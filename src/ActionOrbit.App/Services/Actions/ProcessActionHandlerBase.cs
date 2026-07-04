@@ -33,8 +33,17 @@ public abstract class ProcessActionHandlerBase : IActionHandler
             UseShellExecute = true
         };
 
-        Process.Start(startInfo);
-        return Task.FromResult(ActionExecutionResult.Success());
+        try
+        {
+            var process = Process.Start(startInfo);
+            return Task.FromResult(process is null
+                ? ActionExecutionResult.Failure("Aksiyon başlatılamadı.")
+                : ActionExecutionResult.Success());
+        }
+        catch (Exception ex)
+        {
+            return Task.FromResult(ActionExecutionResult.Failure($"Aksiyon başlatılamadı: {ex.Message}"));
+        }
     }
 
     protected static bool LooksLikePath(string value) =>
