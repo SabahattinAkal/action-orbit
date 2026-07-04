@@ -92,16 +92,26 @@ public sealed class ConfigService
     public void Save(AppConfig config)
     {
         Directory.CreateDirectory(AppDirectory);
+        Validate(config);
         var json = JsonSerializer.Serialize(config, _jsonOptions);
-        File.WriteAllText(ConfigPath, json);
-        File.WriteAllText(LastGoodConfigPath, json);
+        WriteAllTextAtomic(ConfigPath, json);
+
+        try
+        {
+            WriteAllTextAtomic(LastGoodConfigPath, json);
+        }
+        catch (Exception ex)
+        {
+            _logService.Error("Last good config save failed.", ex);
+        }
+
         CurrentConfig = config;
     }
 
     public void ExportConfig(string targetPath)
     {
         var json = JsonSerializer.Serialize(CurrentConfig, _jsonOptions);
-        File.WriteAllText(targetPath, json);
+        WriteAllTextAtomic(targetPath, json);
     }
 
     public AppConfig ImportConfig(string sourcePath)
@@ -121,7 +131,7 @@ public sealed class ConfigService
     {
         NormalizeProfile(profile);
         var json = JsonSerializer.Serialize(profile, _jsonOptions);
-        File.WriteAllText(targetPath, json);
+        WriteAllTextAtomic(targetPath, json);
     }
 
     public ProfileConfig ImportProfile(string sourcePath)
@@ -314,6 +324,40 @@ public sealed class ConfigService
         catch (Exception backupException)
         {
             _logService.Error("Broken config backup failed.", backupException);
+        }
+    }
+
+    private static void WriteAllTextAtomic(string path, string contents)
+    {
+        var directory = Path.GetDirectoryName(path);
+        if (!string.IsNullOrWhiteSpace(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        var tempPath = Path.Combine(
+            directory ?? AppContext.BaseDirectory,
+            $".{Path.GetFileName(path)}.{Guid.NewGuid():N}.tmp");
+
+        try
+        {
+            File.WriteAllText(tempPath, contents);
+
+            if (File.Exists(path))
+            {
+                File.Replace(tempPath, path, null, ignoreMetadataErrors: true);
+            }
+            else
+            {
+                File.Move(tempPath, path);
+            }
+        }
+        finally
+        {
+            if (File.Exists(tempPath))
+            {
+                File.Delete(tempPath);
+            }
         }
     }
 }
