@@ -67,6 +67,7 @@ public sealed class ActionEditorRowViewModel : ViewModelBase
             Action.Title = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(DisplayText));
+            OnPropertyChanged(nameof(RowSubtitle));
         }
     }
 

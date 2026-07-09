@@ -905,9 +905,8 @@
                                               SelectedItem="{Binding Icon, UpdateSourceTrigger=PropertyChanged}"
                                               Text="{Binding Icon, UpdateSourceTrigger=PropertyChanged}" />
                                 </StackPanel>
-                                <StackPanel Grid.Column="1"
-                                            Visibility="{Binding IsNotFolder, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                    <TextBlock Style="{StaticResource TinyLabel}" Text="Buton adı" />
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Style="{StaticResource TinyLabel}" Text="Ad" />
                                     <TextBox Margin="0,6,12,0"
                                              Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}" />
                                 </StackPanel>
