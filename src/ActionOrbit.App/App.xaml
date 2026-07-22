@@ -3,5 +3,23 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Application.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        <SolidColorBrush x:Key="WindowBackgroundBrush" Color="#F4F5F7" />
+        <SolidColorBrush x:Key="PrimaryTextBrush" Color="#171A20" />
+        <SolidColorBrush x:Key="MutedTextBrush" Color="#6B7280" />
+        <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF" />
+        <SolidColorBrush x:Key="SoftSurfaceBrush" Color="#F8F9FB" />
+        <SolidColorBrush x:Key="BorderBrush" Color="#E3E6EC" />
+        <SolidColorBrush x:Key="InputBorderBrush" Color="#DCE1EA" />
+        <SolidColorBrush x:Key="HoverSurfaceBrush" Color="#F2F4F7" />
+        <SolidColorBrush x:Key="PressedSurfaceBrush" Color="#E9EDF3" />
+        <SolidColorBrush x:Key="SelectedSurfaceBrush" Color="#EEF1F6" />
+        <SolidColorBrush x:Key="SelectedBorderBrush" Color="#D8DEE8" />
+        <SolidColorBrush x:Key="NavigationBrush" Color="#E9ECF1" />
+        <SolidColorBrush x:Key="IconSurfaceBrush" Color="#F1F3F6" />
+        <SolidColorBrush x:Key="PrimaryActionBrush" Color="#111318" />
+        <SolidColorBrush x:Key="OnPrimaryActionBrush" Color="#FFFFFF" />
+        <SolidColorBrush x:Key="DangerTextBrush" Color="#9F1239" />
+        <SolidColorBrush x:Key="DangerSurfaceBrush" Color="#FFF5F7" />
+        <SolidColorBrush x:Key="DangerBorderBrush" Color="#F8CED8" />
     </Application.Resources>
 </Application>

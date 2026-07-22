@@ -9,7 +9,11 @@ public sealed class ActiveWindowService
     private const string DesktopProcessName = "desktop.exe";
     private const string TaskbarProcessName = "taskbar.exe";
     private readonly LogService _logService;
+    private readonly object _cacheGate = new();
+    private string _lastObservedProcessName = "";
+    private IntPtr _lastObservedWindowHandle;
     private string _lastExternalProcessName = "";
+    private IntPtr _lastExternalWindowHandle;
 
     public ActiveWindowService(LogService logService)
     {
@@ -44,34 +48,65 @@ public sealed class ActiveWindowService
                 return "";
             }
 
-            NativeMethods.GetWindowThreadProcessId(handle, out var processId);
-            if (processId == 0)
+            string processName;
+            lock (_cacheGate)
             {
-                return "";
+                processName = handle == _lastObservedWindowHandle
+                    ? _lastObservedProcessName
+                    : "";
             }
 
-            using var process = Process.GetProcessById((int)processId);
-            var processName = $"{process.ProcessName}.exe";
-
-            if (string.Equals(processName, "explorer.exe", StringComparison.OrdinalIgnoreCase))
+            if (string.IsNullOrWhiteSpace(processName))
             {
-                processName = ClassifyExplorerWindow(handle);
+                NativeMethods.GetWindowThreadProcessId(handle, out var processId);
+                if (processId == 0)
+                {
+                    return "";
+                }
+
+                using var process = Process.GetProcessById((int)processId);
+                processName = $"{process.ProcessName}.exe";
+
+                if (string.Equals(processName, "explorer.exe", StringComparison.OrdinalIgnoreCase))
+                {
+                    processName = ClassifyExplorerWindow(handle);
+                }
             }
 
-            if (!string.IsNullOrWhiteSpace(ignoredProcessName) &&
-                string.Equals(processName, ignoredProcessName, StringComparison.OrdinalIgnoreCase))
+            lock (_cacheGate)
             {
-                return _lastExternalProcessName;
-            }
+                _lastObservedProcessName = processName;
+                _lastObservedWindowHandle = handle;
 
-            _lastExternalProcessName = processName;
-            return processName;
+                if (!string.IsNullOrWhiteSpace(ignoredProcessName) &&
+                    string.Equals(processName, ignoredProcessName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return _lastExternalProcessName;
+                }
+
+                _lastExternalProcessName = processName;
+                _lastExternalWindowHandle = handle;
+                return processName;
+            }
         }
         catch (Exception ex)
         {
             _logService.Error("Could not read window process.", ex);
             return "";
         }
+    }
+
+    public IntPtr GetLastExternalWindowHandle()
+    {
+        IntPtr handle;
+        lock (_cacheGate)
+        {
+            handle = _lastExternalWindowHandle;
+        }
+
+        return handle != IntPtr.Zero && NativeMethods.IsWindow(handle)
+            ? handle
+            : IntPtr.Zero;
     }
 
     private static string ClassifyExplorerWindow(IntPtr handle)

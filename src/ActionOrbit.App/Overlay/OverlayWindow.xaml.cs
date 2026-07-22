@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media.Animation;
 using ActionOrbit.App.Models;
 using ActionOrbit.App.Services;
 using ActionOrbit.App.Services.Actions;
@@ -36,6 +37,15 @@ public partial class OverlayWindow : Window
         {
             Activate();
             Focus();
+            if (theme.Animation)
+            {
+                BeginAnimation(
+                    OpacityProperty,
+                    new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(140))
+                    {
+                        EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+                    });
+            }
         };
         Closing += (_, _) => _isClosing = true;
     }
@@ -45,6 +55,12 @@ public partial class OverlayWindow : Window
 
     private void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
+        if (DataContext is OverlayViewModel viewModel && viewModel.TryHandleKey(e.Key))
+        {
+            e.Handled = true;
+            return;
+        }
+
         if (e.Key == Key.Escape)
         {
             e.Handled = true;

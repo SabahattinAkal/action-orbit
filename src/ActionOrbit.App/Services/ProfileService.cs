@@ -5,6 +5,9 @@ namespace ActionOrbit.App.Services;
 public sealed class ProfileService
 {
     private readonly LogService _logService;
+    private readonly object _resolutionLogGate = new();
+    private string _lastMissKey = "";
+    private bool _lastResolutionWasMatch = true;
 
     public ProfileService(LogService logService)
     {
@@ -23,6 +26,7 @@ public sealed class ProfileService
 
             if (matched is not null)
             {
+                RecordMatchedResolution();
                 return matched;
             }
         }
@@ -31,7 +35,7 @@ public sealed class ProfileService
 
         if (!string.IsNullOrWhiteSpace(normalizedProcess))
         {
-            _logService.Info($"No profile match for {normalizedProcess}. Using {defaultProfile.Name}.");
+            LogProfileMissOnce(normalizedProcess, defaultProfile);
         }
 
         return defaultProfile;
@@ -66,4 +70,30 @@ public sealed class ProfileService
         processName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
             ? processName[..^4]
             : processName;
+
+    private void RecordMatchedResolution()
+    {
+        lock (_resolutionLogGate)
+        {
+            _lastResolutionWasMatch = true;
+        }
+    }
+
+    private void LogProfileMissOnce(string normalizedProcess, ProfileConfig defaultProfile)
+    {
+        var missKey = $"{normalizedProcess}\u001f{defaultProfile.Id}\u001f{defaultProfile.Name}";
+        lock (_resolutionLogGate)
+        {
+            if (!_lastResolutionWasMatch
+                && string.Equals(_lastMissKey, missKey, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            _lastResolutionWasMatch = false;
+            _lastMissKey = missKey;
+        }
+
+        _logService.Info($"No profile match for {normalizedProcess}. Using {defaultProfile.Name}.");
+    }
 }

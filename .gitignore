@@ -3,3 +3,8 @@ obj/
 *.user
 *.suo
 .vs/
+.idea/
+TestResults/
+*.trx
+*.tmp
+*.log

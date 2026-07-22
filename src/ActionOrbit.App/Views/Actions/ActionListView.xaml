@@ -1,0 +1,73 @@
+<UserControl x:Class="ActionOrbit.App.Views.Actions.ActionListView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:actionViews="clr-namespace:ActionOrbit.App.Views.Actions"
+             DataContext="{Binding ActionEditor}"
+             AutomationProperties.Name="Aksiyon listesi">
+    <Border Style="{DynamicResource Surface}">
+        <DockPanel LastChildFill="True">
+            <StackPanel DockPanel.Dock="Top">
+                <TextBlock FontSize="18" FontWeight="Bold" Text="2. Aksiyonlar" />
+                <TextBlock Margin="0,4,0,14"
+                           Style="{DynamicResource MutedText}"
+                           Text="Sıralama halkadaki konumu belirler." />
+                <TextBlock Margin="0,-8,0,14"
+                           Style="{DynamicResource MutedText}"
+                           Text="Aksiyonu bir klasör satırının üstüne bırakıp alt aksiyon yapabilirsin." />
+                <WrapPanel Margin="0,0,0,12">
+                    <Button Command="{Binding AddActionCommand}" Content="+ Aksiyon" />
+                    <Button Command="{Binding AddFolderCommand}" Content="+ Klasör" />
+                    <Button Command="{Binding AddChildActionCommand}" Content="+ Alt Aksiyon" />
+                </WrapPanel>
+
+                <actionViews:RingPreviewView Margin="0,0,0,12" />
+
+                <Border Margin="0,0,0,12"
+                        Style="{DynamicResource SoftSurface}">
+                    <StackPanel>
+                        <TextBlock Style="{DynamicResource TinyLabel}" Text="Hazır eylem" />
+                        <Grid Margin="0,7,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ComboBox Grid.Column="0"
+                                      Margin="0,0,8,0"
+                                      ItemTemplate="{DynamicResource PresetTemplate}"
+                                      ItemsSource="{Binding ActionPresets}"
+                                      SelectedItem="{Binding SelectedPreset}" />
+                            <Button Grid.Column="1"
+                                    Command="{Binding ApplyPresetCommand}"
+                                    Content="Uygula" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <StackPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
+                <WrapPanel>
+                    <Button Command="{Binding MoveActionUpCommand}" Content="Yukarı" />
+                    <Button Command="{Binding MoveActionDownCommand}" Content="Aşağı" />
+                    <Button Command="{Binding MoveActionOutOfFolderCommand}"
+                            Content="Klasörden Çıkar"
+                            IsEnabled="{Binding CanMoveSelectedActionOutOfFolder}" />
+                    <Button Command="{Binding DeleteActionCommand}"
+                            Style="{DynamicResource DangerButton}"
+                            Content="Sil" />
+                </WrapPanel>
+            </StackPanel>
+
+            <ListBox x:Name="ActionList"
+                     ItemsSource="{Binding ActionRows}"
+                     SelectedItem="{Binding SelectedAction}"
+                     ItemTemplate="{DynamicResource ActionRowTemplate}"
+                     ItemContainerStyle="{DynamicResource CleanListBoxItem}"
+                     AllowDrop="True"
+                     PreviewMouseLeftButtonDown="ActionList_PreviewMouseLeftButtonDown"
+                     PreviewMouseMove="ActionList_PreviewMouseMove"
+                     DragOver="ActionList_DragOver"
+                     DragLeave="ActionList_DragLeave"
+                     Drop="ActionList_Drop" />
+        </DockPanel>
+    </Border>
+</UserControl>

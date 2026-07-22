@@ -15,14 +15,9 @@ internal static class HotkeyParser
             return false;
         }
 
-        var tokens = value
-            .Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Where(token => !string.IsNullOrWhiteSpace(token))
-            .ToList();
-
-        if (tokens.Count == 0)
+        if (!HotkeyChordParser.TryParseTokens(value, out var tokens))
         {
-            errorMessage = "Kisayol bos olamaz.";
+            errorMessage = "Kisayol formati okunamadi. Ornek: Ctrl+Shift+R";
             return false;
         }
 

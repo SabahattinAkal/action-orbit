@@ -1,0 +1,33 @@
+name: build-test-package
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Restore
+        run: dotnet restore ActionOrbit.slnx
+      - name: Restore win-x64 runtime
+        run: dotnet restore src/ActionOrbit.App/ActionOrbit.App.csproj --runtime win-x64
+      - name: Build
+        run: dotnet build ActionOrbit.slnx --configuration Release --no-restore
+      - name: Test
+        run: dotnet test tests/ActionOrbit.App.Tests/ActionOrbit.App.Tests.csproj --configuration Release --no-build --no-restore
+      - name: Publish win-x64
+        run: dotnet publish src/ActionOrbit.App/ActionOrbit.App.csproj --configuration Release --no-restore -p:PublishProfile=win-x64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ActionOrbit-win-x64
+          path: src/ActionOrbit.App/bin/publish/win-x64/
+          if-no-files-found: error

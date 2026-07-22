@@ -18,6 +18,7 @@
             <Setter Property="Width" Value="{Binding Diameter}" />
             <Setter Property="Height" Value="{Binding Diameter}" />
             <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Foreground" Value="#111318" />
             <Setter Property="Background" Value="#F2F2F2" />
             <Setter Property="BorderBrush" Value="#1F000000" />
@@ -88,12 +89,18 @@
                                 <Setter Property="Foreground" Value="#FFFFFF" />
                                 <Setter Property="BorderBrush" Value="#6615171D" />
                             </DataTrigger>
+                            <DataTrigger Binding="{Binding IsKeyboardSelected}" Value="True">
+                                <Setter TargetName="Shell" Property="Background" Value="#A51E39" />
+                                <Setter TargetName="FolderLob" Property="Fill" Value="#A51E39" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter Property="BorderBrush" Value="#80FFFFFF" />
+                            </DataTrigger>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Shell" Property="Background" Value="#FFFFFF" />
                                 <Setter TargetName="FolderLob" Property="Fill" Value="#FFFFFF" />
                                 <Setter Property="RenderTransform">
                                     <Setter.Value>
-                                        <ScaleTransform ScaleX="1.08" ScaleY="1.08" />
+                                        <ScaleTransform ScaleX="1.04" ScaleY="1.04" />
                                     </Setter.Value>
                                 </Setter>
                             </Trigger>
@@ -105,6 +112,16 @@
                                 <Setter TargetName="Shell" Property="Background" Value="#111318" />
                                 <Setter Property="Foreground" Value="#FFFFFF" />
                                 <Setter Property="BorderBrush" Value="#5A111318" />
+                            </MultiDataTrigger>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsKeyboardSelected}" Value="True" />
+                                    <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource TemplatedParent}}" Value="True" />
+                                </MultiDataTrigger.Conditions>
+                                <Setter TargetName="Shell" Property="Background" Value="#A51E39" />
+                                <Setter TargetName="FolderLob" Property="Fill" Value="#A51E39" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter Property="BorderBrush" Value="#80FFFFFF" />
                             </MultiDataTrigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter Property="RenderTransform">
@@ -123,6 +140,7 @@
             <Setter Property="Width" Value="34" />
             <Setter Property="Height" Value="34" />
             <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Foreground" Value="#FFFFFF" />
             <Setter Property="BorderBrush" Value="#30FFFFFF" />
             <Setter Property="BorderThickness" Value="1" />
@@ -161,6 +179,7 @@
             <Setter Property="MinHeight" Value="24" />
             <Setter Property="Padding" Value="10,3" />
             <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Foreground" Value="#FFFFFF" />
             <Setter Property="BorderBrush" Value="#30FFFFFF" />
             <Setter Property="BorderThickness" Value="1" />
@@ -193,6 +212,8 @@
 
         <DataTemplate x:Key="OrbitButtonTemplate">
             <Button Style="{StaticResource OrbitButtonStyle}"
+                    AutomationProperties.Name="{Binding Title}"
+                    AutomationProperties.HelpText="{Binding ToolTipText}"
                     Command="{Binding Command}"
                     CommandParameter="{Binding}"
                     ToolTip="{Binding ToolTipText}"
@@ -247,6 +268,7 @@
                                Text="{Binding EffectiveIcon}"
                                TextAlignment="Center"
                                Visibility="{Binding HasEffectiveFallbackIcon, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
                 </Grid>
             </Button>
         </DataTemplate>
@@ -308,6 +330,12 @@
                            Text="{Binding FolderStatusText}"
                            TextAlignment="Center"
                            TextTrimming="CharacterEllipsis" />
+                <TextBlock Margin="0,3,0,0"
+                           HorizontalAlignment="Center"
+                           FontSize="9"
+                           Foreground="{Binding OverlayInfoMutedForeground}"
+                           Text="{Binding KeyboardHint}"
+                           TextAlignment="Center" />
                 <TextBlock Margin="0,2,0,0"
                            HorizontalAlignment="Center"
                            FontSize="10"

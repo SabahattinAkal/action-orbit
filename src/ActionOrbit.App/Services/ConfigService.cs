@@ -3,7 +3,7 @@ using ActionOrbit.App.Models;
 
 namespace ActionOrbit.App.Services;
 
-public sealed class ConfigService
+public sealed class ConfigService : IConfigPersistence
 {
     private readonly LogService _logService;
     private readonly JsonSerializerOptions _jsonOptions = new()
@@ -13,16 +13,18 @@ public sealed class ConfigService
         WriteIndented = true
     };
 
-    public ConfigService(LogService logService)
+    public ConfigService(LogService logService, string? appDirectory = null)
     {
         _logService = logService;
+        AppDirectory = string.IsNullOrWhiteSpace(appDirectory)
+            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ActionOrbit")
+            : appDirectory;
         Directory.CreateDirectory(AppDirectory);
         Directory.CreateDirectory(IconDirectory);
         IconCatalog.ConfigureCustomIconDirectory(IconDirectory);
     }
 
-    public string AppDirectory { get; } =
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ActionOrbit");
+    public string AppDirectory { get; }
 
     public string ConfigPath =>
         Path.Combine(AppDirectory, "config.json");
@@ -116,15 +118,22 @@ public sealed class ConfigService
 
     public AppConfig ImportConfig(string sourcePath)
     {
+        var config = ReadConfigForImport(sourcePath);
+        Save(config);
+        _logService.Info($"Config imported from {sourcePath}.");
+        return CurrentConfig;
+    }
+
+    public AppConfig ReadConfigForImport(string sourcePath)
+    {
         var json = File.ReadAllText(sourcePath);
         var config = JsonSerializer.Deserialize<AppConfig>(json, _jsonOptions)
             ?? throw new InvalidOperationException("Config dosyası boş.");
 
         Validate(config);
         UpgradeConfig(config);
-        Save(config);
-        _logService.Info($"Config imported from {sourcePath}.");
-        return CurrentConfig;
+        ValidateActionTypes(config.Profiles);
+        return config;
     }
 
     public void ExportProfile(ProfileConfig profile, string targetPath)
@@ -141,6 +150,7 @@ public sealed class ConfigService
             ?? throw new InvalidOperationException("Profil dosyası boş.");
 
         NormalizeProfile(profile);
+        ValidateActionTypes([profile]);
         _logService.Info($"Profile imported from {sourcePath}.");
         return profile;
     }
@@ -200,7 +210,11 @@ public sealed class ConfigService
             NormalizeProfile(profile);
         }
 
-        if (string.IsNullOrWhiteSpace(config.DefaultProfileId))
+        EnsureUniqueProfileIds(config.Profiles);
+
+        if (string.IsNullOrWhiteSpace(config.DefaultProfileId) ||
+            config.Profiles.All(profile =>
+                !string.Equals(profile.Id, config.DefaultProfileId, StringComparison.OrdinalIgnoreCase)))
         {
             config.DefaultProfileId = config.Profiles[0].Id;
         }
@@ -224,6 +238,7 @@ public sealed class ConfigService
         profile.Matches ??= [];
         profile.Actions ??= [];
         NormalizeActions(profile.Actions);
+        EnsureUniqueActionIds(profile.Actions);
     }
 
     private static void NormalizeActions(List<OrbitAction> actions)
@@ -232,6 +247,77 @@ public sealed class ConfigService
         {
             action.Children ??= [];
             NormalizeActions(action.Children);
+        }
+    }
+
+    private static void EnsureUniqueProfileIds(IEnumerable<ProfileConfig> profiles)
+    {
+        var usedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var profile in profiles)
+        {
+            profile.Id = CreateUniqueId(profile.Id, "profile", usedIds);
+        }
+    }
+
+    private static void EnsureUniqueActionIds(IEnumerable<OrbitAction> actions)
+    {
+        var usedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        EnsureUniqueActionIds(actions, usedIds);
+    }
+
+    private static void EnsureUniqueActionIds(
+        IEnumerable<OrbitAction> actions,
+        HashSet<string> usedIds)
+    {
+        foreach (var action in actions)
+        {
+            var fallback = action.IsFolder ? "folder" : "action";
+            action.Id = CreateUniqueId(action.Id, fallback, usedIds);
+            EnsureUniqueActionIds(action.Children, usedIds);
+        }
+    }
+
+    private static string CreateUniqueId(string? requestedId, string fallback, HashSet<string> usedIds)
+    {
+        var baseId = string.IsNullOrWhiteSpace(requestedId) ? fallback : requestedId.Trim();
+        var candidate = baseId;
+        var suffix = 2;
+
+        while (!usedIds.Add(candidate))
+        {
+            candidate = $"{baseId}_{suffix}";
+            suffix++;
+        }
+
+        return candidate;
+    }
+
+    private static void ValidateActionTypes(IEnumerable<ProfileConfig> profiles)
+    {
+        var supportedTypes = ActionDefinitionCatalog.TypeOptions
+            .Select(option => option.Key)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var profile in profiles)
+        {
+            ValidateActionTypes(profile.Actions, profile.Name, supportedTypes);
+        }
+    }
+
+    private static void ValidateActionTypes(
+        IEnumerable<OrbitAction> actions,
+        string profileName,
+        HashSet<string> supportedTypes)
+    {
+        foreach (var action in actions)
+        {
+            if (!supportedTypes.Contains(action.Type))
+            {
+                throw new InvalidOperationException(
+                    $"{profileName} profilindeki '{action.Title}' aksiyonunun türü desteklenmiyor: {action.Type}");
+            }
+
+            ValidateActionTypes(action.Children, profileName, supportedTypes);
         }
     }
 
