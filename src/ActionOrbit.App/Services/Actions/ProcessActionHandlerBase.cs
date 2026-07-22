@@ -33,16 +33,24 @@ public abstract class ProcessActionHandlerBase : IActionHandler
             UseShellExecute = true
         };
 
+        return Task.FromResult(StartShell(startInfo, Process.Start));
+    }
+
+    internal static ActionExecutionResult StartShell(
+        ProcessStartInfo startInfo,
+        Func<ProcessStartInfo, Process?> startProcess)
+    {
         try
         {
-            var process = Process.Start(startInfo);
-            return Task.FromResult(process is null
-                ? ActionExecutionResult.Failure("Aksiyon başlatılamadı.")
-                : ActionExecutionResult.Success());
+            // ShellExecute may hand the request to an existing Explorer/browser process and
+            // legitimately return null. A completed call without an exception means Windows
+            // accepted the request, so it must not be reported as an action failure.
+            _ = startProcess(startInfo);
+            return ActionExecutionResult.Success();
         }
         catch (Exception ex)
         {
-            return Task.FromResult(ActionExecutionResult.Failure($"Aksiyon başlatılamadı: {ex.Message}"));
+            return ActionExecutionResult.Failure($"Aksiyon başlatılamadı: {ex.Message}");
         }
     }
 

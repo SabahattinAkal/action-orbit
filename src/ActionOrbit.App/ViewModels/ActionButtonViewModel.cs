@@ -4,8 +4,10 @@ using ActionOrbit.App.Services;
 
 namespace ActionOrbit.App.ViewModels;
 
-public sealed class ActionButtonViewModel
+public sealed class ActionButtonViewModel : ViewModelBase
 {
+    private bool _isKeyboardSelected;
+
     public required OrbitAction Action { get; init; }
     public required ICommand Command { get; init; }
     public string Title => Action.Title;
@@ -21,6 +23,12 @@ public sealed class ActionButtonViewModel
     public bool IsFolder => Action.IsFolder;
     public bool IsSatellite { get; init; }
     public bool IsActiveFolder { get; init; }
+    public int ShortcutNumber { get; init; }
+    public bool IsKeyboardSelected
+    {
+        get => _isKeyboardSelected;
+        set => SetProperty(ref _isKeyboardSelected, value);
+    }
     public bool ShowFolderLob => IsFolder && !IsActiveFolder;
     public double FolderLobWidth => Diameter * 0.64;
     public double FolderLobHeight => Diameter * 0.64;

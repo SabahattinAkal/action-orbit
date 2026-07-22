@@ -1,0 +1,69 @@
+<UserControl x:Class="ActionOrbit.App.Views.Actions.ActionLibraryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             AutomationProperties.Name="Aksiyon Kütüphanesi">
+    <Border Style="{DynamicResource Surface}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel>
+                <TextBlock FontSize="22" FontWeight="Bold" Text="Aksiyon Kütüphanesi" />
+                <TextBlock Margin="0,6,0,0"
+                           Style="{DynamicResource MutedText}"
+                           TextWrapping="Wrap"
+                           Text="Hazır eylemlerden birini seç; seçili profile yeni aksiyon olarak ekle veya seçili aksiyona uygula." />
+            </StackPanel>
+
+            <Grid Grid.Row="1" Margin="0,18,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.4*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBox Margin="0,0,10,0"
+                         AutomationProperties.Name="Aksiyonlarda ara"
+                         Text="{Binding ActionLibrarySearchText, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="Başlık, açıklama veya hedefte ara" />
+                <ComboBox Grid.Column="1"
+                          AutomationProperties.Name="Aksiyon kategorisi"
+                          DisplayMemberPath="Label"
+                          ItemsSource="{Binding ActionLibraryCategories}"
+                          SelectedItem="{Binding SelectedActionLibraryCategory}" />
+            </Grid>
+
+            <ListBox Grid.Row="2"
+                     Margin="0,18,0,16"
+                     Background="Transparent"
+                     BorderThickness="0"
+                     ItemContainerStyle="{DynamicResource CleanListBoxItem}"
+                     ItemTemplate="{DynamicResource PresetTemplate}"
+                     ItemsSource="{Binding FilteredActionPresets}"
+                     SelectedItem="{Binding ActionEditor.SelectedPreset}">
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Columns="3" />
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+            </ListBox>
+
+            <DockPanel Grid.Row="3" LastChildFill="False">
+                <TextBlock Margin="0,0,18,0"
+                           VerticalAlignment="Center"
+                           Style="{DynamicResource MutedText}"
+                           Text="{Binding ProfileEditor.SelectedProfile.Name, StringFormat=Hedef profil: {0}}" />
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button Command="{Binding ActionEditor.AddPresetToProfileCommand}"
+                            Style="{DynamicResource PrimaryButton}"
+                            Content="Profile Ekle" />
+                    <Button Command="{Binding ActionEditor.ApplyPresetCommand}"
+                            Content="Seçili Aksiyona Uygula"
+                            IsEnabled="{Binding ActionEditor.HasSelectedAction}" />
+                </StackPanel>
+            </DockPanel>
+        </Grid>
+    </Border>
+</UserControl>

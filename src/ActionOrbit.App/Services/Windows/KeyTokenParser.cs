@@ -83,6 +83,16 @@ internal static class KeyTokenParser
         ["PLUS"] = 0xBB,
         ["+"] = 0xBB,
         ["MINUS"] = 0xBD,
-        ["-"] = 0xBD
+        ["-"] = 0xBD,
+        ["."] = 0xBE,
+        ["PERIOD"] = 0xBE,
+        [","] = 0xBC,
+        ["COMMA"] = 0xBC,
+        ["/"] = 0xBF,
+        [";"] = 0xBA,
+        ["["] = 0xDB,
+        ["]"] = 0xDD,
+        ["\\"] = 0xDC,
+        ["'"] = 0xDE
     };
 }

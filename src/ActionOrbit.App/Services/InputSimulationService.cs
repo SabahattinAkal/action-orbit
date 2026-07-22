@@ -20,13 +20,9 @@ public sealed class InputSimulationService
             return Task.CompletedTask;
         }
 
-        var tokens = hotkey
-            .Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .ToList();
-
-        if (tokens.Count == 0)
+        if (!HotkeyChordParser.TryParseTokens(hotkey, out var tokens))
         {
-            return Task.CompletedTask;
+            throw new InvalidOperationException($"Could not parse hotkey: {hotkey}");
         }
 
         var keyToken = tokens[^1];
@@ -96,6 +92,9 @@ public sealed class InputSimulationService
                 ? "no Win32 error"
                 : new Win32Exception(error).Message;
             _logService.Warn($"SendInput sent {sent} of {array.Length} inputs. LastError={error} ({message}).");
+            throw new Win32Exception(
+                error,
+                $"Windows girdinin tamamını gönderemedi ({sent}/{array.Length}). {message}");
         }
     }
 

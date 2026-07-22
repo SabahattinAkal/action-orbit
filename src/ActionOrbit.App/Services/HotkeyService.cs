@@ -7,7 +7,7 @@ using ActionOrbit.App.Services.Windows;
 
 namespace ActionOrbit.App.Services;
 
-public sealed class HotkeyService : IDisposable
+public sealed class HotkeyService : IHotkeyRegistrar, IDisposable
 {
     private const int MainHotkeyId = 0x4150;
 
@@ -15,6 +15,7 @@ public sealed class HotkeyService : IDisposable
     private HwndSource? _source;
     private IntPtr _windowHandle;
     private bool _registered;
+    private HotkeyConfig? _registeredHotkey;
 
     public HotkeyService(LogService logService)
     {
@@ -44,8 +45,38 @@ public sealed class HotkeyService : IDisposable
             throw new InvalidOperationException("Hotkey service is not initialized with a window handle.");
         }
 
-        Unregister();
+        var previousHotkey = _registeredHotkey is null ? null : Clone(_registeredHotkey);
+        UnregisterCore(clearRegisteredHotkey: false);
 
+        try
+        {
+            RegisterCore(hotkey);
+        }
+        catch
+        {
+            if (previousHotkey is not null)
+            {
+                try
+                {
+                    RegisterCore(previousHotkey);
+                }
+                catch (Exception restoreException)
+                {
+                    _registered = false;
+                    _registeredHotkey = null;
+                    _logService.Error("Previous hotkey could not be restored.", restoreException);
+                }
+            }
+
+            throw;
+        }
+    }
+
+    public void Unregister() =>
+        UnregisterCore(clearRegisteredHotkey: true);
+
+    private void RegisterCore(HotkeyConfig hotkey)
+    {
         if (!HotkeyParser.TryParse(hotkey, out var modifiers, out var virtualKey))
         {
             throw new InvalidOperationException($"Hotkey key could not be parsed: {hotkey.Key}");
@@ -58,14 +89,19 @@ public sealed class HotkeyService : IDisposable
         }
 
         _registered = true;
+        _registeredHotkey = Clone(hotkey);
         _logService.Info($"Hotkey registered: {hotkey.Display}.");
     }
 
-    public void Unregister()
+    private void UnregisterCore(bool clearRegisteredHotkey)
     {
         if (!_registered || _windowHandle == IntPtr.Zero)
         {
             _registered = false;
+            if (clearRegisteredHotkey)
+            {
+                _registeredHotkey = null;
+            }
             return;
         }
 
@@ -75,6 +111,10 @@ public sealed class HotkeyService : IDisposable
         }
 
         _registered = false;
+        if (clearRegisteredHotkey)
+        {
+            _registeredHotkey = null;
+        }
     }
 
     public void Dispose()
@@ -93,4 +133,12 @@ public sealed class HotkeyService : IDisposable
 
         return IntPtr.Zero;
     }
+
+    private static HotkeyConfig Clone(HotkeyConfig hotkey) =>
+        new()
+        {
+            Display = hotkey.Display,
+            Key = hotkey.Key,
+            Modifiers = [.. hotkey.Modifiers]
+        };
 }

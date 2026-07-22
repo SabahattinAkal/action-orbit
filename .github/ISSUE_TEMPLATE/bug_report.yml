@@ -1,0 +1,37 @@
+name: Hata bildirimi
+description: Tekrarlanabilir bir Action Orbit hatası bildir
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Sorun
+      description: Ne oldu ve ne olmasını bekliyordun?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Tekrarlama adımları
+      placeholder: "1. ...\n2. ...\n3. ..."
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Sürüm
+      placeholder: v0.x veya commit SHA
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows ve DPI
+      placeholder: Windows 11 24H2, %125
+  - type: textarea
+    id: logs
+    attributes:
+      label: İlgili log
+      description: Kişisel yolları ve hassas veriyi temizleyerek ilgili log bölümünü ekle.
+      render: shell

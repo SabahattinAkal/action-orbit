@@ -1,0 +1,60 @@
+{
+  "id": "browser_sample",
+  "name": "Tarayıcı Örneği",
+  "matches": [
+    {
+      "processName": "chrome.exe"
+    },
+    {
+      "processName": "msedge.exe"
+    }
+  ],
+  "actions": [
+    {
+      "id": "new_tab",
+      "title": "Yeni Sekme",
+      "icon": "plus",
+      "type": "send_hotkey",
+      "target": "Ctrl+T",
+      "arguments": "",
+      "children": []
+    },
+    {
+      "id": "close_tab",
+      "title": "Sekmeyi Kapat",
+      "icon": "x",
+      "type": "send_hotkey",
+      "target": "Ctrl+W",
+      "arguments": "",
+      "children": []
+    },
+    {
+      "id": "web_tools",
+      "title": "Web Araçları",
+      "icon": "folder",
+      "type": "folder",
+      "target": "",
+      "arguments": "",
+      "children": [
+        {
+          "id": "downloads",
+          "title": "İndirilenler",
+          "icon": "download",
+          "type": "send_hotkey",
+          "target": "Ctrl+J",
+          "arguments": "",
+          "children": []
+        },
+        {
+          "id": "developer_tools",
+          "title": "Geliştirici Araçları",
+          "icon": "terminal",
+          "type": "send_hotkey",
+          "target": "Ctrl+Shift+I",
+          "arguments": "",
+          "children": []
+        }
+      ]
+    }
+  ]
+}

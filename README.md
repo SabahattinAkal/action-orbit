@@ -29,7 +29,7 @@ Menü içerisindeki aksiyonlar:
 
 ## Proje durumu
 
-Çalışan MVP kodu eklendi:
+Çalışan beta temeli hazır:
 
 - `src/ActionOrbit.App` altında WPF uygulaması
 - JSON config oluşturma/yükleme/reload
@@ -40,7 +40,18 @@ Menü içerisindeki aksiyonlar:
 - Transparent, topmost radial overlay
 - Folder/alt menü ve geri navigasyonu
 - `open_app`, `open_file`, `open_folder`, `open_url`, `send_hotkey`, `type_text`, `run_command` action handler'ları
-- Basit ayarlar penceresi
+- Ana Sayfa, Ring Editörü, Aksiyon Kütüphanesi ve Ayarlar çalışma alanları
+- Aranabilir/kategorili hazır aksiyon kütüphanesi ve canlı ring önizlemesi
+- Hazır aksiyonu profile ekleme ve seçili aksiyona uygulama için ayrı kontroller
+- Profil kopyalama, varsayılan profil atama ve uygulama eşleştirme
+- Silme, sıralama ve klasör taşıma işlemleri için tek adımlı geri alma
+- Ana/klasör halkalarında kayıpsız sayfalama
+- Fareye ek olarak `1–9`, oklar, `Enter`, `Backspace` ve `Esc` ile overlay kontrolü
+- Ana pencerede gerçek light/dark/system tema ve canlı Windows tema takibi
+- Ana pencere kısayolları: `Ctrl+1…4`, `Ctrl+Z` ve `Ctrl+S`
+- Tek uygulama örneği, hotkey rollback ve güvenli config/profil içe aktarma
+- Editör ve çalıştırma katmanında ortak aksiyon doğrulama/tehlikeli komut filtresi
+- xUnit regresyon testleri ve Windows GitHub Actions yayın hattı
 
 ## Kullanım örneği
 
@@ -91,6 +102,18 @@ Derleme:
 
 ```powershell
 dotnet build ActionOrbit.slnx
+```
+
+Test:
+
+```powershell
+dotnet test tests\ActionOrbit.App.Tests\ActionOrbit.App.Tests.csproj
+```
+
+Self-contained Windows x64 paketi:
+
+```powershell
+.\scripts\publish.ps1
 ```
 
 Çalıştırma:

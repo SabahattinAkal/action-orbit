@@ -1,0 +1,34 @@
+<UserControl x:Class="ActionOrbit.App.Views.Actions.EditorWorkspaceView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:actionViews="clr-namespace:ActionOrbit.App.Views.Actions"
+             xmlns:profileViews="clr-namespace:ActionOrbit.App.Views.Profiles"
+             AutomationProperties.Name="Profil ve aksiyon editörü">
+    <ScrollViewer x:Name="WorkspaceScroll"
+                  HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Disabled">
+        <Grid x:Name="LayoutGrid">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="ProfileColumn" Width="0.95*" MinWidth="250" />
+                <ColumnDefinition x:Name="ActionColumn" Width="1.05*" MinWidth="270" />
+                <ColumnDefinition x:Name="DetailColumn" Width="1.2*" MinWidth="300" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition x:Name="ProfileRow" Height="*" />
+                <RowDefinition x:Name="ActionRow" Height="0" />
+                <RowDefinition x:Name="DetailRow" Height="0" />
+            </Grid.RowDefinitions>
+
+            <profileViews:ProfileManagerView x:Name="ProfilePanel"
+                                             Grid.Column="0"
+                                             Margin="0,0,14,0" />
+
+            <actionViews:ActionListView x:Name="ActionPanel"
+                                        Grid.Column="1"
+                                        Margin="0,0,14,0" />
+
+            <actionViews:SelectedActionEditorView x:Name="DetailPanel"
+                                                  Grid.Column="2" />
+        </Grid>
+    </ScrollViewer>
+</UserControl>

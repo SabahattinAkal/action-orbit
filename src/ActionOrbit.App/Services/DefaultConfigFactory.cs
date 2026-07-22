@@ -4,7 +4,7 @@ namespace ActionOrbit.App.Services;
 
 public static class DefaultConfigFactory
 {
-    public const int CurrentVersion = 6;
+    public const int CurrentVersion = 7;
 
     public static AppConfig Create() =>
         new()

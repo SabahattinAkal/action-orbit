@@ -2,4 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/ActionOrbit.App/ActionOrbit.App.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ActionOrbit.App.Tests/ActionOrbit.App.Tests.csproj" />
+  </Folder>
 </Solution>

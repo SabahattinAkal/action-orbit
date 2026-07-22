@@ -1,0 +1,29 @@
+# Action Orbit yayın kontrol listesi
+
+## Otomatik kontroller
+
+- `dotnet build ActionOrbit.slnx --configuration Release`
+- `dotnet test tests\ActionOrbit.App.Tests\ActionOrbit.App.Tests.csproj --configuration Release`
+- `scripts\publish.ps1` ile self-contained `win-x64` paketini üret
+- Temiz bir Windows kullanıcı hesabında uygulamayı ilk kez çalıştır
+
+## Manuel regresyon
+
+- İkinci uygulama örneğinin açılmadığını ve ilk pencerenin öne geldiğini doğrula
+- Hotkey çakışmasında eski hotkey'in çalışmaya devam ettiğini doğrula
+- Overlay'i fare, `1–9`, ok tuşları, `Enter`, `Backspace` ve `Esc` ile dene
+- 8'den fazla ana aksiyon ve 9'dan fazla klasör aksiyonunda tüm sayfaları dolaş
+- Config/profil içe aktarma, dışa aktarma ve bozuk JSON geri dönüşünü dene
+- Bir profili kopyala, varsayılan yap ve uygulama eşleşmesini değiştir
+- Aksiyon silme, sıralama, klasöre taşıma ve profil silme sonrasında `Ctrl+Z` ile geri al
+- Aksiyon kütüphanesindeki “Profile Ekle” ve “Seçili Aksiyona Uygula” davranışlarını ayrı ayrı dene
+- `run_command` için güvenli bir komutun çalıştığını, yıkıcı örneklerin editörde engellendiğini doğrula
+- %100, %125, %150 DPI ve çoklu monitör senaryolarını kontrol et
+- Açık/koyu/sistem temalarını, canlı Windows tema geçişini ve animasyon kapalı durumunu kontrol et
+
+## Dağıtım
+
+- `src\ActionOrbit.App\bin\publish\win-x64` çıktısını zararlı yazılım taramasından geçir
+- Sürüm numarası ve değişiklik notlarını hazırla
+- GitHub Actions tarafından üretilen `ActionOrbit-win-x64` artifact'ını doğrula
+- İmzalı dağıtım yapılacaksa exe/code-signing adımını yayın hattına ekle

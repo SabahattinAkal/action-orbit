@@ -11,6 +11,9 @@ namespace ActionOrbit.App.ViewModels;
 
 public sealed class OverlayViewModel : ViewModelBase
 {
+    private const int MainPageSize = 7;
+    private const int FolderPageSize = 8;
+
     private readonly ProfileConfig _activeProfile;
     private readonly ProfileConfig _defaultProfile;
     private readonly ThemeConfig _theme;
@@ -30,6 +33,10 @@ public sealed class OverlayViewModel : ViewModelBase
     private double _satelliteGroupWidth;
     private double _satelliteGroupHeight;
     private bool _isShowingDefaultProfile;
+    private int _mainPageIndex;
+    private int _folderPageIndex;
+    private int _folderPageCount = 1;
+    private int _keyboardSelectionIndex;
 
     public OverlayViewModel(
         ProfileConfig profile,
@@ -65,11 +72,12 @@ public sealed class OverlayViewModel : ViewModelBase
         CenterY = WindowHeight / 2;
 
         AccentBrush = CreateBrush(theme.Accent, "#A51E39");
-        OverlayInfoBackground = IsLightMode(theme) ? CreateBrush("#EFFFFFFF", "#EFFFFFFF") : CreateBrush("#E9111318", "#E9111318");
-        OverlayInfoForeground = IsLightMode(theme) ? CreateBrush("#15171D", "#15171D") : CreateBrush("#FFFFFF", "#FFFFFF");
-        OverlayInfoMutedForeground = IsLightMode(theme) ? CreateBrush("#5B6270", "#5B6270") : CreateBrush("#CBD5E1", "#CBD5E1");
-        CenterHintBackground = IsLightMode(theme) ? CreateBrush("#D9111318", "#D9111318") : CreateBrush("#D9FFFFFF", "#D9FFFFFF");
-        CenterHintForeground = IsLightMode(theme) ? CreateBrush("#FFFFFF", "#FFFFFF") : CreateBrush("#111318", "#111318");
+        var isLightMode = ThemeService.IsLightMode(theme.Mode);
+        OverlayInfoBackground = isLightMode ? CreateBrush("#EFFFFFFF", "#EFFFFFFF") : CreateBrush("#E9111318", "#E9111318");
+        OverlayInfoForeground = isLightMode ? CreateBrush("#15171D", "#15171D") : CreateBrush("#FFFFFF", "#FFFFFF");
+        OverlayInfoMutedForeground = isLightMode ? CreateBrush("#5B6270", "#5B6270") : CreateBrush("#CBD5E1", "#CBD5E1");
+        CenterHintBackground = isLightMode ? CreateBrush("#D9111318", "#D9111318") : CreateBrush("#D9FFFFFF", "#D9FFFFFF");
+        CenterHintForeground = isLightMode ? CreateBrush("#FFFFFF", "#FFFFFF") : CreateBrush("#111318", "#111318");
         RebuildMainRing();
     }
 
@@ -144,14 +152,32 @@ public sealed class OverlayViewModel : ViewModelBase
     }
 
     public bool HasFolderOverflow => FolderOverflowCount > 0;
-    public string FolderOverflowText => HasFolderOverflow
-        ? $"+{FolderOverflowCount} aksiyon daha var"
+    public string FolderOverflowText => FolderPageCount > 1
+        ? $"Sayfa {FolderPageIndex + 1}/{FolderPageCount} • Sayfa düğmesi kalan aksiyonları gösterir"
         : "";
 
     public string FolderStatusText =>
         HasSatellites
             ? $"Klasör: {SelectedFolderTitle}"
-            : "Ana halka";
+            : MainPageCount > 1
+                ? $"Ana halka • Sayfa {MainPageIndex + 1}/{MainPageCount}"
+                : "Ana halka";
+
+    public int MainPageIndex => _mainPageIndex;
+    public int MainPageCount => GetMainPageCount();
+    public int FolderPageIndex => _folderPageIndex;
+    public int FolderPageCount
+    {
+        get => _folderPageCount;
+        private set
+        {
+            if (SetProperty(ref _folderPageCount, value))
+            {
+                OnPropertyChanged(nameof(HasFolderOverflow));
+                OnPropertyChanged(nameof(FolderOverflowText));
+            }
+        }
+    }
 
     public double SatelliteGroupLeft
     {
@@ -197,23 +223,32 @@ public sealed class OverlayViewModel : ViewModelBase
     public System.Windows.Media.Brush OverlayInfoMutedForeground { get; }
     public System.Windows.Media.Brush CenterHintBackground { get; }
     public System.Windows.Media.Brush CenterHintForeground { get; }
+    public int KeyboardSelectionIndex => _keyboardSelectionIndex;
+    public string KeyboardHint => "Oklarla seç · Enter aç · Esc geri";
 
     private void RebuildMainRing()
     {
         ActionItems.Clear();
 
-        var count = _currentProfile.Actions.Count;
-        if (count == 0)
+        var totalCount = _currentProfile.Actions.Count;
+        if (totalCount == 0)
         {
             return;
         }
 
+        var pageCount = GetMainPageCount();
+        _mainPageIndex = Math.Clamp(_mainPageIndex, 0, pageCount - 1);
+        var visibleActions = pageCount > 1
+            ? _currentProfile.Actions.Skip(_mainPageIndex * MainPageSize).Take(MainPageSize).ToList()
+            : _currentProfile.Actions.ToList();
+        var count = visibleActions.Count + (pageCount > 1 ? 1 : 0);
+
         var step = count == 1 ? 0 : 360.0 / count;
         const double startAngle = -90.0;
 
-        for (var index = 0; index < count; index++)
+        for (var index = 0; index < visibleActions.Count; index++)
         {
-            var action = _currentProfile.Actions[index];
+            var action = visibleActions[index];
             var angleDegrees = startAngle + index * step;
             var angle = angleDegrees * Math.PI / 180.0;
             var centerX = CenterX + Math.Cos(angle) * RadiusX;
@@ -227,8 +262,33 @@ public sealed class OverlayViewModel : ViewModelBase
                 iconFontSize: 25,
                 angleDegrees,
                 isSatellite: false,
-                isActiveFolder: _expandedFolder?.Id == action.Id));
+                isActiveFolder: ReferenceEquals(_expandedFolder, action),
+                shortcutNumber: index + 1));
         }
+
+        if (pageCount > 1)
+        {
+            var index = count - 1;
+            var angleDegrees = startAngle + index * step;
+            var angle = angleDegrees * Math.PI / 180.0;
+            var centerX = CenterX + Math.Cos(angle) * RadiusX;
+            var centerY = CenterY + Math.Sin(angle) * RadiusY;
+            ActionItems.Add(CreatePaginationButton(
+                title: "Sonraki sayfa",
+                centerX,
+                centerY,
+                ButtonSize,
+                iconFontSize: 22,
+                angleDegrees,
+                isSatellite: false,
+                NextMainPage,
+                shortcutNumber: count));
+        }
+
+        OnPropertyChanged(nameof(MainPageIndex));
+        OnPropertyChanged(nameof(MainPageCount));
+        OnPropertyChanged(nameof(FolderStatusText));
+        ResetKeyboardSelection();
     }
 
     private void RebuildSatellites()
@@ -251,12 +311,17 @@ public sealed class OverlayViewModel : ViewModelBase
         var groupCenterX = _expandedAnchorX + outwardX * SatelliteAnchorOffset;
         var groupCenterY = _expandedAnchorY + outwardY * SatelliteAnchorOffset;
 
-        var visibleChildren = _expandedFolder.Children.Count > 9
-            ? _expandedFolder.Children.Take(8).ToList()
+        FolderPageCount = _expandedFolder.Children.Count > 9
+            ? (int)Math.Ceiling(_expandedFolder.Children.Count / (double)FolderPageSize)
+            : 1;
+        _folderPageIndex = Math.Clamp(_folderPageIndex, 0, FolderPageCount - 1);
+        var visibleChildren = FolderPageCount > 1
+            ? _expandedFolder.Children.Skip(_folderPageIndex * FolderPageSize).Take(FolderPageSize).ToList()
             : _expandedFolder.Children.ToList();
-        var overflowCount = _expandedFolder.Children.Count - visibleChildren.Count;
-        FolderOverflowCount = overflowCount;
-        var count = visibleChildren.Count + (overflowCount > 0 ? 1 : 0);
+        FolderOverflowCount = FolderPageCount > 1
+            ? _expandedFolder.Children.Count - visibleChildren.Count
+            : 0;
+        var count = visibleChildren.Count + (FolderPageCount > 1 ? 1 : 0);
         var spread = count <= 2 ? 108.0 : Math.Min(238.0, 40.0 * (count - 1));
         var firstAngle = _expandedAngleDegrees - spread / 2;
         var step = count <= 1 ? 0 : spread / (count - 1);
@@ -278,17 +343,21 @@ public sealed class OverlayViewModel : ViewModelBase
                     iconFontSize: 21,
                     angleDegrees,
                     isSatellite: true,
-                    isActiveFolder: false));
+                    isActiveFolder: false,
+                    shortcutNumber: index + 1));
                 continue;
             }
 
-            SatelliteItems.Add(CreateOverflowButton(
-                overflowCount,
+            SatelliteItems.Add(CreatePaginationButton(
+                title: "Sonraki sayfa",
                 centerX,
                 centerY,
                 SatelliteButtonSize,
                 iconFontSize: 18,
-                angleDegrees));
+                angleDegrees,
+                isSatellite: true,
+                NextFolderPage,
+                shortcutNumber: count));
         }
 
         var groupRadius = SatelliteRadius + SatelliteButtonSize + 18;
@@ -297,6 +366,9 @@ public sealed class OverlayViewModel : ViewModelBase
         SatelliteGroupWidth = groupRadius * 2;
         SatelliteGroupHeight = groupRadius * 2;
         HasSatellites = true;
+        OnPropertyChanged(nameof(FolderPageIndex));
+        OnPropertyChanged(nameof(FolderOverflowText));
+        ResetKeyboardSelection();
     }
 
     private ActionButtonViewModel CreateButton(
@@ -307,7 +379,8 @@ public sealed class OverlayViewModel : ViewModelBase
         double iconFontSize,
         double angleDegrees,
         bool isSatellite,
-        bool isActiveFolder) =>
+        bool isActiveFolder,
+        int shortcutNumber) =>
         new()
         {
             Action = action,
@@ -320,6 +393,7 @@ public sealed class OverlayViewModel : ViewModelBase
             AngleDegrees = angleDegrees,
             IsSatellite = isSatellite,
             IsActiveFolder = isActiveFolder,
+            ShortcutNumber = shortcutNumber,
             Command = new RelayCommand(parameter =>
             {
                 if (parameter is ActionButtonViewModel item)
@@ -329,20 +403,23 @@ public sealed class OverlayViewModel : ViewModelBase
             })
         };
 
-    private ActionButtonViewModel CreateOverflowButton(
-        int overflowCount,
+    private ActionButtonViewModel CreatePaginationButton(
+        string title,
         double centerX,
         double centerY,
         double diameter,
         double iconFontSize,
-        double angleDegrees) =>
+        double angleDegrees,
+        bool isSatellite,
+        Action nextPage,
+        int shortcutNumber) =>
         new()
         {
             Action = new OrbitAction
             {
                 Id = "__overflow",
-                Title = $"+{overflowCount} daha",
-                Icon = $"+{overflowCount}",
+                Title = title,
+                Icon = "arrow-right",
                 Type = "overflow"
             },
             X = centerX - diameter / 2,
@@ -352,11 +429,139 @@ public sealed class OverlayViewModel : ViewModelBase
             Diameter = diameter,
             IconFontSize = iconFontSize,
             AngleDegrees = angleDegrees,
-            IsSatellite = true,
+            IsSatellite = isSatellite,
             IsActiveFolder = false,
-            Command = new RelayCommand(() =>
-                _logService.Info($"Folder has {overflowCount} more hidden actions."))
+            ShortcutNumber = shortcutNumber,
+            Command = new RelayCommand(nextPage)
         };
+
+    public bool TryHandleKey(Key key)
+    {
+        var numberIndex = key switch
+        {
+            Key.D1 or Key.NumPad1 => 0,
+            Key.D2 or Key.NumPad2 => 1,
+            Key.D3 or Key.NumPad3 => 2,
+            Key.D4 or Key.NumPad4 => 3,
+            Key.D5 or Key.NumPad5 => 4,
+            Key.D6 or Key.NumPad6 => 5,
+            Key.D7 or Key.NumPad7 => 6,
+            Key.D8 or Key.NumPad8 => 7,
+            Key.D9 or Key.NumPad9 => 8,
+            _ => -1
+        };
+
+        if (numberIndex >= 0)
+        {
+            return SelectKeyboardItem(numberIndex, execute: true);
+        }
+
+        switch (key)
+        {
+            case Key.Left:
+            case Key.Up:
+                MoveKeyboardSelection(-1);
+                return true;
+            case Key.Right:
+            case Key.Down:
+            case Key.Tab:
+                MoveKeyboardSelection(1);
+                return true;
+            case Key.Enter:
+            case Key.Space:
+                return SelectKeyboardItem(_keyboardSelectionIndex, execute: true);
+            case Key.Back:
+                return TryCollapseFolder();
+            default:
+                return false;
+        }
+    }
+
+    private IReadOnlyList<ActionButtonViewModel> KeyboardItems =>
+        HasSatellites ? SatelliteItems : ActionItems;
+
+    private void MoveKeyboardSelection(int offset)
+    {
+        var items = KeyboardItems;
+        if (items.Count == 0)
+        {
+            return;
+        }
+
+        _keyboardSelectionIndex = (_keyboardSelectionIndex + offset + items.Count) % items.Count;
+        RefreshKeyboardSelection();
+    }
+
+    private bool SelectKeyboardItem(int index, bool execute)
+    {
+        var items = KeyboardItems;
+        if (index < 0 || index >= items.Count)
+        {
+            return false;
+        }
+
+        _keyboardSelectionIndex = index;
+        RefreshKeyboardSelection();
+        if (execute)
+        {
+            items[index].Command.Execute(items[index]);
+        }
+
+        return true;
+    }
+
+    private void ResetKeyboardSelection()
+    {
+        _keyboardSelectionIndex = 0;
+        RefreshKeyboardSelection();
+    }
+
+    private void RefreshKeyboardSelection()
+    {
+        for (var index = 0; index < ActionItems.Count; index++)
+        {
+            ActionItems[index].IsKeyboardSelected = !HasSatellites && index == _keyboardSelectionIndex;
+        }
+
+        for (var index = 0; index < SatelliteItems.Count; index++)
+        {
+            SatelliteItems[index].IsKeyboardSelected = HasSatellites && index == _keyboardSelectionIndex;
+        }
+
+        OnPropertyChanged(nameof(KeyboardSelectionIndex));
+    }
+
+    private int GetMainPageCount()
+    {
+        var count = _currentProfile.Actions.Count;
+        return count > 8
+            ? (int)Math.Ceiling(count / (double)MainPageSize)
+            : 1;
+    }
+
+    private void NextMainPage()
+    {
+        var pageCount = GetMainPageCount();
+        if (pageCount <= 1)
+        {
+            return;
+        }
+
+        ResetOpenFolder();
+        _mainPageIndex = (_mainPageIndex + 1) % pageCount;
+        RebuildMainRing();
+    }
+
+    private void NextFolderPage()
+    {
+        if (_expandedFolder is null || FolderPageCount <= 1)
+        {
+            return;
+        }
+
+        _folderPageIndex = (_folderPageIndex + 1) % FolderPageCount;
+        RebuildSatellites();
+    }
 
     private void ToggleDefaultProfile()
     {
@@ -367,6 +572,7 @@ public sealed class OverlayViewModel : ViewModelBase
 
         _isShowingDefaultProfile = !_isShowingDefaultProfile;
         _currentProfile = _isShowingDefaultProfile ? _defaultProfile : _activeProfile;
+        _mainPageIndex = 0;
         ResetOpenFolder();
         RebuildMainRing();
         OnPropertyChanged(nameof(ProfileName));
@@ -391,6 +597,11 @@ public sealed class OverlayViewModel : ViewModelBase
             {
                 CollapseSatellites();
                 return;
+            }
+
+            if (!ReferenceEquals(_expandedFolder, action))
+            {
+                _folderPageIndex = 0;
             }
 
             _expandedFolder = action;
@@ -443,6 +654,8 @@ public sealed class OverlayViewModel : ViewModelBase
         SatelliteItems.Clear();
         HasSatellites = false;
         FolderOverflowCount = 0;
+        FolderPageCount = 1;
+        _folderPageIndex = 0;
         SelectedFolderTitle = "";
     }
 
@@ -458,6 +671,4 @@ public sealed class OverlayViewModel : ViewModelBase
         }
     }
 
-    private static bool IsLightMode(ThemeConfig theme) =>
-        string.Equals(theme.Mode, "light", StringComparison.OrdinalIgnoreCase);
 }
