@@ -8,6 +8,16 @@
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <InformationalVersion>1.0.0</InformationalVersion>
+    <Product>Action Orbit</Product>
+    <Authors>Action Orbit contributors</Authors>
+    <Description>Windows için özelleştirilebilir radial aksiyon menüsü.</Description>
+    <RepositoryUrl>https://github.com/SabahattinAkal/action-orbit</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
 </Project>

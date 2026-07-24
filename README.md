@@ -1,5 +1,9 @@
 # Action Orbit
 
+[![CI](https://github.com/SabahattinAkal/action-orbit/actions/workflows/ci.yml/badge.svg)](https://github.com/SabahattinAkal/action-orbit/actions/workflows/ci.yml)
+[![GitHub Release](https://img.shields.io/github/v/release/SabahattinAkal/action-orbit)](https://github.com/SabahattinAkal/action-orbit/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 Action Orbit, Windows için mouse makro tuşuyla açılan gelişmiş bir radial/oval aksiyon menüsü uygulamasıdır.
 
 Amaç: Logitech Actions Ring benzeri ama daha esnek, klasör mantıklı, uygulama bazlı profil destekli, hızlı ve görsel olarak daha modern bir sistem yapmak.
@@ -24,12 +28,13 @@ Menü içerisindeki aksiyonlar:
 
 - Windows 10 ve Windows 11
 - WPF
-- Bu çalışma ortamında x64 Windows Desktop runtime 10 bulunduğu için proje `net10.0-windows` hedefler.
+- Proje `net10.0-windows` hedefler.
+- GitHub Release paketi self-contained olduğu için son kullanıcıda ayrıca .NET kurulumu gerekmez.
 - .NET 8/9 hedeflenmek istenirse ilgili x64 `Microsoft.WindowsDesktop.App` runtime/SDK kurulup `ActionOrbit.App.csproj` hedef framework değeri değiştirilebilir.
 
 ## Proje durumu
 
-Çalışan beta temeli hazır:
+İlk kararlı sürüm `v1.0.0` hazır:
 
 - `src/ActionOrbit.App` altında WPF uygulaması
 - JSON config oluşturma/yükleme/reload
@@ -52,6 +57,16 @@ Menü içerisindeki aksiyonlar:
 - Tek uygulama örneği, hotkey rollback ve güvenli config/profil içe aktarma
 - Editör ve çalıştırma katmanında ortak aksiyon doğrulama/tehlikeli komut filtresi
 - xUnit regresyon testleri ve Windows GitHub Actions yayın hattı
+
+## İndirme
+
+En güncel Windows x64 paketini [GitHub Releases](https://github.com/SabahattinAkal/action-orbit/releases/latest) sayfasından indir:
+
+1. `ActionOrbit-v1.0.0-win-x64.zip` dosyasını indir.
+2. Arşivi istediğin bir klasöre çıkar.
+3. `ActionOrbit.App.exe` dosyasını çalıştır.
+
+Paket self-contained'dır. İlk sürüm kod imzası taşımadığı için Windows SmartScreen bilinmeyen yayıncı uyarısı gösterebilir. Dosya bütünlüğü Release sayfasındaki `SHA256SUMS.txt` ile doğrulanabilir.
 
 ## Kullanım örneği
 
@@ -78,9 +93,9 @@ Menü içerisindeki aksiyonlar:
   - Terminal
   - Not defteri
 
-## MVP hedefi
+## v1.0 kapsamı
 
-İlk çalışan sürümde şu özellikler yeterlidir:
+İlk kararlı sürüm aşağıdaki temel kapsamı karşılar:
 
 1. Global hotkey dinleme.
 2. Hotkey ile cursor konumunda overlay menü açma.
