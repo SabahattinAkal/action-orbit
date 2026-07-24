@@ -4,4 +4,4 @@ Güvenlik açığını herkese açık issue olarak paylaşma. Depo sahibine GitH
 
 Action Orbit yerel komut çalıştırabildiği için içe aktarılan profil/config dosyalarını güvenilir olmayan kaynaklardan kullanma. Özellikle `run_command`, uygulama ve dosya hedeflerini çalıştırmadan önce incele.
 
-Desteklenen sürüm, en son GitHub Release olarak yayımlanan public beta sürümüdür.
+Desteklenen sürüm, en son GitHub Release olarak yayımlanan kararlı sürümdür.
