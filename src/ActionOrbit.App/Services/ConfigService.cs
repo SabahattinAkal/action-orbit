@@ -1,5 +1,6 @@
 using System.Text.Json;
 using ActionOrbit.App.Models;
+using ActionOrbit.App.Services.Windows;
 
 namespace ActionOrbit.App.Services;
 
@@ -112,6 +113,7 @@ public sealed class ConfigService : IConfigPersistence
 
     public void ExportConfig(string targetPath)
     {
+        Validate(CurrentConfig);
         var json = JsonSerializer.Serialize(CurrentConfig, _jsonOptions);
         WriteAllTextAtomic(targetPath, json);
     }
@@ -132,14 +134,15 @@ public sealed class ConfigService : IConfigPersistence
 
         Validate(config);
         UpgradeConfig(config);
-        ValidateActionTypes(config.Profiles);
         return config;
     }
 
     public void ExportProfile(ProfileConfig profile, string targetPath)
     {
-        NormalizeProfile(profile);
-        var json = JsonSerializer.Serialize(profile, _jsonOptions);
+        var exportProfile = ProfileCopyService.Copy(profile, profile.Id, profile.Name);
+        NormalizeProfile(exportProfile);
+        ValidateActionTypes([exportProfile]);
+        var json = JsonSerializer.Serialize(exportProfile, _jsonOptions);
         WriteAllTextAtomic(targetPath, json);
     }
 
@@ -174,6 +177,7 @@ public sealed class ConfigService : IConfigPersistence
 
             Validate(loaded);
             UpgradeConfig(loaded);
+            Validate(loaded);
             config = loaded;
             return true;
         }
@@ -186,6 +190,12 @@ public sealed class ConfigService : IConfigPersistence
 
     private static void Validate(AppConfig config)
     {
+        if (config.ConfigVersion > DefaultConfigFactory.CurrentVersion)
+        {
+            throw new InvalidOperationException(
+                $"Config sürümü desteklenmiyor: {config.ConfigVersion}. Bu dosya daha yeni bir Action Orbit sürümü gerektiriyor.");
+        }
+
         if (config.Hotkey is null)
         {
             throw new InvalidOperationException("hotkey is required.");
@@ -198,7 +208,14 @@ public sealed class ConfigService : IConfigPersistence
             throw new InvalidOperationException("hotkey.key is required.");
         }
 
-        config.Profiles ??= [];
+        if (!HotkeyParser.TryParse(config.Hotkey, out _, out _))
+        {
+            throw new InvalidOperationException("hotkey contains an unsupported key or modifier.");
+        }
+
+        config.Hotkey.Display = BuildHotkeyDisplay(config.Hotkey);
+
+        config.Profiles = config.Profiles?.OfType<ProfileConfig>().ToList() ?? [];
 
         if (config.Profiles.Count == 0)
         {
@@ -221,6 +238,8 @@ public sealed class ConfigService : IConfigPersistence
 
         config.Theme ??= new ThemeConfig();
         config.Settings ??= new AppSettings();
+        NormalizeTheme(config.Theme);
+        ValidateActionTypes(config.Profiles);
     }
 
     private static void NormalizeProfile(ProfileConfig profile)
@@ -235,8 +254,13 @@ public sealed class ConfigService : IConfigPersistence
             profile.Name = "İçe Aktarılan Profil";
         }
 
-        profile.Matches ??= [];
-        profile.Actions ??= [];
+        profile.Matches = profile.Matches?
+            .OfType<ProfileMatch>()
+            .Where(match => !string.IsNullOrWhiteSpace(match.ProcessName))
+            .GroupBy(match => match.ProcessName.Trim(), StringComparer.OrdinalIgnoreCase)
+            .Select(group => new ProfileMatch { ProcessName = group.Key })
+            .ToList() ?? [];
+        profile.Actions = profile.Actions?.OfType<OrbitAction>().ToList() ?? [];
         NormalizeActions(profile.Actions);
         EnsureUniqueActionIds(profile.Actions);
     }
@@ -245,9 +269,60 @@ public sealed class ConfigService : IConfigPersistence
     {
         foreach (var action in actions)
         {
-            action.Children ??= [];
+            action.Id = action.Id?.Trim() ?? "";
+            action.Title = action.Title?.Trim() ?? "";
+            action.Icon = action.Icon?.Trim() ?? "";
+            action.Type = action.Type?.Trim().ToLowerInvariant() ?? "";
+            action.Target ??= "";
+            action.Arguments ??= "";
+            action.Children = action.Children?.OfType<OrbitAction>().ToList() ?? [];
             NormalizeActions(action.Children);
+            if (action.Children.Count > 0
+                && !string.Equals(action.Type, "folder", StringComparison.OrdinalIgnoreCase)
+                && ActionDefinitionCatalog.TypeOptions.Any(option =>
+                    string.Equals(option.Key, action.Type, StringComparison.OrdinalIgnoreCase)))
+            {
+                action.Type = "folder";
+            }
         }
+    }
+
+    private static void NormalizeTheme(ThemeConfig theme)
+    {
+        theme.Mode = theme.Mode?.Trim().ToLowerInvariant() switch
+        {
+            "light" => "light",
+            "dark" => "dark",
+            _ => "system"
+        };
+
+        var accent = theme.Accent?.Trim() ?? "";
+        theme.Accent = accent.Length == 7
+            && accent[0] == '#'
+            && accent[1..].All(Uri.IsHexDigit)
+                ? accent
+                : "#A51E39";
+        theme.ButtonSize = ClampFinite(theme.ButtonSize, 54, 96, 60);
+        theme.RadiusX = ClampFinite(theme.RadiusX, 96, 190, 116);
+        theme.RadiusY = ClampFinite(theme.RadiusY, 82, 168, 98);
+    }
+
+    private static double ClampFinite(double value, double min, double max, double fallback) =>
+        double.IsFinite(value) ? Math.Clamp(value, min, max) : fallback;
+
+    private static string BuildHotkeyDisplay(HotkeyConfig hotkey)
+    {
+        var modifiers = hotkey.Modifiers.Select(modifier =>
+            modifier.Trim().ToLowerInvariant() switch
+            {
+                "control" or "ctrl" => "Ctrl",
+                "alt" => "Alt",
+                "shift" => "Shift",
+                "win" or "windows" => "Win",
+                _ => modifier.Trim()
+            });
+
+        return string.Join("+", modifiers.Append(hotkey.Key.Trim()));
     }
 
     private static void EnsureUniqueProfileIds(IEnumerable<ProfileConfig> profiles)

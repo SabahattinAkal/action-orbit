@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Data;
@@ -276,8 +277,20 @@ public sealed class ProfileEditorViewModel : ViewModelBase
 
     private IEnumerable<RunningAppOption> GetRunningAppOptions()
     {
-        foreach (var process in Process.GetProcesses())
+        Process[] processes;
+        try
         {
+            processes = Process.GetProcesses();
+        }
+        catch (Exception ex)
+        {
+            _setStatus($"Çalışan uygulamalar listelenemedi: {ex.Message}");
+            yield break;
+        }
+
+        foreach (var process in processes)
+        {
+            RunningAppOption? option = null;
             try
             {
                 if (process.MainWindowHandle == IntPtr.Zero)
@@ -291,11 +304,20 @@ public sealed class ProfileEditorViewModel : ViewModelBase
                     continue;
                 }
 
-                yield return new RunningAppOption(processName, process.MainWindowTitle);
+                option = new RunningAppOption(processName, process.MainWindowTitle);
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or Win32Exception or NotSupportedException)
+            {
+                // Processes can exit or become inaccessible while the list is being read.
             }
             finally
             {
                 process.Dispose();
+            }
+
+            if (option is not null)
+            {
+                yield return option;
             }
         }
     }

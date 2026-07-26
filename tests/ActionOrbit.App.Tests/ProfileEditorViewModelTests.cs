@@ -54,9 +54,41 @@ public sealed class ProfileEditorViewModelTests : IDisposable
         Assert.NotSame(source.Actions, viewModel.SelectedProfile!.Actions);
     }
 
+    [Fact]
+    public void EditingDefaultProfileId_UpdatesDefaultReference()
+    {
+        var viewModel = CreateViewModel();
+        viewModel.ReloadFromConfig();
+        var defaultProfile = viewModel.Profiles.Single(profile => profile.Id == "default");
+        viewModel.SelectedProfile = defaultProfile;
+
+        viewModel.SelectedProfileId = "renamed_default";
+
+        Assert.Equal("renamed_default", defaultProfile.Id);
+        Assert.True(viewModel.SelectedProfileIsDefault);
+    }
+
+    [Fact]
+    public void EditingProfileId_ToDuplicateValue_IsRejected()
+    {
+        string? status = null;
+        var viewModel = CreateViewModel(setStatus: message => status = message);
+        viewModel.ReloadFromConfig();
+        var selected = viewModel.Profiles[0];
+        var duplicateId = viewModel.Profiles[1].Id;
+        viewModel.SelectedProfile = selected;
+
+        viewModel.SelectedProfileId = duplicateId;
+
+        Assert.Equal("default", selected.Id);
+        Assert.Equal("default", viewModel.SelectedProfileId);
+        Assert.Contains("zaten", status);
+    }
+
     private ProfileEditorViewModel CreateViewModel(
         Action? markDirty = null,
-        Action? selectedProfileChanged = null)
+        Action? selectedProfileChanged = null,
+        Action<string>? setStatus = null)
     {
         Directory.CreateDirectory(_tempDirectory);
         var logService = new LogService(_tempDirectory);
@@ -66,7 +98,7 @@ public sealed class ProfileEditorViewModelTests : IDisposable
             new ActiveWindowService(logService),
             new ProfileService(logService),
             markDirty ?? (() => { }),
-            _ => { },
+            setStatus ?? (_ => { }),
             (_, _) => { },
             selectedProfileChanged ?? (() => { }));
     }

@@ -45,7 +45,7 @@ public abstract class ProcessActionHandlerBase : IActionHandler
             // ShellExecute may hand the request to an existing Explorer/browser process and
             // legitimately return null. A completed call without an exception means Windows
             // accepted the request, so it must not be reported as an action failure.
-            _ = startProcess(startInfo);
+            startProcess(startInfo)?.Dispose();
             return ActionExecutionResult.Success();
         }
         catch (Exception ex)

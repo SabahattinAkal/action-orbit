@@ -1,0 +1,66 @@
+using ActionOrbit.App.Models;
+using ActionOrbit.App.Services;
+using ActionOrbit.App.Services.Actions;
+
+namespace ActionOrbit.App.Tests;
+
+public sealed class RunCommandActionHandlerTests : IDisposable
+{
+    private readonly string _tempDirectory = Path.Combine(
+        Path.GetTempPath(),
+        $"action-orbit-command-handler-tests-{Guid.NewGuid():N}");
+
+    [Fact]
+    public async Task ExecuteAsync_WhenCommandSucceeds_ReturnsSuccess()
+    {
+        var handler = CreateHandler();
+
+        var result = await handler.ExecuteAsync(CreateAction("ver > nul"));
+
+        Assert.True(result.Succeeded);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenCommandReturnsFailure_ReportsExitCode()
+    {
+        var handler = CreateHandler();
+
+        var result = await handler.ExecuteAsync(CreateAction("exit /b 7"));
+
+        Assert.False(result.Succeeded);
+        Assert.Contains("7", result.Message);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenCommandIsBlocked_DoesNotStartIt()
+    {
+        var handler = CreateHandler();
+
+        var result = await handler.ExecuteAsync(CreateAction("shutdown.exe /s"));
+
+        Assert.False(result.Succeeded);
+        Assert.Contains("güvenlik filtresine", result.Message);
+    }
+
+    private RunCommandActionHandler CreateHandler()
+    {
+        Directory.CreateDirectory(_tempDirectory);
+        return new RunCommandActionHandler(new LogService(_tempDirectory));
+    }
+
+    private static OrbitAction CreateAction(string command) => new()
+    {
+        Id = "command",
+        Title = "Komut",
+        Type = "run_command",
+        Target = command
+    };
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_tempDirectory))
+        {
+            Directory.Delete(_tempDirectory, recursive: true);
+        }
+    }
+}

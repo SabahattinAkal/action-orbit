@@ -71,6 +71,93 @@ public sealed class OverlayPaginationTests : IDisposable
         Assert.True(viewModel.ActionItems[1].IsKeyboardSelected);
     }
 
+    [Fact]
+    public void FolderPagination_CyclesThroughEveryChild()
+    {
+        var folder = new OrbitAction
+        {
+            Id = "folder",
+            Title = "Folder",
+            Type = "folder",
+            Children = Enumerable.Range(1, 25).Select(CreateAction).ToList()
+        };
+        var profile = new ProfileConfig { Id = "default", Name = "Default", Actions = [folder] };
+        var viewModel = CreateViewModel(profile);
+        var folderButton = viewModel.ActionItems[0];
+        folderButton.Command.Execute(folderButton);
+        var visited = new HashSet<string>(StringComparer.Ordinal);
+
+        for (var page = 0; page < viewModel.FolderPageCount; page++)
+        {
+            foreach (var item in viewModel.SatelliteItems.Where(item => item.Type != "overflow"))
+            {
+                visited.Add(item.Action.Id);
+            }
+
+            viewModel.SatelliteItems[^1].Command.Execute(null);
+        }
+
+        Assert.Equal(25, visited.Count);
+        Assert.Equal(0, viewModel.FolderPageIndex);
+    }
+
+    [Fact]
+    public void LightAccent_UsesDarkOverlayForeground()
+    {
+        var profile = new ProfileConfig
+        {
+            Id = "default",
+            Name = "Default",
+            Actions = [CreateAction(1)]
+        };
+        var log = new LogService(_tempDirectory);
+        var executor = new ActionExecutionService(log, []);
+        var viewModel = new OverlayViewModel(
+            profile,
+            profile,
+            new ThemeConfig { Accent = "#FFFFFF", Mode = "light" },
+            executor,
+            log,
+            IntPtr.Zero);
+
+        var foreground = Assert.IsType<System.Windows.Media.SolidColorBrush>(
+            viewModel.AccentForegroundBrush);
+        Assert.Equal(System.Windows.Media.Color.FromRgb(0x11, 0x13, 0x18), foreground.Color);
+    }
+
+    [Fact]
+    public void NestedFolder_BackReturnsToParentBeforeMainRing()
+    {
+        var nested = new OrbitAction
+        {
+            Id = "nested",
+            Title = "Alt Klasör",
+            Type = "folder",
+            Children = [CreateAction(1)]
+        };
+        var root = new OrbitAction
+        {
+            Id = "root",
+            Title = "Üst Klasör",
+            Type = "folder",
+            Children = [nested]
+        };
+        var profile = new ProfileConfig { Id = "default", Name = "Default", Actions = [root] };
+        var viewModel = CreateViewModel(profile);
+
+        viewModel.ActionItems[0].Command.Execute(viewModel.ActionItems[0]);
+        viewModel.SatelliteItems[0].Command.Execute(viewModel.SatelliteItems[0]);
+
+        Assert.Equal("Üst Klasör › Alt Klasör", viewModel.SelectedFolderTitle);
+        Assert.True(viewModel.TryCollapseFolder());
+        Assert.Equal("Üst Klasör", viewModel.SelectedFolderTitle);
+        Assert.Same(nested, viewModel.SatelliteItems[0].Action);
+
+        Assert.True(viewModel.TryCollapseFolder());
+        Assert.False(viewModel.HasSatellites);
+        Assert.False(viewModel.TryCollapseFolder());
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_tempDirectory))

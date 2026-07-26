@@ -13,4 +13,15 @@ public sealed class ThemeServiceTests
     {
         Assert.Equal(expected, ThemeService.IsLightMode(mode));
     }
+
+    [Theory]
+    [InlineData("#FFFFFF", "#111318")]
+    [InlineData("#FACC15", "#111318")]
+    [InlineData("#000000", "#FFFFFF")]
+    [InlineData("#A51E39", "#FFFFFF")]
+    [InlineData("invalid", "#FFFFFF")]
+    public void AccentForeground_SelectsReadableContrast(string accent, string expected)
+    {
+        Assert.Equal(expected, ThemeService.GetContrastingForeground(accent));
+    }
 }

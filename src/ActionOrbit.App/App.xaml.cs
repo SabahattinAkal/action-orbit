@@ -13,6 +13,7 @@ public partial class App : System.Windows.Application
     private ConfigService? _configService;
     private HotkeyService? _hotkeyService;
     private SingleInstanceService? _singleInstanceService;
+    private MainWindowViewModel? _mainWindowViewModel;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -39,7 +40,7 @@ public partial class App : System.Windows.Application
         var activeWindowService = new ActiveWindowService(_logService);
         var profileService = new ProfileService(_logService);
         var startupService = new StartupService(_logService);
-        SyncStartupRegistration(startupService);
+        var startupSyncIssue = SyncStartupRegistration(startupService);
         var inputService = new InputSimulationService(_logService);
 
         var actionExecutionService = new ActionExecutionService(
@@ -72,10 +73,16 @@ public partial class App : System.Windows.Application
             actionExecutionService,
             startupService,
             _logService);
+        _mainWindowViewModel = viewModel;
 
         var mainWindow = new MainWindow(viewModel, _hotkeyService);
         MainWindow = mainWindow;
         mainWindow.Show();
+        if (!string.IsNullOrWhiteSpace(startupSyncIssue))
+        {
+            viewModel.Status.ReportFailure(startupSyncIssue);
+        }
+
         _singleInstanceService.StartListening(() =>
             Dispatcher.BeginInvoke(mainWindow.RestoreFromExternalRequest));
 
@@ -95,6 +102,7 @@ public partial class App : System.Windows.Application
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         _logService?.Error("Unhandled UI exception.", e.Exception);
+        _mainWindowViewModel?.Status.ReportUnexpectedError();
         e.Handled = true;
     }
 
@@ -111,15 +119,17 @@ public partial class App : System.Windows.Application
             _configService.CurrentConfig.Theme.Accent));
     }
 
-    private void SyncStartupRegistration(StartupService startupService)
+    private string? SyncStartupRegistration(StartupService startupService)
     {
         try
         {
             startupService.SetEnabled(_configService?.CurrentConfig.Settings.RunAtStartup == true);
+            return null;
         }
         catch (Exception ex)
         {
             _logService?.Error("Startup registration sync failed.", ex);
+            return $"Windows başlangıç ayarı uygulanamadı: {ex.Message}";
         }
     }
 }

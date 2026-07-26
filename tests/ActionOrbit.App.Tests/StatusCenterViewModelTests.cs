@@ -37,6 +37,36 @@ public sealed class StatusCenterViewModelTests
         Assert.Equal($"True:{viewModel.Message}", notification);
     }
 
+    [Fact]
+    public void ReportUnexpectedError_ShowsVisibleErrorAndRequestsTrayWarning()
+    {
+        var viewModel = new StatusCenterViewModel();
+        string? notification = null;
+        viewModel.UserNotificationRequested += (message, isError) =>
+            notification = isError ? message : null;
+
+        viewModel.ReportUnexpectedError();
+
+        Assert.Equal(StatusTone.Error, viewModel.Tone);
+        Assert.Contains("log", viewModel.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(viewModel.Message, notification);
+    }
+
+    [Fact]
+    public void ReportFailure_ShowsVisibleErrorAndRequestsTrayWarning()
+    {
+        var viewModel = new StatusCenterViewModel();
+        string? notification = null;
+        viewModel.UserNotificationRequested += (message, isError) =>
+            notification = isError ? message : null;
+
+        viewModel.ReportFailure("Overlay açılamadı: test hatası");
+
+        Assert.Equal(StatusTone.Error, viewModel.Tone);
+        Assert.Equal("Overlay açılamadı: test hatası", viewModel.Message);
+        Assert.Equal(viewModel.Message, notification);
+    }
+
     private static OrbitAction CreateAction() => new()
     {
         Id = "downloads",

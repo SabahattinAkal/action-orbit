@@ -93,6 +93,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
             _configService,
             _logService,
             Hotkey,
+            Settings,
             () => ProfileEditor.SelectedProfile,
             ReloadAfterExternalConfigChange,
             AddImportedProfileToEditor,
@@ -111,7 +112,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
 
         _actionExecutionService.ActionExecuted += OnActionExecuted;
         _hotkeyService.HotkeyPressed += (_, _) =>
-            System.Windows.Application.Current.Dispatcher.Invoke(_overlayService.ShowOverlay);
+            System.Windows.Application.Current.Dispatcher.Invoke(ShowOverlay);
 
         RefreshConfigSummary();
         Hotkey.RefreshFromConfig();
@@ -248,8 +249,13 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
 
     public void RegisterHotkey() => Hotkey.RegisterConfiguredHotkey();
 
-    private void ShowOverlay() =>
-        _overlayService.ShowOverlay();
+    private void ShowOverlay()
+    {
+        if (!_overlayService.TryShowOverlay(out var errorMessage))
+        {
+            Status.ReportFailure(errorMessage);
+        }
+    }
 
     private void NavigateWorkspace(string? workspace)
     {
@@ -326,7 +332,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     private void ReloadAfterExternalConfigChange()
     {
         RefreshConfigSummary();
-        Settings.RefreshFromConfig();
+        Settings.CompleteExternalConfigChange();
         ReloadEditorFromConfig();
         ProfileEditor.DetectProfile();
     }
@@ -362,5 +368,8 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         _activeProcessTimer.Stop();
         _actionExecutionService.ActionExecuted -= OnActionExecuted;
     }
+
+    public bool FlushPendingChanges() =>
+        Autosave.FlushPendingChanges();
 
 }

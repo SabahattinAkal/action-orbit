@@ -35,6 +35,19 @@ public sealed class ActionValidationServiceTests
     [InlineData("del C:\\temp /s /q", true)]
     [InlineData("powershell Remove-Item C:\\temp -Recurse -Force", true)]
     [InlineData("rm -rf /", true)]
+    [InlineData("rm notes.txt", true)]
+    [InlineData("rm -r ./cache", true)]
+    [InlineData("powershell -Command ri notes.txt", true)]
+    [InlineData("echo ok && shutdown /s", true)]
+    [InlineData("shutdown.exe /s", true)]
+    [InlineData("C:\\Windows\\System32\\shutdown.exe /s", true)]
+    [InlineData("format.com D:", true)]
+    [InlineData("cmd /c del C:\\temp\\file.txt", true)]
+    [InlineData("powershell -Command Clear-Content C:\\temp\\file.txt", true)]
+    [InlineData("reg delete HKCU\\Software\\Sample /f", true)]
+    [InlineData("diskpart /s cleanup.txt", true)]
+    [InlineData("echo harmless", false)]
+    [InlineData("git rm --cached file.txt", false)]
     public void CommandSafety_BlocksDestructivePatterns(string command, bool blocked)
     {
         Assert.Equal(blocked, CommandSafetyService.IsBlocked(command));
@@ -50,6 +63,18 @@ public sealed class ActionValidationServiceTests
         Assert.False(ActionValidationService.Validate(folder).IsValid);
         folder.Children.Add(Create("open_url", "https://example.com"));
         Assert.True(ActionValidationService.Validate(folder).IsValid);
+    }
+
+    [Fact]
+    public void NonFolder_WithChildren_IsRejected()
+    {
+        var action = Create("open_url", "https://example.com");
+        action.Children.Add(Create("open_url", "https://example.org"));
+
+        var result = ActionValidationService.Validate(action);
+
+        Assert.False(result.IsValid);
+        Assert.Contains("klasör", result.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     private static OrbitAction Create(string type, string target) =>

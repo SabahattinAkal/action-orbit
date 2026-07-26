@@ -15,11 +15,11 @@ public sealed class RunCommandActionHandler : IActionHandler
     public bool CanHandle(OrbitAction action) =>
         string.Equals(action.Type, "run_command", StringComparison.OrdinalIgnoreCase);
 
-    public Task<ActionExecutionResult> ExecuteAsync(OrbitAction action)
+    public async Task<ActionExecutionResult> ExecuteAsync(OrbitAction action)
     {
         if (string.IsNullOrWhiteSpace(action.Target))
         {
-            return Task.FromResult(ActionExecutionResult.Failure("Komut boş."));
+            return ActionExecutionResult.Failure("Komut boş.");
         }
 
         var command = Environment.ExpandEnvironmentVariables(action.Target);
@@ -30,30 +30,49 @@ public sealed class RunCommandActionHandler : IActionHandler
 
         if (CommandSafetyService.IsBlocked(fullCommand))
         {
-            return Task.FromResult(ActionExecutionResult.Failure(
-                "Bu komut public beta güvenlik filtresine takıldı. Silme, formatlama veya kapatma komutlarını elle çalıştır."));
+            return ActionExecutionResult.Failure(
+                "Bu komut public beta güvenlik filtresine takıldı. Silme, formatlama veya kapatma komutlarını elle çalıştır.");
         }
 
         var startInfo = new ProcessStartInfo
         {
             FileName = "cmd.exe",
-            Arguments = $"/c {fullCommand}",
             UseShellExecute = false,
             CreateNoWindow = true
         };
+        startInfo.ArgumentList.Add("/d");
+        startInfo.ArgumentList.Add("/s");
+        startInfo.ArgumentList.Add("/c");
+        startInfo.ArgumentList.Add(fullCommand);
 
         try
         {
             _logService.Info($"Running command: {fullCommand}");
-            var process = Process.Start(startInfo);
-            return Task.FromResult(process is null
-                ? ActionExecutionResult.Failure("Komut başlatılamadı.")
-                : ActionExecutionResult.Success());
+            using var process = Process.Start(startInfo);
+            if (process is null)
+            {
+                return ActionExecutionResult.Failure("Komut başlatılamadı.");
+            }
+
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(8));
+            try
+            {
+                await process.WaitForExitAsync(timeout.Token);
+            }
+            catch (OperationCanceledException) when (timeout.IsCancellationRequested)
+            {
+                return ActionExecutionResult.Success("Komut başlatıldı ve arka planda çalışıyor.");
+            }
+
+            return process.ExitCode == 0
+                ? ActionExecutionResult.Success()
+                : ActionExecutionResult.Failure(
+                    $"Komut {process.ExitCode} hata koduyla sonlandı.");
         }
         catch (Exception ex)
         {
             _logService.Error("Command execution failed.", ex);
-            return Task.FromResult(ActionExecutionResult.Failure($"Komut çalıştırılamadı: {ex.Message}"));
+            return ActionExecutionResult.Failure($"Komut çalıştırılamadı: {ex.Message}");
         }
     }
 

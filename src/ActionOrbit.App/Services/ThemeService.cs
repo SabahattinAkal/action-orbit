@@ -55,6 +55,12 @@ public static class ThemeService
                 ["SelectedBorderBrush"] = "#D8DEE8",
                 ["NavigationBrush"] = "#E9ECF1",
                 ["IconSurfaceBrush"] = "#F1F3F6",
+                ["InfoTextBrush"] = "#3730A3",
+                ["InfoSurfaceBrush"] = "#EEF2FF",
+                ["InfoBorderBrush"] = "#D8E0FF",
+                ["WarningTextBrush"] = "#9A3412",
+                ["WarningSurfaceBrush"] = "#FFF7ED",
+                ["WarningBorderBrush"] = "#FED7AA",
                 ["DangerTextBrush"] = "#9F1239",
                 ["DangerSurfaceBrush"] = "#FFF5F7",
                 ["DangerBorderBrush"] = "#F8CED8"
@@ -74,6 +80,12 @@ public static class ThemeService
                 ["SelectedBorderBrush"] = "#4A5362",
                 ["NavigationBrush"] = "#20242B",
                 ["IconSurfaceBrush"] = "#262B34",
+                ["InfoTextBrush"] = "#C7D2FE",
+                ["InfoSurfaceBrush"] = "#242B44",
+                ["InfoBorderBrush"] = "#46588F",
+                ["WarningTextBrush"] = "#FDBA74",
+                ["WarningSurfaceBrush"] = "#3A2B1C",
+                ["WarningBorderBrush"] = "#7C4A24",
                 ["DangerTextBrush"] = "#FDA4AF",
                 ["DangerSurfaceBrush"] = "#3A2028",
                 ["DangerBorderBrush"] = "#713744"
@@ -84,8 +96,9 @@ public static class ThemeService
             resources[key] = CreateFrozenBrush(color);
         }
 
-        resources["PrimaryActionBrush"] = CreateFrozenBrush(NormalizeAccent(accent));
-        resources["OnPrimaryActionBrush"] = CreateFrozenBrush("#FFFFFF");
+        var normalizedAccent = NormalizeAccent(accent);
+        resources["PrimaryActionBrush"] = CreateFrozenBrush(normalizedAccent);
+        resources["OnPrimaryActionBrush"] = CreateFrozenBrush(GetContrastingForeground(normalizedAccent));
     }
 
     private static System.Windows.Media.Brush CreateFrozenBrush(string color)
@@ -102,4 +115,24 @@ public static class ThemeService
             ? value
             : "#A51E39";
     }
+
+    public static string GetContrastingForeground(string? background)
+    {
+        var normalized = NormalizeAccent(background);
+        var red = Convert.ToByte(normalized[1..3], 16) / 255d;
+        var green = Convert.ToByte(normalized[3..5], 16) / 255d;
+        var blue = Convert.ToByte(normalized[5..7], 16) / 255d;
+        var luminance =
+            0.2126 * ToLinear(red)
+            + 0.7152 * ToLinear(green)
+            + 0.0722 * ToLinear(blue);
+        var whiteContrast = 1.05 / (luminance + 0.05);
+        var darkContrast = (luminance + 0.05) / 0.05;
+        return darkContrast >= whiteContrast ? "#111318" : "#FFFFFF";
+    }
+
+    private static double ToLinear(double component) =>
+        component <= 0.04045
+            ? component / 12.92
+            : Math.Pow((component + 0.055) / 1.055, 2.4);
 }

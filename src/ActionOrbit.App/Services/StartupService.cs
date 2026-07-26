@@ -2,7 +2,7 @@ using Microsoft.Win32;
 
 namespace ActionOrbit.App.Services;
 
-public sealed class StartupService
+public sealed class StartupService : IStartupRegistration
 {
     private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string ValueName = "ActionOrbit";

@@ -69,6 +69,46 @@ public sealed class ActionEditorPersistenceTests : IDisposable
         Assert.Equal(viewModel.SelectedPreset.Arguments, savedAction.Arguments);
     }
 
+    [Fact]
+    public void AddChildAction_WhenRegularActionIsSelected_DoesNotConvertItToFolder()
+    {
+        var (configService, viewModel) = CreateViewModel();
+        var action = CreateAction("regular", "Normal Aksiyon");
+        configService.CurrentConfig.Profiles[0].Actions = [action];
+        viewModel.ReloadForSelectedProfile();
+        viewModel.SelectedAction = Assert.Single(viewModel.ActionRows);
+
+        viewModel.AddChildActionCommand.Execute(null);
+
+        Assert.Equal("open_url", action.Type);
+        Assert.Empty(action.Children);
+    }
+
+    [Fact]
+    public void ApplyPreset_WhenFolderHasChildren_PreservesFolderAndChildren()
+    {
+        var (configService, viewModel) = CreateViewModel();
+        var child = CreateAction("child", "Alt Aksiyon");
+        var folder = new OrbitAction
+        {
+            Id = "folder",
+            Title = "Klasör",
+            Type = "folder",
+            Children = [child]
+        };
+        configService.CurrentConfig.Profiles[0].Actions = [folder];
+        viewModel.ReloadForSelectedProfile();
+        viewModel.SelectedAction = viewModel.ActionRows[0];
+        viewModel.SelectedPreset = viewModel.ActionPresets.First(preset => preset.Type != "folder");
+
+        Assert.False(viewModel.ApplyPresetCommand.CanExecute(null));
+        viewModel.ApplyPresetCommand.Execute(null);
+
+        Assert.Equal("folder", folder.Type);
+        Assert.Equal("Klasör", folder.Title);
+        Assert.Same(child, Assert.Single(folder.Children));
+    }
+
     private (ConfigService ConfigService, ActionEditorViewModel ViewModel) CreateViewModel()
     {
         var configService = CreateConfigService();

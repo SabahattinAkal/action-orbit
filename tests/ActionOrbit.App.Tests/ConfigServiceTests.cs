@@ -114,6 +114,181 @@ public sealed class ConfigServiceTests : IDisposable
         Assert.Equal(ids.Count, ids.Distinct(StringComparer.OrdinalIgnoreCase).Count());
     }
 
+    [Fact]
+    public void Load_WithUnknownActionType_RecoversToDefaultAndBacksUpBrokenConfig()
+    {
+        var service = CreateService();
+        var invalidConfig = new AppConfig
+        {
+            ConfigVersion = DefaultConfigFactory.CurrentVersion,
+            DefaultProfileId = "default",
+            Hotkey = new HotkeyConfig { Display = "F13", Key = "F13", Modifiers = [] },
+            Profiles =
+            [
+                new ProfileConfig
+                {
+                    Id = "default",
+                    Name = "Broken",
+                    Actions = [new OrbitAction { Id = "bad", Title = "Bad", Type = "unknown" }]
+                }
+            ]
+        };
+        File.WriteAllText(service.ConfigPath, JsonSerializer.Serialize(invalidConfig));
+
+        var loaded = service.Load();
+
+        Assert.Equal(DefaultConfigFactory.CurrentVersion, loaded.ConfigVersion);
+        Assert.DoesNotContain(
+            loaded.Profiles.SelectMany(profile => profile.Actions),
+            action => action.Type == "unknown");
+        Assert.NotEmpty(Directory.GetFiles(_tempDirectory, "config.broken.*.json"));
+    }
+
+    [Fact]
+    public void ReadConfigForImport_RemovesNullEntriesAndNormalizesThemeAndMatches()
+    {
+        var service = CreateService();
+        var path = Path.Combine(_tempDirectory, "nullable-config.json");
+        File.WriteAllText(
+            path,
+            """
+            {
+              "configVersion": 7,
+              "defaultProfileId": "default",
+              "hotkey": { "display": "F13", "key": "F13", "modifiers": [] },
+              "theme": {
+                "mode": "unexpected",
+                "accent": "not-a-color",
+                "buttonSize": 999,
+                "radiusX": -5,
+                "radiusY": 999
+              },
+              "profiles": [
+                null,
+                {
+                  "id": "default",
+                  "name": "Default",
+                  "matches": [null, { "processName": " Code.exe " }, { "processName": "code.exe" }],
+                  "actions": [
+                    null,
+                    {
+                      "id": "open",
+                      "title": " Open ",
+                      "type": " OPEN_URL ",
+                      "target": "https://example.com",
+                      "children": [null]
+                    }
+                  ]
+                }
+              ]
+            }
+            """);
+
+        var imported = service.ReadConfigForImport(path);
+
+        var profile = Assert.Single(imported.Profiles);
+        Assert.Single(profile.Matches);
+        Assert.Equal("Code.exe", profile.Matches[0].ProcessName);
+        var action = Assert.Single(profile.Actions);
+        Assert.Equal("Open", action.Title);
+        Assert.Equal("open_url", action.Type);
+        Assert.Empty(action.Children);
+        Assert.Equal("system", imported.Theme.Mode);
+        Assert.Equal("#A51E39", imported.Theme.Accent);
+        Assert.Equal(96, imported.Theme.ButtonSize);
+        Assert.Equal(96, imported.Theme.RadiusX);
+        Assert.Equal(168, imported.Theme.RadiusY);
+    }
+
+    [Fact]
+    public void ReadConfigForImport_RejectsUnsupportedHotkeyModifier()
+    {
+        var service = CreateService();
+        var config = DefaultConfigFactory.Create();
+        config.Hotkey.Modifiers = ["Banana"];
+        var path = WriteConfig(config);
+
+        var error = Assert.Throws<InvalidOperationException>(() => service.ReadConfigForImport(path));
+
+        Assert.Contains("unsupported key or modifier", error.Message);
+    }
+
+    [Fact]
+    public void ReadConfigForImport_CanonicalizesDisplayFromRegisteredHotkeyFields()
+    {
+        var service = CreateService();
+        var config = DefaultConfigFactory.Create();
+        config.Hotkey = new HotkeyConfig
+        {
+            Display = "F14",
+            Key = "R",
+            Modifiers = ["Control", "Shift"]
+        };
+        var path = WriteConfig(config);
+
+        var imported = service.ReadConfigForImport(path);
+
+        Assert.Equal("Ctrl+Shift+R", imported.Hotkey.Display);
+    }
+
+    [Fact]
+    public void ReadConfigForImport_RejectsFutureConfigVersion()
+    {
+        var service = CreateService();
+        var config = DefaultConfigFactory.Create();
+        config.ConfigVersion = DefaultConfigFactory.CurrentVersion + 1;
+        var path = WriteConfig(config);
+
+        var error = Assert.Throws<InvalidOperationException>(() => service.ReadConfigForImport(path));
+
+        Assert.Contains("daha yeni", error.Message);
+    }
+
+    [Fact]
+    public void ReadConfigForImport_RepairsNonFolderWithChildrenWithoutLosingChildren()
+    {
+        var service = CreateService();
+        var config = DefaultConfigFactory.Create();
+        var action = config.Profiles[0].Actions.First(candidate => !candidate.IsFolder);
+        action.Children = [new OrbitAction
+        {
+            Id = "child",
+            Title = "Child",
+            Type = "open_url",
+            Target = "https://example.com"
+        }];
+        var path = WriteConfig(config);
+
+        var imported = service.ReadConfigForImport(path);
+
+        var repaired = imported.Profiles[0].Actions.Single(candidate => candidate.Id == action.Id);
+        Assert.Equal("folder", repaired.Type);
+        Assert.Single(repaired.Children);
+    }
+
+    [Fact]
+    public void ExportProfile_DoesNotMutateLiveProfileWhileRepairingExport()
+    {
+        var service = CreateService();
+        var profile = new ProfileConfig
+        {
+            Id = "sample",
+            Name = "Sample",
+            Actions =
+            [
+                new OrbitAction { Id = "same", Title = "One", Type = "open_url", Target = "https://example.com" },
+                new OrbitAction { Id = "same", Title = "Two", Type = "open_url", Target = "https://example.org" }
+            ]
+        };
+        var exportPath = Path.Combine(_tempDirectory, "sample.profile.json");
+
+        service.ExportProfile(profile, exportPath);
+
+        Assert.Equal(["same", "same"], profile.Actions.Select(action => action.Id));
+        var exported = service.ImportProfile(exportPath);
+        Assert.Equal(2, exported.Actions.Select(action => action.Id).Distinct(StringComparer.OrdinalIgnoreCase).Count());
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_tempDirectory))

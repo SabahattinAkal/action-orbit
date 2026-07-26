@@ -22,6 +22,7 @@ public sealed class ActionEditorRowViewModel : ViewModelBase
     public bool HasParent => Parent is not null;
     public string ParentTitle => Parent?.Title ?? "";
     public int ChildCount => Action.Children?.Count ?? 0;
+    public bool CanChangeType => ChildCount == 0;
     public string FolderBadgeText => ChildCount == 1 ? "1 alt" : $"{ChildCount} alt";
     public string RowSubtitle =>
         IsChild
