@@ -8,7 +8,7 @@ namespace ActionOrbit.App.ViewModels;
 public sealed class SettingsViewModel : ViewModelBase
 {
     private readonly ConfigService _configService;
-    private readonly StartupService _startupService;
+    private readonly IStartupRegistration _startupService;
     private readonly LogService _logService;
     private readonly Action _markDirty;
     private readonly Action<string> _setStatus;
@@ -25,7 +25,7 @@ public sealed class SettingsViewModel : ViewModelBase
 
     public SettingsViewModel(
         ConfigService configService,
-        StartupService startupService,
+        IStartupRegistration startupService,
         LogService logService,
         Action markDirty,
         Action<string> setStatus,
@@ -199,6 +199,43 @@ public sealed class SettingsViewModel : ViewModelBase
         {
             _isSyncingFields = false;
         }
+    }
+
+    public bool IsStartupRegistrationEnabled() =>
+        _startupService.IsEnabled();
+
+    public bool TryApplyStartupRegistration(bool enabled, out string issueMessage)
+    {
+        try
+        {
+            _startupService.SetEnabled(enabled);
+            issueMessage = "";
+            return true;
+        }
+        catch (Exception ex)
+        {
+            issueMessage = $"Windows başlangıç ayarı uygulanamadı: {ex.Message}";
+            _logService.Error("Imported startup setting update failed.", ex);
+            return false;
+        }
+    }
+
+    public void RestoreStartupRegistration(bool enabled)
+    {
+        try
+        {
+            _startupService.SetEnabled(enabled);
+        }
+        catch (Exception ex)
+        {
+            _logService.Error("Previous startup setting could not be restored.", ex);
+        }
+    }
+
+    public void CompleteExternalConfigChange()
+    {
+        RefreshFromConfig();
+        ThemeService.ApplyApplicationTheme(ThemeMode, AccentInput);
     }
 
     private void ApplyThemeSettings()

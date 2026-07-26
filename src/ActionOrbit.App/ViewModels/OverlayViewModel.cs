@@ -20,6 +20,7 @@ public sealed class OverlayViewModel : ViewModelBase
     private readonly ActionExecutionService _actionExecutionService;
     private readonly LogService _logService;
     private readonly IntPtr _restoreWindow;
+    private readonly Stack<FolderNavigationState> _folderHistory = [];
     private ProfileConfig _currentProfile;
     private OrbitAction? _expandedFolder;
     private double _expandedAnchorX;
@@ -72,6 +73,9 @@ public sealed class OverlayViewModel : ViewModelBase
         CenterY = WindowHeight / 2;
 
         AccentBrush = CreateBrush(theme.Accent, "#A51E39");
+        AccentForegroundBrush = CreateBrush(
+            ThemeService.GetContrastingForeground(theme.Accent),
+            "#FFFFFF");
         var isLightMode = ThemeService.IsLightMode(theme.Mode);
         OverlayInfoBackground = isLightMode ? CreateBrush("#EFFFFFFF", "#EFFFFFFF") : CreateBrush("#E9111318", "#E9111318");
         OverlayInfoForeground = isLightMode ? CreateBrush("#15171D", "#15171D") : CreateBrush("#FFFFFF", "#FFFFFF");
@@ -218,6 +222,7 @@ public sealed class OverlayViewModel : ViewModelBase
     public double CenterHintLeft => CenterX - 46;
     public double CenterHintTop => CenterY + 24;
     public System.Windows.Media.Brush AccentBrush { get; }
+    public System.Windows.Media.Brush AccentForegroundBrush { get; }
     public System.Windows.Media.Brush OverlayInfoBackground { get; }
     public System.Windows.Media.Brush OverlayInfoForeground { get; }
     public System.Windows.Media.Brush OverlayInfoMutedForeground { get; }
@@ -303,7 +308,12 @@ public sealed class OverlayViewModel : ViewModelBase
             return;
         }
 
-        SelectedFolderTitle = _expandedFolder.Title;
+        SelectedFolderTitle = string.Join(
+            " › ",
+            _folderHistory
+                .Reverse()
+                .Select(state => state.Folder.Title)
+                .Append(_expandedFolder.Title));
 
         var anchorAngle = _expandedAngleDegrees * Math.PI / 180.0;
         var outwardX = Math.Cos(anchorAngle);
@@ -595,8 +605,23 @@ public sealed class OverlayViewModel : ViewModelBase
 
             if (!item.IsSatellite && _expandedFolder?.Id == action.Id)
             {
-                CollapseSatellites();
+                ResetOpenFolder();
+                RebuildMainRing();
                 return;
+            }
+
+            if (item.IsSatellite && _expandedFolder is not null)
+            {
+                _folderHistory.Push(new FolderNavigationState(
+                    _expandedFolder,
+                    _expandedAnchorX,
+                    _expandedAnchorY,
+                    _expandedAngleDegrees,
+                    _folderPageIndex));
+            }
+            else if (!item.IsSatellite)
+            {
+                _folderHistory.Clear();
             }
 
             if (!ReferenceEquals(_expandedFolder, action))
@@ -637,19 +662,27 @@ public sealed class OverlayViewModel : ViewModelBase
         return true;
     }
 
-    private void CollapseSatellites()
-    {
-        CollapseFolder();
-    }
-
     private void CollapseFolder()
     {
+        if (_folderHistory.TryPop(out var previous))
+        {
+            _expandedFolder = previous.Folder;
+            _expandedAnchorX = previous.AnchorX;
+            _expandedAnchorY = previous.AnchorY;
+            _expandedAngleDegrees = previous.AngleDegrees;
+            _folderPageIndex = previous.PageIndex;
+            RebuildMainRing();
+            RebuildSatellites();
+            return;
+        }
+
         ResetOpenFolder();
         RebuildMainRing();
     }
 
     private void ResetOpenFolder()
     {
+        _folderHistory.Clear();
         _expandedFolder = null;
         SatelliteItems.Clear();
         HasSatellites = false;
@@ -671,4 +704,10 @@ public sealed class OverlayViewModel : ViewModelBase
         }
     }
 
+    private sealed record FolderNavigationState(
+        OrbitAction Folder,
+        double AnchorX,
+        double AnchorY,
+        double AngleDegrees,
+        int PageIndex);
 }

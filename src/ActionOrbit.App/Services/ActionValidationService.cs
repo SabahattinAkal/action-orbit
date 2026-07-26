@@ -23,6 +23,12 @@ public static class ActionValidationService
         var target = action.Target?.Trim() ?? "";
         var expandedTarget = Environment.ExpandEnvironmentVariables(target);
 
+        if (!action.IsFolder && action.Children.Count > 0)
+        {
+            return ActionValidationResult.Failure(
+                "Alt aksiyon içeren bir öğenin türü klasör olmalı.");
+        }
+
         return action.Type switch
         {
             "folder" => action.Children.Count == 0

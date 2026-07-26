@@ -13,6 +13,7 @@ public partial class MainWindow : Window
     private readonly HotkeyService _hotkeyService;
     private readonly Forms.NotifyIcon _trayIcon;
     private bool _allowClose;
+    private bool _hasShownTrayTip;
 
     public MainWindow(MainWindowViewModel viewModel, HotkeyService hotkeyService)
     {
@@ -37,6 +38,20 @@ public partial class MainWindow : Window
             e.Cancel = true;
             HideToTray(showTip: true);
             return;
+        }
+
+        if (!_viewModel.FlushPendingChanges())
+        {
+            var confirmation = System.Windows.MessageBox.Show(
+                "Bekleyen değişiklikler kaydedilemedi. Yine de uygulamadan çıkılsın mı?",
+                "Kaydetme hatası",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+            if (confirmation != MessageBoxResult.Yes)
+            {
+                e.Cancel = true;
+                return;
+            }
         }
 
         _allowClose = true;
@@ -87,8 +102,9 @@ public partial class MainWindow : Window
     {
         Hide();
 
-        if (showTip)
+        if (showTip && !_hasShownTrayTip)
         {
+            _hasShownTrayTip = true;
             _trayIcon.ShowBalloonTip(
                 1400,
                 "Action Orbit",
@@ -128,8 +144,12 @@ public partial class MainWindow : Window
     private void ExitFromTray()
     {
         _allowClose = true;
-        _trayIcon.Visible = false;
-        System.Windows.Application.Current.Shutdown();
+        Close();
+
+        if (IsLoaded)
+        {
+            _allowClose = false;
+        }
     }
 
 }

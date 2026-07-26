@@ -27,7 +27,8 @@
                                        Text="AO" />
                             <TextBlock HorizontalAlignment="Center"
                                        FontSize="8"
-                                       Foreground="#C9CDD5"
+                                       Foreground="{DynamicResource OnPrimaryActionBrush}"
+                                       Opacity="0.74"
                                        Text="MERKEZ" />
                         </StackPanel>
                     </Border>

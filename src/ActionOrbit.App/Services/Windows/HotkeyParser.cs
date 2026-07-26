@@ -69,6 +69,7 @@ internal static class HotkeyParser
     public static bool TryParse(HotkeyConfig hotkey, out uint modifiers, out uint virtualKey)
     {
         modifiers = NativeMethods.ModNoRepeat;
+        virtualKey = 0;
 
         foreach (var modifier in hotkey.Modifiers)
         {
@@ -88,6 +89,8 @@ internal static class HotkeyParser
                 case "windows":
                     modifiers |= NativeMethods.ModWin;
                     break;
+                default:
+                    return false;
             }
         }
 

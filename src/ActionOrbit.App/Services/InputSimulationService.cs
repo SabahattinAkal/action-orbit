@@ -85,17 +85,31 @@ public sealed class InputSimulationService
 
         var array = inputs.ToArray();
         var sent = NativeMethods.SendInput((uint)array.Length, array, Marshal.SizeOf<NativeMethods.Input>());
-        if (sent != array.Length)
+        try
         {
-            var error = Marshal.GetLastWin32Error();
-            var message = error == 0
-                ? "no Win32 error"
-                : new Win32Exception(error).Message;
-            _logService.Warn($"SendInput sent {sent} of {array.Length} inputs. LastError={error} ({message}).");
-            throw new Win32Exception(
-                error,
-                $"Windows girdinin tamamını gönderemedi ({sent}/{array.Length}). {message}");
+            EnsureAllInputsWereSent(array.Length, sent, Marshal.GetLastWin32Error());
         }
+        catch (Win32Exception ex)
+        {
+            _logService.Warn(
+                $"SendInput sent {sent} of {array.Length} inputs. LastError={ex.NativeErrorCode} ({ex.Message}).");
+            throw;
+        }
+    }
+
+    internal static void EnsureAllInputsWereSent(int expected, uint sent, int error)
+    {
+        if (sent == expected)
+        {
+            return;
+        }
+
+        var message = error == 0
+            ? "no Win32 error"
+            : new Win32Exception(error).Message;
+        throw new Win32Exception(
+            error,
+            $"Windows girdinin tamamını gönderemedi ({sent}/{expected}). {message}");
     }
 
     private static NativeMethods.Input KeyInput(uint virtualKey, bool keyUp) =>

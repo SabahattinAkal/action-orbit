@@ -50,12 +50,12 @@
                                         <TextBlock Style="{DynamicResource TinyLabel}" Text="Hazır eylem uygula" />
                                         <ComboBox Margin="0,7,12,0"
                                                   ItemTemplate="{DynamicResource PresetTemplate}"
-                                                  ItemsSource="{Binding ActionPresets}"
-                                                  SelectedItem="{Binding SelectedPreset}" />
+                                                  ItemsSource="{Binding ActionEditor.ActionPresets}"
+                                                  SelectedItem="{Binding ActionEditor.SelectedPreset}" />
                                     </StackPanel>
                                     <Button Grid.Column="1"
                                             VerticalAlignment="Bottom"
-                                            Command="{Binding ApplyPresetCommand}"
+                                            Command="{Binding ActionEditor.ApplyPresetCommand}"
                                             Content="Uygula" />
                                 </Grid>
                             </Border>
@@ -88,14 +88,14 @@
 
                             <Border Margin="0,14,0,0"
                                     Padding="10"
-                                    Background="#EEF2FF"
-                                    BorderBrush="#D8E0FF"
+                                    Background="{DynamicResource InfoSurfaceBrush}"
+                                    BorderBrush="{DynamicResource InfoBorderBrush}"
                                     BorderThickness="1"
                                     CornerRadius="10"
                                     Visibility="{Binding IsFolder, Converter={StaticResource BooleanToVisibilityConverter}}">
                                 <StackPanel>
                                     <TextBlock FontWeight="SemiBold"
-                                               Foreground="#3730A3"
+                                               Foreground="{DynamicResource InfoTextBrush}"
                                                Text="{Binding FolderBadgeText, StringFormat=Bu klasörde {0} aksiyon var.}" />
                                     <TextBlock Margin="0,4,0,0"
                                                Style="{DynamicResource MutedText}"
@@ -133,9 +133,11 @@
                                     <TextBlock Style="{DynamicResource TinyLabel}" Text="Eylem türü" />
                                     <ComboBox Margin="0,6,12,0"
                                               DisplayMemberPath="Label"
+                                              IsEnabled="{Binding CanChangeType}"
                                               ItemsSource="{Binding DataContext.ActionEditor.ActionTypeOptions, RelativeSource={RelativeSource AncestorType=Window}}"
                                               SelectedValue="{Binding Type, UpdateSourceTrigger=PropertyChanged}"
-                                              SelectedValuePath="Key" />
+                                              SelectedValuePath="Key"
+                                              ToolTip="Alt aksiyonları olan klasörün türünü değiştirmek için önce alt aksiyonları taşı veya sil." />
                                 </StackPanel>
                                 <StackPanel Grid.Column="1">
                                     <TextBlock Style="{DynamicResource TinyLabel}" Text="{Binding TargetLabel}" />
@@ -167,26 +169,26 @@
 
                             <Border Margin="0,10,0,0"
                                     Padding="10"
-                                    Background="#FFF7ED"
-                                    BorderBrush="#FED7AA"
+                                    Background="{DynamicResource WarningSurfaceBrush}"
+                                    BorderBrush="{DynamicResource WarningBorderBrush}"
                                     BorderThickness="1"
                                     CornerRadius="10"
                                     Visibility="{Binding IsRunCommand, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                <TextBlock Foreground="#9A3412"
+                                <TextBlock Foreground="{DynamicResource WarningTextBrush}"
                                            TextWrapping="Wrap"
                                            Text="Komut çalıştırma gelişmiş kullanımdır. Yalnızca güvendiğin komutları ekle." />
                             </Border>
 
                             <Border Margin="0,10,0,0"
                                     Padding="10"
-                                    Background="#FFF1F2"
-                                    BorderBrush="#FECDD3"
+                                    Background="{DynamicResource DangerSurfaceBrush}"
+                                    BorderBrush="{DynamicResource DangerBorderBrush}"
                                     BorderThickness="1"
                                     CornerRadius="10"
                                     DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    Visibility="{Binding HasSelectedActionValidation, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                <TextBlock Foreground="#9F1239"
-                                           Text="{Binding SelectedActionValidationMessage}"
+                                    Visibility="{Binding ActionEditor.HasSelectedActionValidation, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <TextBlock Foreground="{DynamicResource DangerTextBrush}"
+                                           Text="{Binding ActionEditor.SelectedActionValidationMessage}"
                                            TextWrapping="Wrap" />
                             </Border>
 
@@ -200,6 +202,7 @@
 
                             <StackPanel Margin="0,16,0,0" Orientation="Horizontal">
                                 <Button Command="{Binding DataContext.ActionEditor.TestActionCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        IsEnabled="{Binding DataContext.ActionEditor.CanTestSelectedAction, RelativeSource={RelativeSource AncestorType=Window}}"
                                         Style="{DynamicResource PrimaryButton}"
                                         Content="Aksiyonu Test Et" />
                             </StackPanel>

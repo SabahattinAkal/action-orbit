@@ -80,4 +80,18 @@ public sealed class StatusCenterViewModel : ViewModelBase
         SetMessage(message, StatusTone.Error);
         UserNotificationRequested?.Invoke(message, true);
     }
+
+    public void ReportUnexpectedError()
+    {
+        const string message =
+            "Beklenmeyen bir arayüz hatası oluştu. Ayrıntılar log dosyasına kaydedildi.";
+        SetMessage(message, StatusTone.Error);
+        UserNotificationRequested?.Invoke(message, true);
+    }
+
+    public void ReportFailure(string message)
+    {
+        SetMessage(message, StatusTone.Error);
+        UserNotificationRequested?.Invoke(message, true);
+    }
 }

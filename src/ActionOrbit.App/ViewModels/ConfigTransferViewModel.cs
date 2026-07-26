@@ -12,6 +12,7 @@ public sealed class ConfigTransferViewModel : ViewModelBase
     private readonly ConfigService _configService;
     private readonly LogService _logService;
     private readonly HotkeySettingsViewModel _hotkey;
+    private readonly SettingsViewModel _settings;
     private readonly Func<ProfileConfig?> _getSelectedProfile;
     private readonly Action _reloadEditors;
     private readonly Action<ProfileConfig> _addImportedProfile;
@@ -23,6 +24,7 @@ public sealed class ConfigTransferViewModel : ViewModelBase
         ConfigService configService,
         LogService logService,
         HotkeySettingsViewModel hotkey,
+        SettingsViewModel settings,
         Func<ProfileConfig?> getSelectedProfile,
         Action reloadEditors,
         Action<ProfileConfig> addImportedProfile,
@@ -33,6 +35,7 @@ public sealed class ConfigTransferViewModel : ViewModelBase
         _configService = configService;
         _logService = logService;
         _hotkey = hotkey;
+        _settings = settings;
         _getSelectedProfile = getSelectedProfile;
         _reloadEditors = reloadEditors;
         _addImportedProfile = addImportedProfile;
@@ -146,34 +149,51 @@ public sealed class ConfigTransferViewModel : ViewModelBase
         try
         {
             var importedConfig = _configService.ReadConfigForImport(dialog.FileName);
-            var previousHotkey = _hotkey.SnapshotConfiguredHotkey();
-
-            if (!_hotkey.TryActivateCandidate(importedConfig.Hotkey, out var hotkeyIssue))
-            {
-                _setStatus($"Config uygulanmadı. {hotkeyIssue}");
-                return;
-            }
-
-            try
-            {
-                _configService.Save(importedConfig);
-            }
-            catch
-            {
-                _hotkey.RestoreRegistration(previousHotkey);
-                throw;
-            }
-
-            _hotkey.CompleteExternalConfigChange();
-            _reloadEditors();
-            _setSaveState(false, false);
-            _setStatus($"Config içe aktarıldı: {Path.GetFileName(dialog.FileName)}");
+            ApplyImportedConfig(importedConfig, Path.GetFileName(dialog.FileName));
         }
         catch (Exception ex)
         {
             _setStatus($"Config içe aktarılamadı: {ex.Message}");
             _logService.Error("Config import failed.", ex);
         }
+    }
+
+    internal bool ApplyImportedConfig(AppConfig importedConfig, string sourceName)
+    {
+        var previousHotkey = _hotkey.SnapshotConfiguredHotkey();
+        var previousStartupRegistration = _settings.IsStartupRegistrationEnabled();
+
+        if (!_hotkey.TryActivateCandidate(importedConfig.Hotkey, out var hotkeyIssue))
+        {
+            _setStatus($"Config uygulanmadı. {hotkeyIssue}");
+            return false;
+        }
+
+        if (!_settings.TryApplyStartupRegistration(
+                importedConfig.Settings.RunAtStartup,
+                out var startupIssue))
+        {
+            _hotkey.RestoreRegistration(previousHotkey);
+            _setStatus($"Config uygulanmadı. {startupIssue}");
+            return false;
+        }
+
+        try
+        {
+            _configService.Save(importedConfig);
+        }
+        catch
+        {
+            _settings.RestoreStartupRegistration(previousStartupRegistration);
+            _hotkey.RestoreRegistration(previousHotkey);
+            throw;
+        }
+
+        _hotkey.CompleteExternalConfigChange();
+        _reloadEditors();
+        _setSaveState(false, false);
+        _setStatus($"Config içe aktarıldı: {sourceName}");
+        return true;
     }
 
     private void ExportSelectedProfile()

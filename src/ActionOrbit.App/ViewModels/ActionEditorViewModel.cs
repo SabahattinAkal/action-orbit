@@ -21,6 +21,7 @@ public sealed class ActionEditorViewModel : ViewModelBase
     private readonly Action _showOverlay;
     private ActionEditorRowViewModel? _selectedAction;
     private ActionPresetOption? _selectedPreset;
+    private bool _isTestingAction;
 
     public ActionEditorViewModel(
         ConfigService configService,
@@ -44,7 +45,7 @@ public sealed class ActionEditorViewModel : ViewModelBase
         AddActionCommand = new RelayCommand(AddAction);
         AddFolderCommand = new RelayCommand(AddFolder);
         AddChildActionCommand = new RelayCommand(AddChildAction);
-        ApplyPresetCommand = new RelayCommand(ApplySelectedPreset);
+        ApplyPresetCommand = new RelayCommand(ApplySelectedPreset, CanApplySelectedPreset);
         AddPresetToProfileCommand = new RelayCommand(AddSelectedPresetToProfile);
         ImportIconCommand = new RelayCommand(ImportIcon);
         DeleteActionCommand = new RelayCommand(DeleteAction);
@@ -75,6 +76,7 @@ public sealed class ActionEditorViewModel : ViewModelBase
             {
                 RefreshSelectedActionState();
                 RefreshRingPreviewSelection();
+                RefreshApplyPresetCommand();
             }
         }
     }
@@ -82,7 +84,13 @@ public sealed class ActionEditorViewModel : ViewModelBase
     public ActionPresetOption? SelectedPreset
     {
         get => _selectedPreset;
-        set => SetProperty(ref _selectedPreset, value);
+        set
+        {
+            if (SetProperty(ref _selectedPreset, value))
+            {
+                RefreshApplyPresetCommand();
+            }
+        }
     }
 
     public string RingPreviewSummary
@@ -101,6 +109,19 @@ public sealed class ActionEditorViewModel : ViewModelBase
 
     public bool HasSelectedAction => SelectedAction is not null;
     public bool HasNoSelectedAction => SelectedAction is null;
+    public bool IsTestingAction
+    {
+        get => _isTestingAction;
+        private set
+        {
+            if (SetProperty(ref _isTestingAction, value))
+            {
+                OnPropertyChanged(nameof(CanTestSelectedAction));
+            }
+        }
+    }
+
+    public bool CanTestSelectedAction => HasSelectedAction && !IsTestingAction;
     public bool SelectedActionIsFolder => SelectedAction?.IsFolder == true;
     public bool SelectedActionIsChild => SelectedAction?.IsChild == true;
     public bool CanMoveSelectedActionOutOfFolder => SelectedAction?.Parent is not null;
@@ -468,7 +489,8 @@ public sealed class ActionEditorViewModel : ViewModelBase
 
         if (!SelectedAction.IsFolder)
         {
-            SelectedAction.Type = "folder";
+            _setStatus("Alt aksiyon eklemek için önce bir klasör seç.");
+            return;
         }
 
         SelectedAction.Action.Children ??= [];
@@ -490,6 +512,13 @@ public sealed class ActionEditorViewModel : ViewModelBase
         }
 
         var row = SelectedAction;
+        if (row.ChildCount > 0
+            && !string.Equals(SelectedPreset.Type, "folder", StringComparison.OrdinalIgnoreCase))
+        {
+            _setStatus("Alt aksiyonları olan klasöre normal eylem uygulanamaz. Önce alt aksiyonları taşı veya sil.");
+            return;
+        }
+
         row.Title = SelectedPreset.Title;
         row.Icon = SelectedPreset.Icon;
         row.Type = SelectedPreset.Type;
@@ -508,6 +537,20 @@ public sealed class ActionEditorViewModel : ViewModelBase
         RefreshActionList();
         _markDirty();
         _setStatus($"Hazır eylem uygulandı: {SelectedPreset.Title}");
+    }
+
+    private bool CanApplySelectedPreset() =>
+        SelectedAction is not null
+        && SelectedPreset is not null
+        && (SelectedAction.ChildCount == 0
+            || string.Equals(SelectedPreset.Type, "folder", StringComparison.OrdinalIgnoreCase));
+
+    private void RefreshApplyPresetCommand()
+    {
+        if (ApplyPresetCommand is RelayCommand command)
+        {
+            command.RaiseCanExecuteChanged();
+        }
     }
 
     private void AddSelectedPresetToProfile()
@@ -619,6 +662,12 @@ public sealed class ActionEditorViewModel : ViewModelBase
 
     private async void TestSelectedAction()
     {
+        if (IsTestingAction)
+        {
+            _setStatus("Aksiyon testi zaten devam ediyor.");
+            return;
+        }
+
         if (SelectedAction is null)
         {
             _setStatus("Önce test edilecek aksiyonu seç.");
@@ -641,6 +690,7 @@ public sealed class ActionEditorViewModel : ViewModelBase
 
         try
         {
+            IsTestingAction = true;
             var title = SelectedAction.Title;
             var result = await _actionExecutionService.ExecuteAsync(SelectedAction.Action);
             _setStatus(result.Succeeded
@@ -651,6 +701,10 @@ public sealed class ActionEditorViewModel : ViewModelBase
         {
             _setStatus($"Aksiyon çalışmadı: {ex.Message}");
             _logService.Error("Action test failed.", ex);
+        }
+        finally
+        {
+            IsTestingAction = false;
         }
     }
 
@@ -796,6 +850,7 @@ public sealed class ActionEditorViewModel : ViewModelBase
     {
         OnPropertyChanged(nameof(HasSelectedAction));
         OnPropertyChanged(nameof(HasNoSelectedAction));
+        OnPropertyChanged(nameof(CanTestSelectedAction));
         OnPropertyChanged(nameof(SelectedActionIsFolder));
         OnPropertyChanged(nameof(SelectedActionIsChild));
         OnPropertyChanged(nameof(CanMoveSelectedActionOutOfFolder));

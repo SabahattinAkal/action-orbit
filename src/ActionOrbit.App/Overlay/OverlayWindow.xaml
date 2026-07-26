@@ -90,10 +90,10 @@
                                 <Setter Property="BorderBrush" Value="#6615171D" />
                             </DataTrigger>
                             <DataTrigger Binding="{Binding IsKeyboardSelected}" Value="True">
-                                <Setter TargetName="Shell" Property="Background" Value="#A51E39" />
-                                <Setter TargetName="FolderLob" Property="Fill" Value="#A51E39" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
-                                <Setter Property="BorderBrush" Value="#80FFFFFF" />
+                                <Setter TargetName="Shell" Property="Background" Value="{Binding DataContext.AccentBrush, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                <Setter TargetName="FolderLob" Property="Fill" Value="{Binding DataContext.AccentBrush, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                <Setter Property="Foreground" Value="{Binding DataContext.AccentForegroundBrush, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                <Setter Property="BorderBrush" Value="{Binding DataContext.AccentForegroundBrush, RelativeSource={RelativeSource AncestorType=Window}}" />
                             </DataTrigger>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Shell" Property="Background" Value="#FFFFFF" />
@@ -118,10 +118,10 @@
                                     <Condition Binding="{Binding IsKeyboardSelected}" Value="True" />
                                     <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource TemplatedParent}}" Value="True" />
                                 </MultiDataTrigger.Conditions>
-                                <Setter TargetName="Shell" Property="Background" Value="#A51E39" />
-                                <Setter TargetName="FolderLob" Property="Fill" Value="#A51E39" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
-                                <Setter Property="BorderBrush" Value="#80FFFFFF" />
+                                <Setter TargetName="Shell" Property="Background" Value="{Binding DataContext.AccentBrush, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                <Setter TargetName="FolderLob" Property="Fill" Value="{Binding DataContext.AccentBrush, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                <Setter Property="Foreground" Value="{Binding DataContext.AccentForegroundBrush, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                <Setter Property="BorderBrush" Value="{Binding DataContext.AccentForegroundBrush, RelativeSource={RelativeSource AncestorType=Window}}" />
                             </MultiDataTrigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter Property="RenderTransform">
@@ -163,11 +163,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Shell" Property="Background" Value="#C51F46" />
-                                <Setter Property="BorderBrush" Value="#55FFFFFF" />
+                                <Setter TargetName="Shell" Property="Opacity" Value="0.9" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Shell" Property="Background" Value="#8F1831" />
+                                <Setter TargetName="Shell" Property="Opacity" Value="0.76" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -348,6 +347,7 @@
                 <Button Margin="0,7,0,0"
                         HorizontalAlignment="Center"
                         Background="{Binding AccentBrush}"
+                        Foreground="{Binding AccentForegroundBrush}"
                         Command="{Binding CollapseFolderCommand}"
                         Content="Geri"
                         Style="{StaticResource OverlayInfoButtonStyle}"
@@ -359,6 +359,7 @@
                 Canvas.Left="{Binding CenterX}"
                 Canvas.Top="{Binding CenterY}"
                 Background="{Binding AccentBrush}"
+                Foreground="{Binding AccentForegroundBrush}"
                 Command="{Binding ToggleDefaultProfileCommand}"
                 ToolTip="{Binding CenterButtonToolTip}"
                 ToolTipService.BetweenShowDelay="0"
@@ -371,7 +372,7 @@
             <TextBlock FontFamily="Segoe UI Symbol"
                        FontSize="15"
                        FontWeight="Bold"
-                       Foreground="#FFFFFF"
+                       Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                        Text="{Binding CenterButtonText}"
                        TextAlignment="Center" />
         </Button>

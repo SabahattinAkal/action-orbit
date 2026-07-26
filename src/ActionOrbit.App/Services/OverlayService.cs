@@ -31,15 +31,19 @@ public sealed class OverlayService
         _logService = logService;
     }
 
-    public void ShowOverlay()
+    public bool TryShowOverlay(out string errorMessage)
     {
         try
         {
             ShowOverlayCore();
+            errorMessage = "";
+            return true;
         }
         catch (Exception ex)
         {
             _logService.Error("Overlay could not be opened.", ex);
+            errorMessage = $"Overlay açılamadı: {ex.Message}";
+            return false;
         }
     }
 

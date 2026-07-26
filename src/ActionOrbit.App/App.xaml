@@ -18,6 +18,12 @@
         <SolidColorBrush x:Key="IconSurfaceBrush" Color="#F1F3F6" />
         <SolidColorBrush x:Key="PrimaryActionBrush" Color="#111318" />
         <SolidColorBrush x:Key="OnPrimaryActionBrush" Color="#FFFFFF" />
+        <SolidColorBrush x:Key="InfoTextBrush" Color="#3730A3" />
+        <SolidColorBrush x:Key="InfoSurfaceBrush" Color="#EEF2FF" />
+        <SolidColorBrush x:Key="InfoBorderBrush" Color="#D8E0FF" />
+        <SolidColorBrush x:Key="WarningTextBrush" Color="#9A3412" />
+        <SolidColorBrush x:Key="WarningSurfaceBrush" Color="#FFF7ED" />
+        <SolidColorBrush x:Key="WarningBorderBrush" Color="#FED7AA" />
         <SolidColorBrush x:Key="DangerTextBrush" Color="#9F1239" />
         <SolidColorBrush x:Key="DangerSurfaceBrush" Color="#FFF5F7" />
         <SolidColorBrush x:Key="DangerBorderBrush" Color="#F8CED8" />
