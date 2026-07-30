@@ -94,6 +94,8 @@ public sealed class ProfileService
             _lastMissKey = missKey;
         }
 
-        _logService.Info($"No profile match for {normalizedProcess}. Using {defaultProfile.Name}.");
+        _logService.Info(
+            $"No profile match for {LogService.SafeValue(normalizedProcess)}. " +
+            $"Using {LogService.SafeValue(defaultProfile.Name)}.");
     }
 }

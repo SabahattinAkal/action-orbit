@@ -16,9 +16,9 @@ function Assert-DotNetSuccess {
     }
 }
 
-dotnet restore $solutionPath
+dotnet restore $solutionPath --locked-mode
 Assert-DotNetSuccess 'Solution restore'
-dotnet restore $projectPath --runtime $Runtime
+dotnet restore $projectPath --runtime $Runtime --locked-mode
 Assert-DotNetSuccess 'Runtime restore'
 dotnet build $solutionPath --configuration Release --no-restore
 Assert-DotNetSuccess 'Release build'

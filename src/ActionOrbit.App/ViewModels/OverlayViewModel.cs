@@ -599,7 +599,8 @@ public sealed class OverlayViewModel : ViewModelBase
         {
             if (action.Children.Count == 0)
             {
-                _logService.Warn($"Folder action has no children: {action.Id}");
+                _logService.Warn(
+                    $"Folder action has no children: {LogService.SafeValue(action.Id)}");
                 return;
             }
 
