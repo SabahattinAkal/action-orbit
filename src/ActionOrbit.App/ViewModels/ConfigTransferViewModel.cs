@@ -19,6 +19,7 @@ public sealed class ConfigTransferViewModel : ViewModelBase
     private readonly Action _markDirty;
     private readonly Action<bool, bool> _setSaveState;
     private readonly Action<string> _setStatus;
+    private readonly IUserConfirmationService _confirmationService;
 
     public ConfigTransferViewModel(
         ConfigService configService,
@@ -30,7 +31,8 @@ public sealed class ConfigTransferViewModel : ViewModelBase
         Action<ProfileConfig> addImportedProfile,
         Action markDirty,
         Action<bool, bool> setSaveState,
-        Action<string> setStatus)
+        Action<string> setStatus,
+        IUserConfirmationService? confirmationService = null)
     {
         _configService = configService;
         _logService = logService;
@@ -42,6 +44,7 @@ public sealed class ConfigTransferViewModel : ViewModelBase
         _markDirty = markDirty;
         _setSaveState = setSaveState;
         _setStatus = setStatus;
+        _confirmationService = confirmationService ?? new MessageBoxConfirmationService();
 
         OpenConfigCommand = new RelayCommand(() => OpenPath(_configService.ConfigPath));
         OpenLogCommand = new RelayCommand(OpenLog);
@@ -122,18 +125,6 @@ public sealed class ConfigTransferViewModel : ViewModelBase
 
     private void ImportConfig()
     {
-        var confirmation = System.Windows.MessageBox.Show(
-            "Seçtiğin config mevcut profilleri ve ayarları değiştirecek. Devam edilsin mi?",
-            "Config içe aktar",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Warning);
-
-        if (confirmation != MessageBoxResult.Yes)
-        {
-            _setStatus("Config içe aktarma iptal edildi.");
-            return;
-        }
-
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
             Title = "Config içe aktar",
@@ -149,7 +140,18 @@ public sealed class ConfigTransferViewModel : ViewModelBase
         try
         {
             var importedConfig = _configService.ReadConfigForImport(dialog.FileName);
-            ApplyImportedConfig(importedConfig, Path.GetFileName(dialog.FileName));
+            var sourceName = Path.GetFileName(dialog.FileName);
+            var warning = ActionSecurityService.BuildImportWarning(
+                importedConfig.Profiles,
+                sourceName,
+                replacesConfiguration: true);
+            if (!_confirmationService.Confirm("Config güvenlik incelemesi", warning))
+            {
+                _setStatus("Config içe aktarma iptal edildi.");
+                return;
+            }
+
+            ApplyImportedConfig(importedConfig, sourceName);
         }
         catch (Exception ex)
         {
@@ -246,6 +248,17 @@ public sealed class ConfigTransferViewModel : ViewModelBase
         try
         {
             var profile = _configService.ImportProfile(dialog.FileName);
+            var sourceName = Path.GetFileName(dialog.FileName);
+            var warning = ActionSecurityService.BuildImportWarning(
+                [profile],
+                sourceName,
+                replacesConfiguration: false);
+            if (!_confirmationService.Confirm("Profil güvenlik incelemesi", warning))
+            {
+                _setStatus("Profil içe aktarma iptal edildi.");
+                return;
+            }
+
             profile.Id = CreateUniqueImportedProfileId(profile.Id);
             _configService.CurrentConfig.Profiles.Add(profile);
             _addImportedProfile(profile);
@@ -300,7 +313,7 @@ public sealed class ConfigTransferViewModel : ViewModelBase
         catch (Exception ex)
         {
             _setStatus($"Dosya açılamadı: {ex.Message}");
-            _logService.Error($"Could not open path: {path}", ex);
+            _logService.Error($"Could not open path: {LogService.SafeValue(path)}", ex);
         }
     }
 }

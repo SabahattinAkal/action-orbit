@@ -21,6 +21,7 @@ public sealed class SettingsViewModel : ViewModelBase
     private bool _isSyncingFields;
     private bool _startupWithWindows;
     private bool _closeToTray = true;
+    private bool _allowCommandActions;
     private bool _overlayAnimation = true;
 
     public SettingsViewModel(
@@ -88,6 +89,24 @@ public sealed class SettingsViewModel : ViewModelBase
             _setStatus(value
                 ? "Kapat düğmesi artık uygulamayı tray'e alacak."
                 : "Kapat düğmesi artık uygulamadan tamamen çıkacak.");
+        }
+    }
+
+    public bool AllowCommandActions
+    {
+        get => _allowCommandActions;
+        set
+        {
+            if (!SetProperty(ref _allowCommandActions, value) || _isSyncingFields)
+            {
+                return;
+            }
+
+            _configService.CurrentConfig.Settings.AllowCommandActions = value;
+            _markDirty();
+            _setStatus(value
+                ? "Komut aksiyonları açıldı. Her çalıştırmada ayrıca onay istenecek."
+                : "Komut aksiyonları kapatıldı.");
         }
     }
 
@@ -186,6 +205,7 @@ public sealed class SettingsViewModel : ViewModelBase
         {
             StartupWithWindows = _configService.CurrentConfig.Settings.RunAtStartup;
             CloseToTray = _configService.CurrentConfig.Settings.CloseToTray;
+            AllowCommandActions = _configService.CurrentConfig.Settings.AllowCommandActions;
             ThemeMode = NormalizeThemeMode(_configService.CurrentConfig.Theme.Mode);
             AccentInput = string.IsNullOrWhiteSpace(_configService.CurrentConfig.Theme.Accent)
                 ? "#A51E39"

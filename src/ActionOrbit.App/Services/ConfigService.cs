@@ -6,12 +6,22 @@ namespace ActionOrbit.App.Services;
 
 public sealed class ConfigService : IConfigPersistence
 {
+    internal const long MaxConfigFileBytes = 2 * 1024 * 1024;
+    internal const int MaxProfiles = 64;
+    internal const int MaxMatchesPerProfile = 128;
+    internal const int MaxActionsPerProfile = 1024;
+    internal const int MaxActionDepth = 8;
+    internal const int MaxIdentifierLength = 128;
+    internal const int MaxTitleLength = 256;
+    internal const int MaxTargetLength = 4096;
+
     private readonly LogService _logService;
     private readonly JsonSerializerOptions _jsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = true
+        WriteIndented = true,
+        MaxDepth = 32
     };
 
     public ConfigService(LogService logService, string? appDirectory = null)
@@ -52,7 +62,7 @@ public sealed class ConfigService : IConfigPersistence
 
         try
         {
-            var json = File.ReadAllText(ConfigPath);
+            var json = ReadTextWithLimit(ConfigPath, "Config");
             var config = JsonSerializer.Deserialize<AppConfig>(json, _jsonOptions);
 
             if (config is null)
@@ -122,18 +132,20 @@ public sealed class ConfigService : IConfigPersistence
     {
         var config = ReadConfigForImport(sourcePath);
         Save(config);
-        _logService.Info($"Config imported from {sourcePath}.");
+        _logService.Info($"Config imported from {LogService.SafeValue(sourcePath)}.");
         return CurrentConfig;
     }
 
     public AppConfig ReadConfigForImport(string sourcePath)
     {
-        var json = File.ReadAllText(sourcePath);
+        var json = ReadTextWithLimit(sourcePath, "Config");
         var config = JsonSerializer.Deserialize<AppConfig>(json, _jsonOptions)
             ?? throw new InvalidOperationException("Config dosyası boş.");
 
         Validate(config);
         UpgradeConfig(config);
+        Validate(config);
+        config.Settings.AllowCommandActions = false;
         return config;
     }
 
@@ -148,13 +160,13 @@ public sealed class ConfigService : IConfigPersistence
 
     public ProfileConfig ImportProfile(string sourcePath)
     {
-        var json = File.ReadAllText(sourcePath);
+        var json = ReadTextWithLimit(sourcePath, "Profil");
         var profile = JsonSerializer.Deserialize<ProfileConfig>(json, _jsonOptions)
             ?? throw new InvalidOperationException("Profil dosyası boş.");
 
         NormalizeProfile(profile);
         ValidateActionTypes([profile]);
-        _logService.Info($"Profile imported from {sourcePath}.");
+        _logService.Info($"Profile imported from {LogService.SafeValue(sourcePath)}.");
         return profile;
     }
 
@@ -168,7 +180,7 @@ public sealed class ConfigService : IConfigPersistence
 
         try
         {
-            var json = File.ReadAllText(LastGoodConfigPath);
+            var json = ReadTextWithLimit(LastGoodConfigPath, "Son iyi config");
             var loaded = JsonSerializer.Deserialize<AppConfig>(json, _jsonOptions);
             if (loaded is null)
             {
@@ -222,6 +234,14 @@ public sealed class ConfigService : IConfigPersistence
             throw new InvalidOperationException("profiles must contain at least one profile.");
         }
 
+        if (config.Profiles.Count > MaxProfiles)
+        {
+            throw new InvalidOperationException(
+                $"Config en fazla {MaxProfiles} profil içerebilir.");
+        }
+
+        EnsureTextLength(config.DefaultProfileId, MaxIdentifierLength, "defaultProfileId");
+
         foreach (var profile in config.Profiles)
         {
             NormalizeProfile(profile);
@@ -244,6 +264,9 @@ public sealed class ConfigService : IConfigPersistence
 
     private static void NormalizeProfile(ProfileConfig profile)
     {
+        EnsureTextLength(profile.Id, MaxIdentifierLength, "profile.id");
+        EnsureTextLength(profile.Name, MaxTitleLength, "profile.name");
+
         if (string.IsNullOrWhiteSpace(profile.Id))
         {
             profile.Id = "profile";
@@ -260,23 +283,66 @@ public sealed class ConfigService : IConfigPersistence
             .GroupBy(match => match.ProcessName.Trim(), StringComparer.OrdinalIgnoreCase)
             .Select(group => new ProfileMatch { ProcessName = group.Key })
             .ToList() ?? [];
+        if (profile.Matches.Count > MaxMatchesPerProfile)
+        {
+            throw new InvalidOperationException(
+                $"Bir profil en fazla {MaxMatchesPerProfile} uygulama eşleşmesi içerebilir.");
+        }
+
+        foreach (var match in profile.Matches)
+        {
+            EnsureTextLength(match.ProcessName, MaxIdentifierLength, "profile.matches.processName");
+        }
+
         profile.Actions = profile.Actions?.OfType<OrbitAction>().ToList() ?? [];
-        NormalizeActions(profile.Actions);
+        var actionCount = 0;
+        NormalizeActions(profile.Actions, depth: 0, ref actionCount);
         EnsureUniqueActionIds(profile.Actions);
     }
 
-    private static void NormalizeActions(List<OrbitAction> actions)
+    private static void NormalizeActions(
+        List<OrbitAction> actions,
+        int depth,
+        ref int actionCount)
     {
         foreach (var action in actions)
         {
+            if (depth > MaxActionDepth)
+            {
+                throw new InvalidOperationException(
+                    $"Aksiyon klasörleri en fazla {MaxActionDepth} seviye iç içe olabilir.");
+            }
+
+            actionCount++;
+            if (actionCount > MaxActionsPerProfile)
+            {
+                throw new InvalidOperationException(
+                    $"Bir profil en fazla {MaxActionsPerProfile} aksiyon içerebilir.");
+            }
+
+            EnsureTextLength(action.Id, MaxIdentifierLength, "action.id");
+            EnsureTextLength(action.Title, MaxTitleLength, "action.title");
+            EnsureTextLength(action.Icon, MaxIdentifierLength, "action.icon");
+            EnsureTextLength(action.Type, 64, "action.type");
+            EnsureTextLength(action.Target, MaxTargetLength, "action.target");
+            EnsureTextLength(action.Arguments, MaxTargetLength, "action.arguments");
+
             action.Id = action.Id?.Trim() ?? "";
             action.Title = action.Title?.Trim() ?? "";
             action.Icon = action.Icon?.Trim() ?? "";
+            if (!IconCatalog.IsSafeIconReference(action.Icon))
+            {
+                action.Icon = "";
+            }
+
             action.Type = action.Type?.Trim().ToLowerInvariant() ?? "";
             action.Target ??= "";
             action.Arguments ??= "";
             action.Children = action.Children?.OfType<OrbitAction>().ToList() ?? [];
-            NormalizeActions(action.Children);
+            if (action.Children.Count > 0)
+            {
+                NormalizeActions(action.Children, depth + 1, ref actionCount);
+            }
             if (action.Children.Count > 0
                 && !string.Equals(action.Type, "folder", StringComparison.OrdinalIgnoreCase)
                 && ActionDefinitionCatalog.TypeOptions.Any(option =>
@@ -365,6 +431,15 @@ public sealed class ConfigService : IConfigPersistence
         }
 
         return candidate;
+    }
+
+    private static void EnsureTextLength(string? value, int maxLength, string field)
+    {
+        if ((value?.Length ?? 0) > maxLength)
+        {
+            throw new InvalidOperationException(
+                $"{field} alanı en fazla {maxLength} karakter olabilir.");
+        }
     }
 
     private static void ValidateActionTypes(IEnumerable<ProfileConfig> profiles)
@@ -480,7 +555,8 @@ public sealed class ConfigService : IConfigPersistence
                 AppDirectory,
                 $"config.broken.{DateTime.Now:yyyyMMddHHmmss}.json");
             File.Copy(ConfigPath, backupPath, overwrite: true);
-            _logService.Warn($"Broken config backed up to {backupPath}.");
+            _logService.Warn(
+                $"Broken config backed up to {LogService.SafeValue(backupPath)}.");
         }
         catch (Exception backupException)
         {
@@ -520,5 +596,30 @@ public sealed class ConfigService : IConfigPersistence
                 File.Delete(tempPath);
             }
         }
+    }
+
+    private static string ReadTextWithLimit(string path, string label)
+    {
+        if (!File.Exists(path))
+        {
+            throw new FileNotFoundException($"{label} dosyası bulunamadı.", path);
+        }
+
+        using var stream = new FileStream(
+            path,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read);
+        if (stream.Length > MaxConfigFileBytes)
+        {
+            throw new InvalidOperationException(
+                $"{label} dosyası {MaxConfigFileBytes / 1024} KB sınırını aşıyor.");
+        }
+
+        using var reader = new StreamReader(
+            stream,
+            System.Text.Encoding.UTF8,
+            detectEncodingFromByteOrderMarks: true);
+        return reader.ReadToEnd();
     }
 }

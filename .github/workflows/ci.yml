@@ -9,25 +9,35 @@ on:
 jobs:
   windows:
     runs-on: windows-latest
+    timeout-minutes: 20
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-dotnet@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: 10.0.302
       - name: Restore
-        run: dotnet restore ActionOrbit.slnx
+        run: dotnet restore ActionOrbit.slnx --locked-mode
       - name: Restore win-x64 runtime
-        run: dotnet restore src/ActionOrbit.App/ActionOrbit.App.csproj --runtime win-x64
+        run: dotnet restore src/ActionOrbit.App/ActionOrbit.App.csproj --runtime win-x64 --locked-mode
       - name: Build
         run: dotnet build ActionOrbit.slnx --configuration Release --no-restore
       - name: Test
         run: dotnet test tests/ActionOrbit.App.Tests/ActionOrbit.App.Tests.csproj --configuration Release --no-build --no-restore
       - name: Publish win-x64
         run: dotnet publish src/ActionOrbit.App/ActionOrbit.App.csproj --configuration Release --no-restore -p:PublishProfile=win-x64
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: ActionOrbit-win-x64
           path: src/ActionOrbit.App/bin/publish/win-x64/
           if-no-files-found: error
+
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4

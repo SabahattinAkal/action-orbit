@@ -42,18 +42,28 @@ public partial class App : System.Windows.Application
         var startupService = new StartupService(_logService);
         var startupSyncIssue = SyncStartupRegistration(startupService);
         var inputService = new InputSimulationService(_logService);
+        var confirmationService = new MessageBoxConfirmationService();
 
         var actionExecutionService = new ActionExecutionService(
             _logService,
             new IActionHandler[]
             {
                 new OpenUrlActionHandler(_logService),
-                new OpenAppActionHandler(_logService),
+                new OpenAppActionHandler(
+                    _logService,
+                    (target, arguments) => confirmationService.Confirm(
+                        "Uygulama argümanları onayı",
+                        $"Aşağıdaki uygulama argümanlarla başlatılacak:\n\n{target}\n{arguments}\n\nDevam edilsin mi?")),
                 new OpenFileActionHandler(_logService),
                 new OpenFolderActionHandler(_logService),
                 new SendHotkeyActionHandler(inputService),
                 new TypeTextActionHandler(inputService),
-                new RunCommandActionHandler(_logService)
+                new RunCommandActionHandler(
+                    _logService,
+                    () => _configService!.CurrentConfig.Settings.AllowCommandActions,
+                    command => confirmationService.Confirm(
+                        "Komut çalıştırma onayı",
+                        $"Aşağıdaki komut mevcut kullanıcı yetkileriyle çalıştırılacak:\n\n{command}\n\nDevam edilsin mi?"))
             });
 
         var overlayService = new OverlayService(
@@ -72,7 +82,8 @@ public partial class App : System.Windows.Application
             overlayService,
             actionExecutionService,
             startupService,
-            _logService);
+            _logService,
+            confirmationService);
         _mainWindowViewModel = viewModel;
 
         var mainWindow = new MainWindow(viewModel, _hotkeyService);

@@ -819,6 +819,11 @@ public static class IconCatalog
     };
 
     private static string? _customIconDirectory;
+    internal const long MaxSvgIconBytes = 256 * 1024;
+    internal const long MaxRasterIconBytes = 5 * 1024 * 1024;
+    internal const int MaxRasterDimension = 4096;
+    internal const int MaxSvgPathCount = 64;
+    internal const int MaxSvgPathLength = 4096;
 
     public static IReadOnlyList<string> AvailableKeys => GetAvailableIcons()
         .Select(icon => icon.Key)
@@ -849,7 +854,7 @@ public static class IconCatalog
     public static string? GetImagePath(string? key)
     {
         var filePath = ResolveCustomFilePath(key);
-        if (filePath is null || IsSvg(filePath))
+        if (filePath is null || IsSvg(filePath) || !IsSafeRaster(filePath))
         {
             return null;
         }
@@ -885,6 +890,65 @@ public static class IconCatalog
 
     public static bool HasIcon(string? key) => GetPaths(key).Count > 0 || GetImagePath(key) is not null;
 
+    public static bool IsSafeIconReference(string? key)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            return true;
+        }
+
+        var normalized = Normalize(key);
+        if (Icons.ContainsKey(normalized) || Aliases.ContainsKey(normalized))
+        {
+            return true;
+        }
+
+        return IsSafeCustomKey(key);
+    }
+
+    public static bool ValidateImportCandidate(string path, out string issue)
+    {
+        issue = "";
+        if (!File.Exists(path))
+        {
+            issue = "İkon dosyası bulunamadı.";
+            return false;
+        }
+
+        if (!IsSupportedCustomIcon(path))
+        {
+            issue = "Yalnızca PNG, JPG, JPEG ve path tabanlı SVG ikonları desteklenir.";
+            return false;
+        }
+
+        if (IsSvg(path))
+        {
+            if (new FileInfo(path).Length > MaxSvgIconBytes)
+            {
+                issue = $"SVG ikonu en fazla {MaxSvgIconBytes / 1024} KB olabilir.";
+                return false;
+            }
+
+            if (ReadSvgPaths(path).Count == 0)
+            {
+                issue = "SVG geçerli path verisi içermiyor veya güvenlik sınırlarını aşıyor.";
+                return false;
+            }
+
+            return true;
+        }
+
+        if (!IsSafeRaster(path))
+        {
+            issue =
+                $"Raster ikon en fazla {MaxRasterIconBytes / 1024 / 1024} MB ve " +
+                $"{MaxRasterDimension}×{MaxRasterDimension} piksel olabilir.";
+            return false;
+        }
+
+        return true;
+    }
+
     private static IReadOnlyList<IconOption> GetCustomIcons()
     {
         if (string.IsNullOrWhiteSpace(_customIconDirectory) || !Directory.Exists(_customIconDirectory))
@@ -893,7 +957,7 @@ public static class IconCatalog
         }
 
         return Directory.EnumerateFiles(_customIconDirectory)
-            .Where(IsSupportedCustomIcon)
+            .Where(path => IsSvg(path) || IsSafeRaster(path))
             .OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase)
             .Select(filePath =>
             {
@@ -913,40 +977,79 @@ public static class IconCatalog
             return null;
         }
 
-        if (File.Exists(key))
-        {
-            return key;
-        }
-
         if (string.IsNullOrWhiteSpace(_customIconDirectory) ||
-            !key.StartsWith("custom:", StringComparison.OrdinalIgnoreCase))
+            !IsSafeCustomKey(key))
         {
             return null;
         }
 
         var fileName = key["custom:".Length..];
-        if (fileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+        var root = Path.GetFullPath(_customIconDirectory);
+        var path = Path.GetFullPath(Path.Combine(root, fileName));
+        var relative = Path.GetRelativePath(root, path);
+        if (Path.IsPathRooted(relative) ||
+            relative.StartsWith("..", StringComparison.Ordinal))
         {
             return null;
         }
 
-        var path = Path.Combine(_customIconDirectory, fileName);
         return File.Exists(path) ? path : null;
+    }
+
+    private static bool IsSafeCustomKey(string key)
+    {
+        if (!key.StartsWith("custom:", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var fileName = key["custom:".Length..];
+        return !string.IsNullOrWhiteSpace(fileName)
+            && !Path.IsPathRooted(fileName)
+            && string.Equals(Path.GetFileName(fileName), fileName, StringComparison.Ordinal)
+            && fileName.IndexOfAny(Path.GetInvalidFileNameChars()) < 0
+            && IsSupportedCustomIcon(fileName);
     }
 
     private static IReadOnlyList<string> ReadSvgPaths(string path)
     {
         try
         {
-            var svg = File.ReadAllText(path);
+            if (!IsSafeRegularFile(path))
+            {
+                return [];
+            }
+
+            using var stream = new FileStream(
+                path,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read);
+            if (stream.Length > MaxSvgIconBytes)
+            {
+                return [];
+            }
+
+            using var reader = new StreamReader(
+                stream,
+                System.Text.Encoding.UTF8,
+                detectEncodingFromByteOrderMarks: true);
+            var svg = reader.ReadToEnd();
             var matches = System.Text.RegularExpressions.Regex.Matches(
                 svg,
                 "<path\\b[^>]*\\bd\\s*=\\s*['\"]([^'\"]+)['\"][^>]*>",
-                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase,
+                TimeSpan.FromMilliseconds(250));
+
+            if (matches.Count > MaxSvgPathCount)
+            {
+                return [];
+            }
 
             return matches
                 .Select(match => match.Groups[1].Value.Trim())
                 .Where(value => !string.IsNullOrWhiteSpace(value))
+                .Where(value => value.Length <= MaxSvgPathLength)
                 .Where(value => !string.Equals(value, "M0 0h24v24H0z", StringComparison.OrdinalIgnoreCase))
                 .ToList();
         }
@@ -968,6 +1071,49 @@ public static class IconCatalog
         return string.Equals(extension, ".png", StringComparison.OrdinalIgnoreCase)
             || string.Equals(extension, ".jpg", StringComparison.OrdinalIgnoreCase)
             || string.Equals(extension, ".jpeg", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsSafeRaster(string path)
+    {
+        try
+        {
+            if (!IsSafeRegularFile(path))
+            {
+                return false;
+            }
+
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            if (stream.Length > MaxRasterIconBytes)
+            {
+                return false;
+            }
+
+            var decoder = System.Windows.Media.Imaging.BitmapDecoder.Create(
+                stream,
+                System.Windows.Media.Imaging.BitmapCreateOptions.PreservePixelFormat,
+                System.Windows.Media.Imaging.BitmapCacheOption.None);
+            var frame = decoder.Frames.FirstOrDefault();
+            return frame is not null
+                && frame.PixelWidth is > 0 and <= MaxRasterDimension
+                && frame.PixelHeight is > 0 and <= MaxRasterDimension
+                && (long)frame.PixelWidth * frame.PixelHeight
+                    <= (long)MaxRasterDimension * MaxRasterDimension;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool IsSafeRegularFile(string path)
+    {
+        if (!File.Exists(path))
+        {
+            return false;
+        }
+
+        var attributes = File.GetAttributes(path);
+        return (attributes & FileAttributes.ReparsePoint) == 0;
     }
 
     private static string ToCustomKey(string fileName) =>

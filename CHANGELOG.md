@@ -3,6 +3,25 @@
 Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 [Semantic Versioning](https://semver.org/) düzenini izler.
 
+## [1.0.1] - 2026-07-30
+
+### Güvenlik
+
+- Self-contained Windows paketindeki .NET runtime 10.0.10'a güncellendi.
+- Komut aksiyonları varsayılan olarak kapatıldı ve her çalıştırma için açık onay eklendi.
+- Shell yorumlayıcılarının `open_app` argümanlarıyla komut filtresini dolaşması engellendi.
+- Çalıştırılabilir/betik dosyalarının `open_file` üzerinden açılması engellendi.
+- Config ve profil içe aktarmaya risk özeti, maksimum boyut, profil, aksiyon ve derinlik sınırları eklendi.
+- Mutlak ve UNC ikon yolları engellendi; SVG/raster ikon boyut ve karmaşıklık sınırları eklendi.
+- Komut içerikleri ve kontrol karakterleri loglardan çıkarıldı.
+- CodeQL, dependency review, kilitli NuGet restore, SPDX SBOM ve GitHub provenance attestation eklendi.
+- GitHub Actions bağımlılıkları tam commit SHA değerlerine sabitlendi.
+
+### Değiştirildi
+
+- Test altyapısı xUnit v3, Microsoft.NET.Test.Sdk 18.8.1 ve coverlet 10.0.1'e güncellendi.
+- SDK 10.0.302, runtime 10.0.10 ve paket lock dosyalarıyla deterministik build sağlandı.
+
 ## [1.0.0] - 2026-07-24
 
 ### Eklendi
@@ -25,4 +44,5 @@ Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 - Aktif profil sorgularında tekrarlı çözümleme ve log büyümesi.
 - Büyük log dosyaları için 5 MB rotasyon ve sınırlı arşiv saklama.
 
+[1.0.1]: https://github.com/SabahattinAkal/action-orbit/releases/tag/v1.0.1
 [1.0.0]: https://github.com/SabahattinAkal/action-orbit/releases/tag/v1.0.0

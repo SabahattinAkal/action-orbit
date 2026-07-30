@@ -36,6 +36,17 @@ public sealed class LogService
     public void Error(string message, Exception? exception = null) =>
         Write("ERROR", exception is null ? message : $"{message}{Environment.NewLine}{exception}");
 
+    internal static string SafeValue(string? value, int maxLength = 160)
+    {
+        var safe = (value ?? "")
+            .Replace("\r", " ", StringComparison.Ordinal)
+            .Replace("\n", " ", StringComparison.Ordinal)
+            .Replace("\t", " ", StringComparison.Ordinal)
+            .Trim();
+
+        return safe.Length <= maxLength ? safe : safe[..maxLength];
+    }
+
     private void Write(string level, string message)
     {
         try

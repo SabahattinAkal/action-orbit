@@ -35,7 +35,8 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         OverlayService overlayService,
         ActionExecutionService actionExecutionService,
         StartupService startupService,
-        LogService logService)
+        LogService logService,
+        IUserConfirmationService? confirmationService = null)
     {
         _configService = configService;
         _hotkeyService = hotkeyService;
@@ -99,7 +100,8 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
             AddImportedProfileToEditor,
             MarkDirty,
             Autosave.SetState,
-            message => Status.SetMessage(message));
+            message => Status.SetMessage(message),
+            confirmationService);
 
         ShowOverlayCommand = new RelayCommand(ShowOverlay);
         NavigateWorkspaceCommand = new RelayCommand(parameter => NavigateWorkspace(parameter?.ToString()));

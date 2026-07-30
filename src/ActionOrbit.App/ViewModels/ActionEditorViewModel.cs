@@ -600,6 +600,12 @@ public sealed class ActionEditorViewModel : ViewModelBase
 
         try
         {
+            if (!IconCatalog.ValidateImportCandidate(dialog.FileName, out var iconIssue))
+            {
+                _setStatus($"İkon eklenemedi: {iconIssue}");
+                return;
+            }
+
             Directory.CreateDirectory(_configService.IconDirectory);
             var targetPath = CreateUniqueIconPath(dialog.FileName);
             File.Copy(dialog.FileName, targetPath, overwrite: false);

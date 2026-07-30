@@ -73,7 +73,8 @@ public sealed class OverlayService
         _currentWindow.Closed += (_, _) => _currentWindow = null;
         _currentWindow.Show();
         _currentWindow.Dispatcher.BeginInvoke(() => PositionWindow(_currentWindow, cursor));
-        _logService.Info($"Overlay opened for profile {profile.Name} at {cursor.X:0},{cursor.Y:0}.");
+        _logService.Info(
+            $"Overlay opened for profile {LogService.SafeValue(profile.Name)} at {cursor.X:0},{cursor.Y:0}.");
     }
 
     private static NativeMethods.Point GetCursorPosition()
