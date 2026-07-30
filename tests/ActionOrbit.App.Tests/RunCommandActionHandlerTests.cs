@@ -42,10 +42,48 @@ public sealed class RunCommandActionHandlerTests : IDisposable
         Assert.Contains("güvenlik filtresine", result.Message);
     }
 
-    private RunCommandActionHandler CreateHandler()
+    [Fact]
+    public async Task ExecuteAsync_WhenCommandActionsAreDisabled_ReturnsFailure()
+    {
+        var handler = CreateHandler(enabled: false);
+
+        var result = await handler.ExecuteAsync(CreateAction("ver > nul"));
+
+        Assert.False(result.Succeeded);
+        Assert.Contains("kapalı", result.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenConfirmationIsDeclined_DoesNotRunCommand()
+    {
+        var handler = CreateHandler(confirmed: false);
+
+        var result = await handler.ExecuteAsync(CreateAction("ver > nul"));
+
+        Assert.False(result.Succeeded);
+        Assert.Contains("iptal", result.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_DoesNotWriteCommandContentsToLog()
+    {
+        const string secretMarker = "action-orbit-secret-marker";
+        var handler = CreateHandler();
+
+        var result = await handler.ExecuteAsync(CreateAction($"echo {secretMarker} > nul"));
+        var log = File.ReadAllText(Path.Combine(_tempDirectory, "logs", "actionorbit.log"));
+
+        Assert.True(result.Succeeded);
+        Assert.DoesNotContain(secretMarker, log, StringComparison.Ordinal);
+    }
+
+    private RunCommandActionHandler CreateHandler(bool enabled = true, bool confirmed = true)
     {
         Directory.CreateDirectory(_tempDirectory);
-        return new RunCommandActionHandler(new LogService(_tempDirectory));
+        return new RunCommandActionHandler(
+            new LogService(_tempDirectory),
+            () => enabled,
+            _ => confirmed);
     }
 
     private static OrbitAction CreateAction(string command) => new()

@@ -25,6 +25,12 @@ public sealed class OpenFileActionHandler : ProcessActionHandlerBase
             return Task.FromResult(ActionExecutionResult.Failure("Dosya bulunamadı."));
         }
 
+        if (ActionSecurityService.IsExecutableFileTarget(target))
+        {
+            return Task.FromResult(ActionExecutionResult.Failure(
+                "Çalıştırılabilir veya betik dosyaları dosya aksiyonuyla açılamaz. Uygulama ya da komut aksiyonunu kullan."));
+        }
+
         return StartShellAsync(action.Target);
     }
 }

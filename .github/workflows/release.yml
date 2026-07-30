@@ -1,0 +1,168 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          dotnet-version: 10.0.302
+
+      - name: Validate tag and project version
+        shell: pwsh
+        run: |
+          $version = '${{ github.ref_name }}'.TrimStart('v')
+          [xml]$project = Get-Content 'src/ActionOrbit.App/ActionOrbit.App.csproj'
+          $projectVersion = [string]$project.Project.PropertyGroup.Version
+          if ($version -ne $projectVersion) {
+            throw "Tag $version ile proje sürümü $projectVersion eşleşmiyor."
+          }
+
+      - name: Restore locked dependencies
+        run: |
+          dotnet restore ActionOrbit.slnx --locked-mode
+          dotnet restore src/ActionOrbit.App/ActionOrbit.App.csproj --runtime win-x64 --locked-mode
+
+      - name: Build and test
+        run: |
+          dotnet build ActionOrbit.slnx --configuration Release --no-restore
+          dotnet test tests/ActionOrbit.App.Tests/ActionOrbit.App.Tests.csproj --configuration Release --no-build --no-restore
+
+      - name: Publish win-x64
+        run: dotnet publish src/ActionOrbit.App/ActionOrbit.App.csproj --configuration Release --no-restore -p:PublishProfile=win-x64
+
+      - name: Import signing certificate
+        shell: pwsh
+        env:
+          SIGNING_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE_BASE64 }}
+          ACTION_ORBIT_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE_PASSWORD }}
+        run: |
+          if (
+            [string]::IsNullOrWhiteSpace($env:SIGNING_CERTIFICATE_BASE64) -or
+            [string]::IsNullOrWhiteSpace($env:ACTION_ORBIT_CERTIFICATE_PASSWORD)
+          ) {
+            "AUTHENTICODE_STATUS=unsigned" | Out-File -FilePath $env:GITHUB_ENV -Append
+            Write-Warning 'Kod imzalama secretları tanımlı değil; provenance üretilecek ancak EXE Authenticode imzasız kalacak.'
+            exit 0
+          }
+
+          $pfx = Join-Path $env:RUNNER_TEMP 'action-orbit-signing.pfx'
+          try {
+            [IO.File]::WriteAllBytes(
+              $pfx,
+              [Convert]::FromBase64String($env:SIGNING_CERTIFICATE_BASE64))
+            ./scripts/sign.ps1 `
+              -FilePath 'src/ActionOrbit.App/bin/publish/win-x64/ActionOrbit.App.exe' `
+              -PfxPath $pfx
+          }
+          finally {
+            Remove-Item -LiteralPath $pfx -Force -ErrorAction SilentlyContinue
+          }
+
+      - name: Generate SBOM and release package
+        env:
+          DOTNET_ROLL_FORWARD: Major
+        shell: pwsh
+        run: |
+          $version = '${{ github.ref_name }}'.TrimStart('v')
+          $publish = Resolve-Path 'src/ActionOrbit.App/bin/publish/win-x64'
+          $release = Join-Path $PWD 'release'
+          $stage = Join-Path $release "ActionOrbit-v$version-win-x64"
+          New-Item -ItemType Directory -Path $stage -Force | Out-Null
+
+          dotnet tool install `
+            --tool-path (Join-Path $env:RUNNER_TEMP 'sbom-tool') `
+            Microsoft.Sbom.DotNetTool `
+            --version 4.1.5
+          $sbomTool = Join-Path $env:RUNNER_TEMP 'sbom-tool/sbom-tool.exe'
+          & $sbomTool generate `
+            -b $publish `
+            -bc $PWD `
+            -m $release `
+            -pn ActionOrbit `
+            -pv $version `
+            -ps 'Action Orbit contributors' `
+            -nsb 'https://github.com/SabahattinAkal/action-orbit' `
+            -nsu "${version}-${{ github.sha }}" `
+            -D true
+          if ($LASTEXITCODE -ne 0) { throw 'SBOM üretilemedi.' }
+
+          $sbom = Get-ChildItem $release -Recurse -Filter 'manifest.spdx.json' | Select-Object -First 1
+          if ($null -eq $sbom) { throw 'SPDX SBOM bulunamadı.' }
+          Copy-Item $sbom.FullName (Join-Path $release "ActionOrbit-v$version.spdx.json")
+
+          Copy-Item (Join-Path $publish 'ActionOrbit.App.exe') $stage
+          Copy-Item README.md, LICENSE, CHANGELOG.md, SECURITY.md $stage
+          Copy-Item (Join-Path $release "ActionOrbit-v$version.spdx.json") $stage
+
+          $zip = Join-Path $release "ActionOrbit-v$version-win-x64.zip"
+          Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zip -CompressionLevel Optimal
+          $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $(Split-Path $zip -Leaf)" |
+            Set-Content (Join-Path $release 'SHA256SUMS.txt') -Encoding ascii
+
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: ActionOrbit-${{ github.ref_name }}-release
+          path: |
+            release/*.zip
+            release/*.json
+            release/SHA256SUMS.txt
+          if-no-files-found: error
+
+      - uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-path: |
+            release/*.zip
+            release/*.json
+            release/SHA256SUMS.txt
+
+      - name: Publish GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = '${{ github.ref_name }}'.TrimStart('v')
+          $notes = @"
+          ## Action Orbit v$version
+
+          Güvenlik stabilizasyonu:
+
+          - Self-contained .NET runtime 10.0.10
+          - Güvenli config/profil içe aktarma incelemesi ve kaynak sınırları
+          - Komut aksiyonları için varsayılan kapalı durum ve çalıştırma onayı
+          - UNC/harici ikon yolu engelleme ve ikon boyut sınırları
+          - Hassas komut içeriğini loglardan çıkarma
+          - SPDX SBOM ve GitHub build provenance attestation
+
+          Paket bütünlüğü `SHA256SUMS.txt` ile doğrulanabilir. Authenticode sertifikası yapılandırılmadıysa Windows SmartScreen bilinmeyen yayıncı uyarısı gösterebilir.
+          "@
+          $notesPath = Join-Path $env:RUNNER_TEMP 'release-notes.md'
+          $notes | Set-Content $notesPath -Encoding utf8
+          $assets = @(
+            Get-ChildItem release -File |
+              Where-Object {
+                $_.Extension -in '.zip', '.json' -or $_.Name -eq 'SHA256SUMS.txt'
+              } |
+              Select-Object -ExpandProperty FullName
+          )
+          if ($assets.Count -lt 3) { throw 'Release assetları eksik.' }
+          gh release create '${{ github.ref_name }}' `
+            @assets `
+            --verify-tag `
+            --title "Action Orbit v$version" `
+            --notes-file $notesPath `
+            --latest

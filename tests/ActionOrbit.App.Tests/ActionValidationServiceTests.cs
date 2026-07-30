@@ -65,6 +65,32 @@ public sealed class ActionValidationServiceTests
         Assert.True(ActionValidationService.Validate(folder).IsValid);
     }
 
+    [Theory]
+    [InlineData("cmd.exe", "/c echo hello")]
+    [InlineData("powershell.exe", "-EncodedCommand ZQBjAGgAbwA=")]
+    public void OpenApp_RejectsShellInterpretersWithArguments(string target, string arguments)
+    {
+        var action = Create("open_app", target);
+        action.Arguments = arguments;
+
+        var result = ActionValidationService.Validate(action);
+
+        Assert.False(result.IsValid);
+        Assert.Contains("yorumlayıcı", result.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
+    [InlineData("script.cmd")]
+    [InlineData("shortcut.lnk")]
+    [InlineData("installer.msi")]
+    public void OpenFile_RejectsExecutableFileTypes(string target)
+    {
+        var result = ActionValidationService.Validate(Create("open_file", target));
+
+        Assert.False(result.IsValid);
+        Assert.Contains("Çalıştırılabilir", result.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Fact]
     public void NonFolder_WithChildren_IsRejected()
     {

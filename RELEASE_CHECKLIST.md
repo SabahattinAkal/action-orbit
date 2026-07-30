@@ -4,6 +4,8 @@
 
 - `dotnet build ActionOrbit.slnx --configuration Release`
 - `dotnet test tests\ActionOrbit.App.Tests\ActionOrbit.App.Tests.csproj --configuration Release`
+- `dotnet restore ActionOrbit.slnx --locked-mode`
+- `dotnet list tests\ActionOrbit.App.Tests\ActionOrbit.App.Tests.csproj package --vulnerable --include-transitive`
 - `scripts\publish.ps1` ile self-contained `win-x64` paketini üret
 - Temiz bir Windows kullanıcı hesabında uygulamayı ilk kez çalıştır
 
@@ -18,6 +20,9 @@
 - Aksiyon silme, sıralama, klasöre taşıma ve profil silme sonrasında `Ctrl+Z` ile geri al
 - Aksiyon kütüphanesindeki “Profile Ekle” ve “Seçili Aksiyona Uygula” davranışlarını ayrı ayrı dene
 - `run_command` için güvenli bir komutun çalıştığını, yıkıcı örneklerin editörde engellendiğini doğrula
+- Komut aksiyonlarının varsayılan kapalı olduğunu ve her çalıştırmada onay istediğini doğrula
+- Riskli config/profil içe aktarmada hedef ve aksiyon özetinin gösterildiğini doğrula
+- UNC/mutlak ikon yolunun yüklenmediğini, büyük SVG/raster dosyasının reddedildiğini doğrula
 - %100, %125, %150 DPI ve çoklu monitör senaryolarını kontrol et
 - Açık/koyu/sistem temalarını, canlı Windows tema geçişini ve animasyon kapalı durumunu kontrol et
 
@@ -26,4 +31,6 @@
 - `src\ActionOrbit.App\bin\publish\win-x64` çıktısını zararlı yazılım taramasından geçir
 - Sürüm numarası ve değişiklik notlarını hazırla
 - GitHub Actions tarafından üretilen `ActionOrbit-win-x64` artifact'ını doğrula
-- İmzalı dağıtım yapılacaksa exe/code-signing adımını yayın hattına ekle
+- Release paketindeki runtime marker'ın 10.0.10 olduğunu doğrula
+- SPDX SBOM, `SHA256SUMS.txt` ve GitHub provenance attestation dosyalarını doğrula
+- Authenticode secretları tanımlıysa imzayı, tanımlı değilse Release'deki imzasız uyarısını doğrula

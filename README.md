@@ -1,6 +1,7 @@
 # Action Orbit
 
 [![CI](https://github.com/SabahattinAkal/action-orbit/actions/workflows/ci.yml/badge.svg)](https://github.com/SabahattinAkal/action-orbit/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/SabahattinAkal/action-orbit/actions/workflows/codeql.yml/badge.svg)](https://github.com/SabahattinAkal/action-orbit/actions/workflows/codeql.yml)
 [![GitHub Release](https://img.shields.io/github/v/release/SabahattinAkal/action-orbit)](https://github.com/SabahattinAkal/action-orbit/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
@@ -34,7 +35,7 @@ Menü içerisindeki aksiyonlar:
 
 ## Proje durumu
 
-İlk kararlı sürüm `v1.0.0` hazır:
+Güncel kararlı sürüm `v1.0.1`:
 
 - `src/ActionOrbit.App` altında WPF uygulaması
 - JSON config oluşturma/yükleme/reload
@@ -56,17 +57,31 @@ Menü içerisindeki aksiyonlar:
 - Ana pencere kısayolları: `Ctrl+1…4`, `Ctrl+Z` ve `Ctrl+S`
 - Tek uygulama örneği, hotkey rollback ve güvenli config/profil içe aktarma
 - Editör ve çalıştırma katmanında ortak aksiyon doğrulama/tehlikeli komut filtresi
-- xUnit regresyon testleri ve Windows GitHub Actions yayın hattı
+- Komut aksiyonlarında varsayılan kapalı güvenli mod ve çalıştırma öncesi açık onay
+- Config/profil içe aktarmada çalıştırılabilir aksiyon özeti ve dosya/kaynak sınırları
+- Harici/UNC ikon yollarını engelleyen güvenli özel ikon dizini
+- xUnit v3 regresyon testleri, CodeQL ve Windows GitHub Actions yayın hattı
 
 ## İndirme
 
 En güncel Windows x64 paketini [GitHub Releases](https://github.com/SabahattinAkal/action-orbit/releases/latest) sayfasından indir:
 
-1. `ActionOrbit-v1.0.0-win-x64.zip` dosyasını indir.
+1. `ActionOrbit-v1.0.1-win-x64.zip` dosyasını indir.
 2. Arşivi istediğin bir klasöre çıkar.
 3. `ActionOrbit.App.exe` dosyasını çalıştır.
 
-Paket self-contained'dır. İlk sürüm kod imzası taşımadığı için Windows SmartScreen bilinmeyen yayıncı uyarısı gösterebilir. Dosya bütünlüğü Release sayfasındaki `SHA256SUMS.txt` ile doğrulanabilir.
+Paket self-contained'dır ve .NET 10.0.10 runtime içerir. Dosya bütünlüğü Release
+sayfasındaki `SHA256SUMS.txt`, SPDX SBOM ve GitHub build provenance attestation ile
+doğrulanabilir:
+
+```powershell
+gh attestation verify ActionOrbit-v1.0.1-win-x64.zip --repo SabahattinAkal/action-orbit
+```
+
+Yayın hattı, depo secretlarında Authenticode sertifikası yapılandırıldığında EXE'yi
+otomatik imzalar. Sertifika henüz yapılandırılmadıysa Windows SmartScreen bilinmeyen
+yayıncı uyarısı gösterebilir; provenance doğrulaması paketin bu depodaki GitHub Actions
+iş akışında üretildiğini kanıtlar.
 
 ## Kullanım örneği
 
@@ -111,7 +126,7 @@ Paket self-contained'dır. İlk sürüm kod imzası taşımadığı için Window
 Önkoşul:
 
 - Windows
-- .NET SDK 10 ve `Microsoft.WindowsDesktop.App` x64 runtime 10
+- `global.json` ile sabitlenen .NET SDK 10.0.302
 
 Derleme:
 
@@ -157,6 +172,10 @@ Config ve log konumları:
 ```
 
 İlk açılışta default config otomatik oluşturulur. Config bozuksa `config.broken.yyyyMMddHHmmss.json` olarak yedeklenir ve default config yeniden yazılır.
+
+`run_command` aksiyonları varsayılan olarak kapalıdır. Ayarlar bölümünden açıkça
+etkinleştirilse bile her komut çalıştırılmadan önce tam komut gösterilerek onay istenir.
+İçe aktarılan config dosyaları bu ayarı otomatik olarak açamaz.
 
 ## Notlar
 

@@ -34,7 +34,7 @@ public static class ActionValidationService
             "folder" => action.Children.Count == 0
                 ? ActionValidationResult.Failure("Klasörün içinde en az bir alt aksiyon olmalı.")
                 : ActionValidationResult.Success,
-            "open_app" => ValidateApp(target, expandedTarget),
+            "open_app" => ValidateApp(target, expandedTarget, action.Arguments),
             "open_file" => ValidateFile(target, expandedTarget),
             "open_folder" => ValidateFolder(target, expandedTarget),
             "open_url" => ValidateUrl(target),
@@ -47,11 +47,21 @@ public static class ActionValidationService
         };
     }
 
-    private static ActionValidationResult ValidateApp(string target, string expandedTarget)
+    private static ActionValidationResult ValidateApp(
+        string target,
+        string expandedTarget,
+        string? arguments)
     {
         if (string.IsNullOrWhiteSpace(target))
         {
             return ActionValidationResult.Failure("Uygulama hedefi boş olamaz.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(arguments) &&
+            ActionSecurityService.IsShellInterpreter(expandedTarget))
+        {
+            return ActionValidationResult.Failure(
+                "Komut yorumlayıcıları uygulama aksiyonuyla argümanlı çalıştırılamaz.");
         }
 
         return LooksLikePath(expandedTarget) && !File.Exists(expandedTarget)
@@ -64,6 +74,12 @@ public static class ActionValidationService
         if (string.IsNullOrWhiteSpace(target))
         {
             return ActionValidationResult.Failure("Dosya yolu boş olamaz.");
+        }
+
+        if (ActionSecurityService.IsExecutableFileTarget(expandedTarget))
+        {
+            return ActionValidationResult.Failure(
+                "Çalıştırılabilir veya betik dosyaları dosya aksiyonuyla açılamaz.");
         }
 
         return File.Exists(expandedTarget)

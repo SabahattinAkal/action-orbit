@@ -6,10 +6,17 @@ namespace ActionOrbit.App.Services.Actions;
 public sealed class RunCommandActionHandler : IActionHandler
 {
     private readonly LogService _logService;
+    private readonly Func<bool> _isCommandExecutionEnabled;
+    private readonly Func<string, bool> _confirmCommand;
 
-    public RunCommandActionHandler(LogService logService)
+    public RunCommandActionHandler(
+        LogService logService,
+        Func<bool>? isCommandExecutionEnabled = null,
+        Func<string, bool>? confirmCommand = null)
     {
         _logService = logService;
+        _isCommandExecutionEnabled = isCommandExecutionEnabled ?? (() => false);
+        _confirmCommand = confirmCommand ?? (_ => false);
     }
 
     public bool CanHandle(OrbitAction action) =>
@@ -22,6 +29,12 @@ public sealed class RunCommandActionHandler : IActionHandler
             return ActionExecutionResult.Failure("Komut boş.");
         }
 
+        if (!_isCommandExecutionEnabled())
+        {
+            return ActionExecutionResult.Failure(
+                "Komut aksiyonları güvenlik nedeniyle kapalı. Ayarlar bölümünden açıkça etkinleştir.");
+        }
+
         var command = Environment.ExpandEnvironmentVariables(action.Target);
         var arguments = Environment.ExpandEnvironmentVariables(action.Arguments ?? "");
         var fullCommand = string.IsNullOrWhiteSpace(arguments)
@@ -32,6 +45,11 @@ public sealed class RunCommandActionHandler : IActionHandler
         {
             return ActionExecutionResult.Failure(
                 "Bu komut public beta güvenlik filtresine takıldı. Silme, formatlama veya kapatma komutlarını elle çalıştır.");
+        }
+
+        if (!_confirmCommand(fullCommand))
+        {
+            return ActionExecutionResult.Failure("Komut çalıştırma kullanıcı tarafından iptal edildi.");
         }
 
         var startInfo = new ProcessStartInfo
@@ -47,7 +65,7 @@ public sealed class RunCommandActionHandler : IActionHandler
 
         try
         {
-            _logService.Info($"Running command: {fullCommand}");
+            _logService.Info($"Running command action {LogService.SafeValue(action.Id)}.");
             using var process = Process.Start(startInfo);
             if (process is null)
             {

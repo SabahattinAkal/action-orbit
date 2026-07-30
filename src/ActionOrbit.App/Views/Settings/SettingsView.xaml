@@ -23,6 +23,13 @@
                     <CheckBox Margin="0,6,0,0"
                               Content="Kapatınca tray'e al"
                               IsChecked="{Binding Settings.CloseToTray}" />
+                    <CheckBox Margin="0,12,0,0"
+                              Content="Gelişmiş komut aksiyonlarını etkinleştir"
+                              IsChecked="{Binding Settings.AllowCommandActions}" />
+                    <TextBlock Margin="22,4,12,0"
+                               TextWrapping="Wrap"
+                               Style="{DynamicResource MutedText}"
+                               Text="Kapalı kalması önerilir. Açıldığında her komut çalıştırılmadan önce tam komut gösterilerek onay istenir." />
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Margin="16,0,0,0">

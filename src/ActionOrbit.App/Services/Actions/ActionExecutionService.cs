@@ -36,7 +36,8 @@ public sealed class ActionExecutionService
 
         try
         {
-            _logService.Info($"Executing action {action.Id} ({action.Type}).");
+            _logService.Info(
+                $"Executing action {LogService.SafeValue(action.Id)} ({LogService.SafeValue(action.Type)}).");
             var result = await handler.ExecuteAsync(action);
             if (!result.Succeeded)
             {
@@ -48,7 +49,7 @@ public sealed class ActionExecutionService
         }
         catch (Exception ex)
         {
-            _logService.Error($"Action failed: {action.Id}", ex);
+            _logService.Error($"Action failed: {LogService.SafeValue(action.Id)}", ex);
             var failedResult = ActionExecutionResult.Failure(ex.Message);
             NotifyActionExecuted(action, failedResult);
             return failedResult;
