@@ -1,17 +1,17 @@
-# Action Orbit
+# Action Orbit Pro
 
 [![CI](https://github.com/SabahattinAkal/action-orbit/actions/workflows/ci.yml/badge.svg)](https://github.com/SabahattinAkal/action-orbit/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/SabahattinAkal/action-orbit/actions/workflows/codeql.yml/badge.svg)](https://github.com/SabahattinAkal/action-orbit/actions/workflows/codeql.yml)
 [![GitHub Release](https://img.shields.io/github/v/release/SabahattinAkal/action-orbit)](https://github.com/SabahattinAkal/action-orbit/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-Action Orbit, Windows için mouse makro tuşuyla açılan gelişmiş bir radial/oval aksiyon menüsü uygulamasıdır.
+Action Orbit Pro, Windows için mouse makro tuşuyla açılan radial/oval aksiyon menüsünü uygulamalar arası geçici içerik rafıyla birleştirir.
 
 Amaç: Logitech Actions Ring benzeri ama daha esnek, klasör mantıklı, uygulama bazlı profil destekli, hızlı ve görsel olarak daha modern bir sistem yapmak.
 
 ## Ana fikir
 
-Kullanıcı mouse üzerindeki makro tuşuna örneğin `F13` veya `Ctrl+Alt+Shift+R` atar. Action Orbit bu kısayolu dinler ve imlecin olduğu yerde oval/radial bir menü açar.
+Kullanıcı mouse üzerindeki makro tuşuna örneğin `F13` veya `Ctrl+Alt+Shift+P` atar. Action Orbit Pro bu kısayolu dinler ve imlecin olduğu yerde oval/radial bir menü açar.
 
 Menü içerisindeki aksiyonlar:
 
@@ -35,7 +35,18 @@ Menü içerisindeki aksiyonlar:
 
 ## Proje durumu
 
-Güncel kararlı sürüm `v1.0.1`:
+Güncel Pro geliştirme sürümü `v2.0.0`:
+
+- Chrome, Explorer ve diğer Windows uygulamalarından görsel, dosya, bağlantı ve metin kabul eden topmost **Orbit Shelf**
+- Raf öğesini başka uygulamaya geri sürükleme veya panoya kopyalayıp yapıştırma
+- Çoklu raf, adlandırma, açık sabitleme, isteğe bağlı yakın geçmiş ve süreli geçici önbellek
+- Görselleri güvenli biçimde PNG'ye dönüştürme ve 1600 px sınırına küçültme
+- Profil başına adlandırılmış birden fazla halka; mouse tekerleğiyle halka değiştirme
+- Bas-aç, basılı-tut/bırakınca çalıştır ve çift-bas tetikleme modları
+- Belirlenen uygulamalarda halkayı devre dışı bırakan process listesi
+- URL aksiyonunu sistem tarayıcısı, Chrome, Edge, Firefox veya Brave ile açma
+- Her aksiyona isteğe bağlı doğrudan global klavye kısayolu atama
+- Pro sürümünün config, log, mutex ve başlangıç kaydını klasik sürümden ayıran izolasyon
 
 - `src/ActionOrbit.App` altında WPF uygulaması
 - JSON config oluşturma/yükleme/reload
@@ -54,7 +65,7 @@ Güncel kararlı sürüm `v1.0.1`:
 - Ana/klasör halkalarında kayıpsız sayfalama
 - Fareye ek olarak `1–9`, oklar, `Enter`, `Backspace` ve `Esc` ile overlay kontrolü
 - Ana pencerede gerçek light/dark/system tema ve canlı Windows tema takibi
-- Ana pencere kısayolları: `Ctrl+1…4`, `Ctrl+Z` ve `Ctrl+S`
+- Ana pencere kısayolları: `Ctrl+1…5`, `Ctrl+Z` ve `Ctrl+S`
 - Tek uygulama örneği, hotkey rollback ve güvenli config/profil içe aktarma
 - Editör ve çalıştırma katmanında ortak aksiyon doğrulama/tehlikeli komut filtresi
 - Komut aksiyonlarında varsayılan kapalı güvenli mod ve çalıştırma öncesi açık onay
@@ -66,7 +77,7 @@ Güncel kararlı sürüm `v1.0.1`:
 
 En güncel Windows x64 paketini [GitHub Releases](https://github.com/SabahattinAkal/action-orbit/releases/latest) sayfasından indir:
 
-1. `ActionOrbit-v1.0.1-win-x64.zip` dosyasını indir.
+1. `ActionOrbitPro-v2.0.0-win-x64.zip` dosyasını indir.
 2. Arşivi istediğin bir klasöre çıkar.
 3. `ActionOrbit.App.exe` dosyasını çalıştır.
 
@@ -75,7 +86,7 @@ sayfasındaki `SHA256SUMS.txt`, SPDX SBOM ve GitHub build provenance attestation
 doğrulanabilir:
 
 ```powershell
-gh attestation verify ActionOrbit-v1.0.1-win-x64.zip --repo SabahattinAkal/action-orbit
+gh attestation verify ActionOrbitPro-v2.0.0-win-x64.zip --repo SabahattinAkal/action-orbit
 ```
 
 Yayın hattı, depo secretlarında Authenticode sertifikası yapılandırıldığında EXE'yi
@@ -108,18 +119,22 @@ iş akışında üretildiğini kanıtlar.
   - Terminal
   - Not defteri
 
-## v1.0 kapsamı
+- Chrome'daki bir görseli Orbit Shelf penceresine sürükle:
+  - Görsel güvenli geçici önbelleğe alınır
+  - `Kopyala` ile panoya koyup hedef uygulamada `Ctrl+V` kullanabilirsin
+  - Öğeyi raftan doğrudan başka bir uygulamaya sürükleyebilirsin
+  - İstersen PNG'ye dönüştürebilir veya 1600 px'e küçültebilirsin
 
-İlk kararlı sürüm aşağıdaki temel kapsamı karşılar:
+## Pro özellik kapsamı
 
-1. Global hotkey dinleme.
-2. Hotkey ile cursor konumunda overlay menü açma.
-3. Menüde 6-10 aksiyon gösterme.
-4. Aksiyon tıklanınca çalıştırma.
-5. JSON config dosyasından menüleri okuma.
-6. Aktif uygulamaya göre profil seçme.
-7. Alt menü desteği.
-8. Basit ayarlar ekranı.
+Pro sürüm temel Action Orbit kapsamına şunları ekler:
+
+1. Uygulamalar arası görsel/dosya/URL/metin rafı.
+2. Çoklu ve adlandırılmış halka setleri.
+3. Alternatif tetikleme davranışları.
+4. Uygulama bazlı devre dışı bırakma listesi.
+5. Tarayıcı seçimi.
+6. Aksiyon bazlı doğrudan hotkey.
 
 ## Çalıştırma
 
@@ -161,14 +176,16 @@ src\ActionOrbit.App\bin\Debug\net10.0-windows\ActionOrbit.App.exe
 Varsayılan global hotkey:
 
 ```text
-Ctrl+Alt+Shift+R
+Ctrl+Alt+Shift+P
 ```
 
 Config ve log konumları:
 
 ```text
-%AppData%\ActionOrbit\config.json
-%AppData%\ActionOrbit\logs\actionorbit.log
+%AppData%\ActionOrbitPro\config.json
+%AppData%\ActionOrbitPro\logs\actionorbit.log
+%AppData%\ActionOrbitPro\shelves.json
+%AppData%\ActionOrbitPro\shelf-cache\
 ```
 
 İlk açılışta default config otomatik oluşturulur. Config bozuksa `config.broken.yyyyMMddHHmmss.json` olarak yedeklenir ve default config yeniden yazılır.
@@ -179,6 +196,6 @@ etkinleştirilse bile her komut çalıştırılmadan önce tam komut gösteriler
 
 ## Notlar
 
-- Mouse makro tuşunu doğrudan yakalamak yerine mouse yazılımında `Ctrl+Alt+Shift+R`, `F13` gibi bir klavye kısayoluna map etmek gerekir.
+- Mouse makro tuşunu doğrudan yakalamak yerine mouse yazılımında `Ctrl+Alt+Shift+P`, `F13` gibi bir klavye kısayoluna map etmek gerekir.
 - Normal yetkiyle çalışan Action Orbit, admin yetkili pencerelere input göndermekte sınırlı kalabilir.
 - Çok monitör ve DPI davranışı için temel konumlama vardır; farklı scaling senaryolarında ek test önerilir.

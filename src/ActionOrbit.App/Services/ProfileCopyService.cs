@@ -12,10 +12,17 @@ public static class ProfileCopyService
         {
             Id = id,
             Name = name,
+            MainRingName = source.MainRingName,
             Matches = source.Matches
                 .Select(match => new ProfileMatch { ProcessName = match.ProcessName })
                 .ToList(),
-            Actions = source.Actions.Select(CopyAction).ToList()
+            Actions = source.Actions.Select(CopyAction).ToList(),
+            RingSets = source.RingSets.Select(ring => new RingSetConfig
+            {
+                Id = ring.Id,
+                Name = ring.Name,
+                Actions = ring.Actions.Select(CopyAction).ToList()
+            }).ToList()
         };
     }
 
@@ -28,6 +35,8 @@ public static class ProfileCopyService
             Type = action.Type,
             Target = action.Target,
             Arguments = action.Arguments,
+            Browser = action.Browser,
+            Shortcut = action.Shortcut,
             Children = action.Children.Select(CopyAction).ToList()
         };
 }

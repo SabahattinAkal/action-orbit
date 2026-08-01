@@ -13,6 +13,8 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
                 <StackPanel Grid.Column="0">
@@ -102,6 +104,117 @@
                         <Button Command="{Binding Transfers.ImportProfileCommand}" Content="Profil İçe Aktar" />
                     </WrapPanel>
                 </StackPanel>
+
+                <Border Grid.Row="2"
+                        Grid.ColumnSpan="2"
+                        Margin="0,18,0,0"
+                        Padding="14"
+                        Background="{DynamicResource SoftSurfaceBrush}"
+                        BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.1*" />
+                            <ColumnDefinition Width="1*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Margin="0,0,16,0">
+                            <TextBlock FontWeight="Bold" Text="Halka tetikleme davranışı" />
+                            <ComboBox Margin="0,8,0,0"
+                                      DisplayMemberPath="Label"
+                                      ItemsSource="{Binding Settings.ActivationModeOptions}"
+                                      SelectedValue="{Binding Settings.ActivationMode}"
+                                      SelectedValuePath="Key" />
+                            <Grid Margin="0,9,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="150" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="55" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock VerticalAlignment="Center" Style="{DynamicResource MutedText}" Text="Basılı tutma gecikmesi" />
+                                <Slider Grid.Column="1" Minimum="100" Maximum="1200" Value="{Binding Settings.HoldDelayMilliseconds}" />
+                                <TextBlock Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center" Style="{DynamicResource MutedText}" Text="{Binding Settings.HoldDelayMilliseconds, StringFormat={}{0} ms}" />
+                            </Grid>
+                            <Grid Margin="0,5,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="150" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="55" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock VerticalAlignment="Center" Style="{DynamicResource MutedText}" Text="Çift basma aralığı" />
+                                <Slider Grid.Column="1" Minimum="200" Maximum="900" Value="{Binding Settings.DoublePressWindowMilliseconds}" />
+                                <TextBlock Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center" Style="{DynamicResource MutedText}" Text="{Binding Settings.DoublePressWindowMilliseconds, StringFormat={}{0} ms}" />
+                            </Grid>
+                            <CheckBox Margin="0,9,0,0"
+                                      Content="İmleç dış sınırdan çıkınca halkayı kapat"
+                                      IsChecked="{Binding Settings.CancelWhenPointerLeaves}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock FontWeight="Bold" Text="Bu uygulamalarda devre dışı" />
+                            <TextBox Margin="0,8,0,0"
+                                     MinHeight="66"
+                                     AcceptsReturn="True"
+                                     TextWrapping="Wrap"
+                                     Text="{Binding Settings.SuppressedProcessesText, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Margin="0,6,0,0"
+                                       Style="{DynamicResource MutedText}"
+                                       TextWrapping="Wrap"
+                                       Text="Virgülle ayır. Örn: powerpnt.exe, mstsc.exe, valorant.exe. Bu uygulamalar öndeyken halka açılmaz." />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Row="3"
+                        Grid.ColumnSpan="2"
+                        Margin="0,12,0,0"
+                        Padding="14"
+                        Background="{DynamicResource SoftSurfaceBrush}"
+                        BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.1*" />
+                            <ColumnDefinition Width="1*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Margin="0,0,16,0">
+                            <TextBlock FontWeight="Bold" Text="Orbit Shelf gizlilik ve kalıcılık" />
+                            <CheckBox Margin="0,8,0,0"
+                                      Content="Orbit Shelf'i etkinleştir"
+                                      IsChecked="{Binding Settings.ShelfEnabled}" />
+                            <CheckBox Margin="0,7,0,0"
+                                      Content="Sabitlenmemiş son rafları da hatırla"
+                                      IsChecked="{Binding Settings.RememberRecentShelves}" />
+                            <TextBlock Margin="22,5,0,0"
+                                       Style="{DynamicResource MutedText}"
+                                       TextWrapping="Wrap"
+                                       Text="Kapalıyken yalnızca açıkça sabitlediğin raflar sonraki açılışta geri yüklenir. Geçici öğeler süre dolunca temizlenir." />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock FontWeight="Bold" Text="Raf sınırları" />
+                            <Grid Margin="0,9,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="130" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="48" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock VerticalAlignment="Center" Style="{DynamicResource MutedText}" Text="Raf başına öğe" />
+                                <Slider Grid.Column="1" Minimum="5" Maximum="100" TickFrequency="5" Value="{Binding Settings.ShelfMaxItems}" />
+                                <TextBlock Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center" Style="{DynamicResource MutedText}" Text="{Binding Settings.ShelfMaxItems}" />
+                            </Grid>
+                            <Grid Margin="0,6,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="130" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="58" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock VerticalAlignment="Center" Style="{DynamicResource MutedText}" Text="Geçici saklama" />
+                                <Slider Grid.Column="1" Minimum="1" Maximum="168" TickFrequency="1" Value="{Binding Settings.ShelfRetentionHours}" />
+                                <TextBlock Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center" Style="{DynamicResource MutedText}" Text="{Binding Settings.ShelfRetentionHours, StringFormat={}{0} saat}" />
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
+                </Border>
             </Grid>
         </Expander>
     </Border>

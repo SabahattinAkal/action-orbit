@@ -4,7 +4,7 @@ namespace ActionOrbit.App.Services;
 
 public static class DefaultConfigFactory
 {
-    public const int CurrentVersion = 7;
+    public const int CurrentVersion = 8;
 
     public static AppConfig Create() =>
         new()
@@ -12,15 +12,22 @@ public static class DefaultConfigFactory
             ConfigVersion = CurrentVersion,
             Hotkey = new HotkeyConfig
             {
-                Display = "Ctrl+Alt+Shift+R",
+                Display = "Ctrl+Alt+Shift+P",
                 Modifiers = ["Control", "Alt", "Shift"],
-                Key = "R"
+                Key = "P"
             },
             DefaultProfileId = "default",
             Settings = new AppSettings
             {
                 CloseToTray = true,
-                RunAtStartup = false
+                RunAtStartup = false,
+                Activation = new ActivationSettings
+                {
+                    Mode = "toggle",
+                    HoldDelayMilliseconds = 260,
+                    DoublePressWindowMilliseconds = 380
+                },
+                Shelf = new ShelfSettings()
             },
             Theme = new ThemeConfig
             {

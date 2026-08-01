@@ -118,6 +118,11 @@ internal static class HotkeyParser
     private static string NormalizeKeyDisplay(string token)
     {
         var trimmed = token.Trim();
+        if (trimmed.Length == 1 && char.IsLetter(trimmed[0]))
+        {
+            return trimmed.ToUpperInvariant();
+        }
+
         return trimmed.Equals("Control", StringComparison.OrdinalIgnoreCase)
             ? "Ctrl"
             : trimmed.Equals("Escape", StringComparison.OrdinalIgnoreCase)

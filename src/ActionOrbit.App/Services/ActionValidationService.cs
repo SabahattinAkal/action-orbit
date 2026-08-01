@@ -20,6 +20,12 @@ public static class ActionValidationService
             return ActionValidationResult.Failure("Aksiyon adı boş olamaz.");
         }
 
+        if (!string.IsNullOrWhiteSpace(action.Shortcut) &&
+            !HotkeyParser.TryParseDisplay(action.Shortcut, out _, out var shortcutError))
+        {
+            return ActionValidationResult.Failure($"Doğrudan kısayol geçersiz: {shortcutError}");
+        }
+
         var target = action.Target?.Trim() ?? "";
         var expandedTarget = Environment.ExpandEnvironmentVariables(target);
 

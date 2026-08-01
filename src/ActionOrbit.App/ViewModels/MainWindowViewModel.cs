@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -22,6 +23,8 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     private readonly LogService _logService;
     private readonly UndoManager _undoManager = new();
     private readonly DispatcherTimer _activeProcessTimer;
+    private readonly ActivationCoordinator _activationCoordinator;
+    private readonly ShelfWindowService _shelfWindowService;
     private bool _isReloadingEditor;
     private string _selectedWorkspace = "home";
     private string _actionLibrarySearchText = "";
@@ -47,6 +50,12 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         _startupService = startupService;
         _logService = logService;
         Status = new StatusCenterViewModel();
+        Shelf = new ShelfViewModel(
+            _configService,
+            _logService,
+            message => Status.SetMessage(message));
+        _shelfWindowService = new ShelfWindowService(Shelf);
+        Shelf.SetFloatingShelfOpener(_shelfWindowService.Show);
         Autosave = new AutosaveViewModel(
             _configService,
             _logService,
@@ -66,8 +75,14 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
                 OnPropertyChanged(nameof(SelectedProfile));
                 OnPropertyChanged(nameof(SelectedProfileIsDefault));
                 OnPropertyChanged(nameof(CanSetDefaultProfile));
+                RingSets?.ReloadForSelectedProfile();
                 ActionEditor?.ReloadForSelectedProfile();
             });
+        RingSets = new RingSetEditorViewModel(
+            () => ProfileEditor.SelectedProfile,
+            MarkDirty,
+            message => Status.SetMessage(message),
+            () => ActionEditor?.ReloadForSelectedProfile());
         Settings = new SettingsViewModel(
             _configService,
             _startupService,
@@ -86,6 +101,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
             _actionExecutionService,
             _logService,
             () => ProfileEditor.SelectedProfile,
+            () => RingSets.SelectedActions,
             MarkDirty,
             message => Status.SetMessage(message),
             RegisterUndo,
@@ -113,8 +129,12 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         };
 
         _actionExecutionService.ActionExecuted += OnActionExecuted;
-        _hotkeyService.HotkeyPressed += (_, _) =>
-            System.Windows.Application.Current.Dispatcher.Invoke(ShowOverlay);
+        _activationCoordinator = new ActivationCoordinator(
+            _hotkeyService,
+            () => _configService.CurrentConfig.Settings.Activation,
+            TryShowOverlay,
+            _overlayService.CommitHoveredActionOrClose);
+        _hotkeyService.ActionShortcutPressed += OnActionShortcutPressed;
 
         RefreshConfigSummary();
         Hotkey.RefreshFromConfig();
@@ -148,7 +168,9 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     public HotkeySettingsViewModel Hotkey { get; }
     public ConfigTransferViewModel Transfers { get; }
     public ProfileEditorViewModel ProfileEditor { get; }
+    public RingSetEditorViewModel RingSets { get; }
     public ActionEditorViewModel ActionEditor { get; }
+    public ShelfViewModel Shelf { get; }
     public IReadOnlyList<ActionTypeOption> ActionLibraryCategories { get; }
     public ICollectionView FilteredActionPresets { get; }
 
@@ -176,6 +198,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
                 OnPropertyChanged(nameof(IsEditorWorkspace));
                 OnPropertyChanged(nameof(IsLibraryWorkspace));
                 OnPropertyChanged(nameof(IsSettingsWorkspace));
+                OnPropertyChanged(nameof(IsShelfWorkspace));
             }
         }
     }
@@ -184,6 +207,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     public bool IsEditorWorkspace => SelectedWorkspace == "editor";
     public bool IsLibraryWorkspace => SelectedWorkspace == "library";
     public bool IsSettingsWorkspace => SelectedWorkspace == "settings";
+    public bool IsShelfWorkspace => SelectedWorkspace == "shelf";
 
     public ProfileConfig? SelectedProfile
     {
@@ -249,19 +273,28 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         set => ProfileEditor.SelectedProfileMatchesText = value;
     }
 
-    public void RegisterHotkey() => Hotkey.RegisterConfiguredHotkey();
+    public void RegisterHotkey()
+    {
+        Hotkey.RegisterConfiguredHotkey();
+        RegisterActionHotkeys(reportFailures: true);
+    }
 
-    private void ShowOverlay()
+    private void ShowOverlay() => TryShowOverlay();
+
+    private bool TryShowOverlay()
     {
         if (!_overlayService.TryShowOverlay(out var errorMessage))
         {
             Status.ReportFailure(errorMessage);
+            return false;
         }
+
+        return true;
     }
 
     private void NavigateWorkspace(string? workspace)
     {
-        if (workspace is not ("home" or "editor" or "library" or "settings"))
+        if (workspace is not ("home" or "editor" or "library" or "settings" or "shelf"))
         {
             return;
         }
@@ -329,12 +362,83 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     {
         RefreshConfigSummary();
         ProfileEditor.UpdateActiveProcessPreview();
+        Shelf.RefreshSettings();
+        RegisterActionHotkeys(reportFailures: true);
+    }
+
+    private void RegisterActionHotkeys(bool reportFailures)
+    {
+        var shortcuts = _configService.CurrentConfig.Profiles
+            .SelectMany(GetAllProfileActions)
+            .Select(action => action.Shortcut)
+            .Where(shortcut => !string.IsNullOrWhiteSpace(shortcut));
+        var failures = _hotkeyService.RegisterActionShortcuts(shortcuts);
+        if (reportFailures && failures.Count > 0)
+        {
+            Status.SetMessage($"Bazı doğrudan kısayollar kaydedilemedi: {failures[0]}", StatusTone.Warning);
+        }
+    }
+
+    private async void OnActionShortcutPressed(object? sender, ActionShortcutPressedEventArgs e)
+    {
+        var ownProcessName = $"{Process.GetCurrentProcess().ProcessName}.exe";
+        var processName = _activeWindowService.GetActiveProcessName(ownProcessName);
+        var profile = _profileService.ResolveProfile(_configService.CurrentConfig, processName);
+        var action = GetAllProfileActions(profile)
+            .FirstOrDefault(candidate =>
+                !candidate.IsFolder &&
+                string.Equals(candidate.Shortcut, e.Shortcut, StringComparison.OrdinalIgnoreCase));
+        if (action is null)
+        {
+            var defaultProfile = _profileService.GetDefaultProfile(_configService.CurrentConfig);
+            action = GetAllProfileActions(defaultProfile)
+                .FirstOrDefault(candidate =>
+                    !candidate.IsFolder &&
+                    string.Equals(candidate.Shortcut, e.Shortcut, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (action is null)
+        {
+            Status.SetMessage($"{e.Shortcut} için aktif profilde aksiyon bulunamadı.", StatusTone.Warning);
+            return;
+        }
+
+        await _actionExecutionService.ExecuteAsync(action);
+    }
+
+    private static IEnumerable<OrbitAction> GetAllProfileActions(ProfileConfig profile)
+    {
+        foreach (var action in Flatten(profile.Actions))
+        {
+            yield return action;
+        }
+
+        foreach (var ring in profile.RingSets)
+        {
+            foreach (var action in Flatten(ring.Actions))
+            {
+                yield return action;
+            }
+        }
+    }
+
+    private static IEnumerable<OrbitAction> Flatten(IEnumerable<OrbitAction> actions)
+    {
+        foreach (var action in actions)
+        {
+            yield return action;
+            foreach (var child in Flatten(action.Children))
+            {
+                yield return child;
+            }
+        }
     }
 
     private void ReloadAfterExternalConfigChange()
     {
         RefreshConfigSummary();
         Settings.CompleteExternalConfigChange();
+        Shelf.RefreshSettings();
         ReloadEditorFromConfig();
         ProfileEditor.DetectProfile();
     }
@@ -356,6 +460,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         try
         {
             ProfileEditor.ReloadFromConfig();
+            RingSets.ReloadForSelectedProfile();
             ActionEditor.ReloadForSelectedProfile();
         }
         finally
@@ -367,6 +472,10 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     public void Dispose()
     {
         Autosave.Dispose();
+        _activationCoordinator.Dispose();
+        _hotkeyService.ActionShortcutPressed -= OnActionShortcutPressed;
+        _shelfWindowService.Dispose();
+        Shelf.Dispose();
         _activeProcessTimer.Stop();
         _actionExecutionService.ActionExecuted -= OnActionExecuted;
     }

@@ -38,6 +38,8 @@ public sealed class OverlayViewModel : ViewModelBase
     private int _folderPageIndex;
     private int _folderPageCount = 1;
     private int _keyboardSelectionIndex;
+    private IReadOnlyList<RingRuntime> _currentRings = [];
+    private int _ringIndex;
 
     public OverlayViewModel(
         ProfileConfig profile,
@@ -50,6 +52,7 @@ public sealed class OverlayViewModel : ViewModelBase
         _activeProfile = profile;
         _defaultProfile = defaultProfile;
         _currentProfile = profile;
+        LoadRingsForCurrentProfile();
         _isShowingDefaultProfile = ActiveProfileIsDefault;
         _theme = theme;
         _actionExecutionService = actionExecutionService;
@@ -91,6 +94,10 @@ public sealed class OverlayViewModel : ViewModelBase
     public ObservableCollection<ActionButtonViewModel> SatelliteItems { get; } = [];
 
     public string ProfileName => _currentProfile.Name;
+    public string CurrentRingName => _currentRings.Count == 0 ? "Ana Halka" : _currentRings[_ringIndex].Name;
+    public bool HasMultipleRings => _currentRings.Count > 1;
+    private List<OrbitAction> CurrentActions =>
+        _currentRings.Count == 0 ? _currentProfile.Actions : _currentRings[_ringIndex].Actions;
 
     public ICommand ToggleDefaultProfileCommand { get; }
     public ICommand CollapseFolderCommand { get; }
@@ -235,7 +242,7 @@ public sealed class OverlayViewModel : ViewModelBase
     {
         ActionItems.Clear();
 
-        var totalCount = _currentProfile.Actions.Count;
+        var totalCount = CurrentActions.Count;
         if (totalCount == 0)
         {
             return;
@@ -244,8 +251,8 @@ public sealed class OverlayViewModel : ViewModelBase
         var pageCount = GetMainPageCount();
         _mainPageIndex = Math.Clamp(_mainPageIndex, 0, pageCount - 1);
         var visibleActions = pageCount > 1
-            ? _currentProfile.Actions.Skip(_mainPageIndex * MainPageSize).Take(MainPageSize).ToList()
-            : _currentProfile.Actions.ToList();
+            ? CurrentActions.Skip(_mainPageIndex * MainPageSize).Take(MainPageSize).ToList()
+            : CurrentActions.ToList();
         var count = visibleActions.Count + (pageCount > 1 ? 1 : 0);
 
         var step = count == 1 ? 0 : 360.0 / count;
@@ -543,7 +550,7 @@ public sealed class OverlayViewModel : ViewModelBase
 
     private int GetMainPageCount()
     {
-        var count = _currentProfile.Actions.Count;
+        var count = CurrentActions.Count;
         return count > 8
             ? (int)Math.Ceiling(count / (double)MainPageSize)
             : 1;
@@ -582,6 +589,7 @@ public sealed class OverlayViewModel : ViewModelBase
 
         _isShowingDefaultProfile = !_isShowingDefaultProfile;
         _currentProfile = _isShowingDefaultProfile ? _defaultProfile : _activeProfile;
+        LoadRingsForCurrentProfile();
         _mainPageIndex = 0;
         ResetOpenFolder();
         RebuildMainRing();
@@ -589,6 +597,34 @@ public sealed class OverlayViewModel : ViewModelBase
         OnPropertyChanged(nameof(CenterButtonText));
         OnPropertyChanged(nameof(CenterButtonToolTip));
         OnPropertyChanged(nameof(CenterButtonHint));
+    }
+
+    public bool SwitchRing(int direction)
+    {
+        if (_currentRings.Count <= 1 || direction == 0)
+        {
+            return false;
+        }
+
+        _ringIndex = (_ringIndex + Math.Sign(direction) + _currentRings.Count) % _currentRings.Count;
+        _mainPageIndex = 0;
+        ResetOpenFolder();
+        RebuildMainRing();
+        OnPropertyChanged(nameof(CurrentRingName));
+        OnPropertyChanged(nameof(FolderStatusText));
+        return true;
+    }
+
+    private void LoadRingsForCurrentProfile()
+    {
+        _currentRings =
+        [
+            new RingRuntime(_currentProfile.MainRingName, _currentProfile.Actions),
+            .. _currentProfile.RingSets.Select(ring => new RingRuntime(ring.Name, ring.Actions))
+        ];
+        _ringIndex = 0;
+        OnPropertyChanged(nameof(CurrentRingName));
+        OnPropertyChanged(nameof(HasMultipleRings));
     }
 
     private async Task RunActionAsync(ActionButtonViewModel item)
@@ -711,4 +747,6 @@ public sealed class OverlayViewModel : ViewModelBase
         double AnchorY,
         double AngleDegrees,
         int PageIndex);
+
+    private sealed record RingRuntime(string Name, List<OrbitAction> Actions);
 }

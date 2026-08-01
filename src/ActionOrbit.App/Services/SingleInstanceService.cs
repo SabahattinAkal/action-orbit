@@ -2,8 +2,8 @@ namespace ActionOrbit.App.Services;
 
 public sealed class SingleInstanceService : IDisposable
 {
-    private const string MutexName = "Local\\ActionOrbit.SingleInstance";
-    private const string ActivationEventName = "Local\\ActionOrbit.ActivateExisting";
+    private const string MutexName = "Local\\ActionOrbitPro.SingleInstance";
+    private const string ActivationEventName = "Local\\ActionOrbitPro.ActivateExisting";
 
     private readonly Mutex _mutex;
     private readonly EventWaitHandle? _activationEvent;

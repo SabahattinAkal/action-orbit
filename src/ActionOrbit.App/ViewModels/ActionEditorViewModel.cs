@@ -15,6 +15,7 @@ public sealed class ActionEditorViewModel : ViewModelBase
     private readonly ActionExecutionService _actionExecutionService;
     private readonly LogService _logService;
     private readonly Func<ProfileConfig?> _getSelectedProfile;
+    private readonly Func<List<OrbitAction>?> _getSelectedActions;
     private readonly Action _markDirty;
     private readonly Action<string> _setStatus;
     private readonly Action<string, Action> _registerUndo;
@@ -32,11 +33,35 @@ public sealed class ActionEditorViewModel : ViewModelBase
         Action<string> setStatus,
         Action<string, Action> registerUndo,
         Action showOverlay)
+        : this(
+            configService,
+            actionExecutionService,
+            logService,
+            getSelectedProfile,
+            () => getSelectedProfile()?.Actions,
+            markDirty,
+            setStatus,
+            registerUndo,
+            showOverlay)
+    {
+    }
+
+    public ActionEditorViewModel(
+        ConfigService configService,
+        ActionExecutionService actionExecutionService,
+        LogService logService,
+        Func<ProfileConfig?> getSelectedProfile,
+        Func<List<OrbitAction>?> getSelectedActions,
+        Action markDirty,
+        Action<string> setStatus,
+        Action<string, Action> registerUndo,
+        Action showOverlay)
     {
         _configService = configService;
         _actionExecutionService = actionExecutionService;
         _logService = logService;
         _getSelectedProfile = getSelectedProfile;
+        _getSelectedActions = getSelectedActions;
         _markDirty = markDirty;
         _setStatus = setStatus;
         _registerUndo = registerUndo;
@@ -66,6 +91,14 @@ public sealed class ActionEditorViewModel : ViewModelBase
     public IReadOnlyList<string> AvailableIconKeys => IconCatalog.AvailableKeys;
     public IReadOnlyList<ActionTypeOption> ActionTypeOptions { get; } = ActionDefinitionCatalog.TypeOptions;
     public IReadOnlyList<ActionPresetOption> ActionPresets { get; } = ActionDefinitionCatalog.Presets;
+    public IReadOnlyList<BrowserOption> BrowserOptions { get; } =
+    [
+        new("system", "Sistem varsayılanı"),
+        new("chrome", "Google Chrome"),
+        new("edge", "Microsoft Edge"),
+        new("firefox", "Mozilla Firefox"),
+        new("brave", "Brave")
+    ];
 
     public ActionEditorRowViewModel? SelectedAction
     {
@@ -97,7 +130,7 @@ public sealed class ActionEditorViewModel : ViewModelBase
     {
         get
         {
-            var count = _getSelectedProfile()?.Actions.Count ?? 0;
+            var count = _getSelectedActions()?.Count ?? 0;
             return count switch
             {
                 0 => "Halka boş · aksiyon ekleyebilirsin",
@@ -312,15 +345,16 @@ public sealed class ActionEditorViewModel : ViewModelBase
         var selectedId = SelectedAction?.Action.Id;
         ActionRows.Clear();
         var selectedProfile = _getSelectedProfile();
+        var selectedActions = _getSelectedActions();
 
-        if (selectedProfile is null)
+        if (selectedProfile is null || selectedActions is null)
         {
             SelectedAction = null;
             RebuildRingPreview();
             return;
         }
 
-        AddRows(selectedProfile.Actions, selectedProfile.Actions, parent: null, depth: 0);
+        AddRows(selectedActions, selectedActions, parent: null, depth: 0);
         SelectedAction = ActionRows.FirstOrDefault(row =>
             string.Equals(row.Action.Id, selectedId, StringComparison.OrdinalIgnoreCase))
             ?? ActionRows.FirstOrDefault();
@@ -458,6 +492,8 @@ public sealed class ActionEditorViewModel : ViewModelBase
             e.PropertyName is nameof(ActionEditorRowViewModel.Type) ||
             e.PropertyName is nameof(ActionEditorRowViewModel.Target) ||
             e.PropertyName is nameof(ActionEditorRowViewModel.Arguments) ||
+            e.PropertyName is nameof(ActionEditorRowViewModel.Browser) ||
+            e.PropertyName is nameof(ActionEditorRowViewModel.Shortcut) ||
             e.PropertyName is nameof(ActionEditorRowViewModel.Id))
         {
             _markDirty();
@@ -475,9 +511,9 @@ public sealed class ActionEditorViewModel : ViewModelBase
         }
     }
 
-    private void AddAction() => AddActionTo(_getSelectedProfile()?.Actions, type: "open_app");
+    private void AddAction() => AddActionTo(_getSelectedActions(), type: "open_app");
 
-    private void AddFolder() => AddActionTo(_getSelectedProfile()?.Actions, type: "folder");
+    private void AddFolder() => AddActionTo(_getSelectedActions(), type: "folder");
 
     private void AddChildAction()
     {
@@ -562,7 +598,8 @@ public sealed class ActionEditorViewModel : ViewModelBase
         }
 
         var selectedProfile = _getSelectedProfile();
-        if (selectedProfile is null)
+        var selectedActions = _getSelectedActions();
+        if (selectedProfile is null || selectedActions is null)
         {
             _setStatus("Önce hedef profili seç.");
             return;
@@ -570,8 +607,8 @@ public sealed class ActionEditorViewModel : ViewModelBase
 
         var action = ActionDefinitionCatalog.CreateActionFromPreset(
             SelectedPreset,
-            CreateUniqueActionId(selectedProfile.Actions, NormalizeId(SelectedPreset.Id, "action")));
-        selectedProfile.Actions.Add(action);
+            CreateUniqueActionId(selectedActions, NormalizeId(SelectedPreset.Id, "action")));
+        selectedActions.Add(action);
         RebuildActionRows();
         SelectedAction = ActionRows.FirstOrDefault(candidate => ReferenceEquals(candidate.Action, action));
         _markDirty();
@@ -918,3 +955,5 @@ public sealed class ActionEditorViewModel : ViewModelBase
         return string.IsNullOrWhiteSpace(normalized) ? fallback : normalized;
     }
 }
+
+public sealed record BrowserOption(string Key, string Label);

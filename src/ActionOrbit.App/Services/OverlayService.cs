@@ -33,6 +33,12 @@ public sealed class OverlayService
 
     public bool TryShowOverlay(out string errorMessage)
     {
+        if (TryGetSuppressedForegroundProcess(out var suppressedProcess))
+        {
+            errorMessage = $"Action Orbit, {suppressedProcess} öndeyken devre dışı.";
+            return false;
+        }
+
         try
         {
             ShowOverlayCore();
@@ -45,6 +51,29 @@ public sealed class OverlayService
             errorMessage = $"Overlay açılamadı: {ex.Message}";
             return false;
         }
+    }
+
+    public void CommitHoveredActionOrClose()
+    {
+        if (_currentWindow is not { IsVisible: true } window)
+        {
+            return;
+        }
+
+        window.Dispatcher.BeginInvoke(window.ExecuteHoveredActionOrClose);
+    }
+
+    public void CloseCurrentOverlay() => _currentWindow?.Close();
+
+    private bool TryGetSuppressedForegroundProcess(out string processName)
+    {
+        var ownProcessName = $"{Process.GetCurrentProcess().ProcessName}.exe";
+        processName = _activeWindowService.GetProcessNameForWindow(
+            NativeMethods.GetForegroundWindow(),
+            ownProcessName);
+        var resolvedProcessName = processName;
+        return _configService.CurrentConfig.Settings.Activation.SuppressedProcesses.Any(candidate =>
+            string.Equals(candidate, resolvedProcessName, StringComparison.OrdinalIgnoreCase));
     }
 
     private void ShowOverlayCore()
@@ -64,7 +93,14 @@ public sealed class OverlayService
         var defaultProfile = _profileService.GetDefaultProfile(config);
         var cursor = GetCursorPosition();
 
-        _currentWindow = new OverlayWindow(profile, defaultProfile, config.Theme, _actionExecutionService, _logService, actionTargetWindow)
+        _currentWindow = new OverlayWindow(
+            profile,
+            defaultProfile,
+            config.Theme,
+            config.Settings.Activation,
+            _actionExecutionService,
+            _logService,
+            actionTargetWindow)
         {
             WindowStartupLocation = WindowStartupLocation.Manual
         };

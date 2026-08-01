@@ -1,0 +1,16 @@
+<Window x:Class="ActionOrbit.App.Views.Shelf.ShelfWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shelfViews="clr-namespace:ActionOrbit.App.Views.Shelf"
+        Title="Action Orbit Pro · Orbit Shelf"
+        Width="620"
+        Height="680"
+        MinWidth="500"
+        MinHeight="460"
+        ShowInTaskbar="True"
+        Topmost="True"
+        WindowStartupLocation="Manual">
+    <Grid Margin="14">
+        <shelfViews:ShelfWorkspaceView />
+    </Grid>
+</Window>

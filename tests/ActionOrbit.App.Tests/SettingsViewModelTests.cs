@@ -20,12 +20,20 @@ public sealed class SettingsViewModelTests : IDisposable
         viewModel.OverlayButtonSize = 500;
         viewModel.OverlayRadiusX = 1;
         viewModel.OverlayRadiusY = 500;
+        viewModel.ShelfEnabled = false;
+        viewModel.RememberRecentShelves = true;
+        viewModel.ShelfMaxItems = 500;
+        viewModel.ShelfRetentionHours = 0;
 
         Assert.Equal(viewModel.CloseToTray, GetConfigService().CurrentConfig.Settings.CloseToTray);
         Assert.Equal(96, viewModel.OverlayButtonSize);
         Assert.Equal(96, viewModel.OverlayRadiusX);
         Assert.Equal(168, viewModel.OverlayRadiusY);
-        Assert.True(dirtyCount >= 4);
+        Assert.False(GetConfigService().CurrentConfig.Settings.Shelf.Enabled);
+        Assert.True(GetConfigService().CurrentConfig.Settings.Shelf.RememberRecentShelves);
+        Assert.Equal(100, viewModel.ShelfMaxItems);
+        Assert.Equal(1, viewModel.ShelfRetentionHours);
+        Assert.True(dirtyCount >= 8);
     }
 
     [Fact]
