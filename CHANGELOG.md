@@ -27,6 +27,7 @@ Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 - Klasik sürümle varsayılan hotkey çakışması; Pro varsayılanı `Ctrl+Alt+Shift+P` oldu.
 - Chrome'un `data:image/...;base64,...` olarak verdiği sürüklenen görsellerin düz metin yerine gerçek görsel olarak alınması.
 - Bozuk veya aşırı büyük inline görsel verisinin ham base64 metni olarak rafa eklenmesi engellendi.
+- Yüzen raf, ana çalışma alanını tekrar kullanmak yerine kendi stilleri olan kompakt ve sağ kenarda açılan bir pencere olarak yeniden tasarlandı.
 
 ## [1.0.1] - 2026-07-30
 
