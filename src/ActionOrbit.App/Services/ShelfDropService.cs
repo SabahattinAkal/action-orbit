@@ -9,9 +9,10 @@ namespace ActionOrbit.App.Services;
 
 public sealed class ShelfDropService
 {
+    private const long MaxInlineImageBytes = 20L * 1024 * 1024;
     private static readonly Regex HtmlImageSourcePattern = new(
-        "<img\\b[^>]*\\bsrc\\s*=\\s*[\"'](?<url>https?://[^\"']+)[\"']",
-        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
+        "<img\\b[^>]*\\bsrc\\s*=\\s*[\"'](?<source>[^\"']+)[\"']",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Singleline,
         TimeSpan.FromMilliseconds(100));
     private readonly SafeRemoteImageService _remoteImages;
     private readonly string _cacheDirectory;
@@ -59,7 +60,17 @@ public sealed class ShelfDropService
                 ? data.GetData(WpfDataFormats.Text) as string
                 : null;
 
-        var remoteUri = TryExtractRemoteUri(html) ?? TryParseHttpUri(text);
+        var imageSource = TryExtractImageSource(html);
+        var inlineImage = ImportInlineDataImage(
+            imageSource ?? text,
+            settings,
+            remainingBytes);
+        if (inlineImage is not null)
+        {
+            return inlineImage;
+        }
+
+        var remoteUri = TryParseHttpUri(imageSource) ?? TryParseHttpUri(text);
         if (remoteUri is not null && LooksLikeImage(remoteUri, html))
         {
             var maxBytes = Math.Min(settings.MaxItemBytes, remainingBytes);
@@ -90,6 +101,11 @@ public sealed class ShelfDropService
         if (!string.IsNullOrWhiteSpace(text))
         {
             var normalized = text.Trim();
+            if (normalized.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase))
+            {
+                return ShelfImportResult.Failure("Chrome görsel verisi çözülemedi; ham base64 metni rafa eklenmedi.");
+            }
+
             if (normalized.Length > 256 * 1024)
             {
                 return ShelfImportResult.Failure("Metin 256 KB sınırını aşıyor.");
@@ -209,7 +225,105 @@ public sealed class ShelfDropService
         }
     }
 
-    private static Uri? TryExtractRemoteUri(string? html)
+    private ShelfImportResult? ImportInlineDataImage(
+        string? value,
+        ShelfSettings settings,
+        long remainingBytes)
+    {
+        var normalized = WebUtility.HtmlDecode(value ?? "").Trim();
+        if (!normalized.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var commaIndex = normalized.IndexOf(',');
+        if (commaIndex <= 5)
+        {
+            return ShelfImportResult.Failure("Chrome görsel verisinin data URI başlığı okunamadı.");
+        }
+
+        var metadata = normalized[5..commaIndex];
+        var metadataParts = metadata.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var mediaType = metadataParts.FirstOrDefault()?.ToLowerInvariant() ?? "";
+        if (!metadataParts.Skip(1).Any(part => string.Equals(part, "base64", StringComparison.OrdinalIgnoreCase)))
+        {
+            return ShelfImportResult.Failure("Yalnızca base64 kodlu Chrome görselleri destekleniyor.");
+        }
+
+        var extension = mediaType switch
+        {
+            "image/png" => ".png",
+            "image/jpeg" or "image/jpg" => ".jpg",
+            "image/gif" => ".gif",
+            "image/bmp" => ".bmp",
+            "image/webp" => ".webp",
+            _ => ""
+        };
+        if (extension.Length == 0)
+        {
+            return ShelfImportResult.Failure("Bu inline görsel biçimi desteklenmiyor.");
+        }
+
+        var maxBytes = Math.Min(Math.Min(settings.MaxItemBytes, remainingBytes), MaxInlineImageBytes);
+        var payload = normalized[(commaIndex + 1)..];
+        if (payload.Length == 0 || payload.Length > ((maxBytes + 2) / 3 * 4) + 4096)
+        {
+            return ShelfImportResult.Failure("Inline görsel güvenli boyut sınırını aşıyor.");
+        }
+
+        byte[] bytes;
+        try
+        {
+            bytes = Convert.FromBase64String(payload);
+        }
+        catch (FormatException)
+        {
+            return ShelfImportResult.Failure("Chrome görselinin base64 verisi bozuk.");
+        }
+
+        if (bytes.Length == 0 || bytes.LongLength > maxBytes)
+        {
+            return ShelfImportResult.Failure("Inline görsel güvenli boyut sınırını aşıyor.");
+        }
+
+        Directory.CreateDirectory(_cacheDirectory);
+        var targetPath = Path.Combine(_cacheDirectory, $"inline-{Guid.NewGuid():N}{extension}");
+        try
+        {
+            File.WriteAllBytes(targetPath, bytes);
+            if (!SafeRemoteImageService.HasSupportedImageSignature(targetPath))
+            {
+                File.Delete(targetPath);
+                return ShelfImportResult.Failure("Inline veri desteklenen bir görsel değil.");
+            }
+
+            if (!ImageProcessingService.TryValidateImageDimensions(targetPath, out var validationIssue))
+            {
+                File.Delete(targetPath);
+                return ShelfImportResult.Failure(validationIssue);
+            }
+
+            return ShelfImportResult.Success(
+            [
+                new ShelfItem
+                {
+                    Kind = "image",
+                    DisplayName = $"Chrome Görseli {DateTime.Now:HH-mm-ss}{extension}",
+                    Source = $"inline:{mediaType}",
+                    LocalPath = targetPath,
+                    SizeBytes = bytes.LongLength,
+                    IsTemporary = true
+                }
+            ]);
+        }
+        catch (Exception ex)
+        {
+            try { File.Delete(targetPath); } catch { }
+            return ShelfImportResult.Failure($"Inline görsel oluşturulamadı: {ex.Message}");
+        }
+    }
+
+    private static string? TryExtractImageSource(string? html)
     {
         if (string.IsNullOrWhiteSpace(html))
         {
@@ -217,7 +331,7 @@ public sealed class ShelfDropService
         }
 
         var match = HtmlImageSourcePattern.Match(html);
-        return match.Success ? TryParseHttpUri(WebUtility.HtmlDecode(match.Groups["url"].Value)) : null;
+        return match.Success ? WebUtility.HtmlDecode(match.Groups["source"].Value).Trim() : null;
     }
 
     private static Uri? TryParseHttpUri(string? value) =>

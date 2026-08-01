@@ -243,7 +243,7 @@ public sealed class SafeRemoteImageService : IDisposable
         throw new HttpRequestException("Görsel sunucusuna güvenli bağlantı kurulamadı.", lastError);
     }
 
-    private static bool HasSupportedImageSignature(string path)
+    internal static bool HasSupportedImageSignature(string path)
     {
         Span<byte> header = stackalloc byte[16];
         using var stream = File.OpenRead(path);
