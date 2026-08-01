@@ -25,6 +25,8 @@ Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 
 - Yeni raf görünümünün ana pencere açılışında oluşturduğu WPF kaynak çözümleme hatası.
 - Klasik sürümle varsayılan hotkey çakışması; Pro varsayılanı `Ctrl+Alt+Shift+P` oldu.
+- Chrome'un `data:image/...;base64,...` olarak verdiği sürüklenen görsellerin düz metin yerine gerçek görsel olarak alınması.
+- Bozuk veya aşırı büyük inline görsel verisinin ham base64 metni olarak rafa eklenmesi engellendi.
 
 ## [1.0.1] - 2026-07-30
 

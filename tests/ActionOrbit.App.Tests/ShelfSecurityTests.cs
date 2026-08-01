@@ -106,6 +106,56 @@ public sealed class ShelfSecurityTests
     }
 
     [Fact]
+    public async Task ShelfDrop_ImportsChromeBase64ImageAsAnImageInsteadOfText()
+    {
+        using var temp = new TemporaryDirectory();
+        using var remote = new SafeRemoteImageService(new LogService(temp.Path));
+        var service = new ShelfDropService(remote, Path.Combine(temp.Path, "cache"));
+        const string payload =
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
+        var dataUri = $"data:image/png;base64,{payload}";
+        var data = new System.Windows.DataObject();
+        data.SetData(System.Windows.DataFormats.Html, $"<html><body><img src=\"{dataUri}\"></body></html>");
+        data.SetData(System.Windows.DataFormats.UnicodeText, dataUri);
+
+        var result = await service.ImportAsync(
+            data,
+            new ShelfSettings(),
+            20,
+            100_000_000,
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.Succeeded, result.Message);
+        var item = Assert.Single(result.Items);
+        Assert.Equal("image", item.Kind);
+        Assert.Empty(item.TextContent);
+        Assert.True(File.Exists(item.LocalPath));
+        Assert.Equal(Convert.FromBase64String(payload).Length, item.SizeBytes);
+    }
+
+    [Fact]
+    public async Task ShelfDrop_DoesNotStoreMalformedBase64ImageAsText()
+    {
+        using var temp = new TemporaryDirectory();
+        using var remote = new SafeRemoteImageService(new LogService(temp.Path));
+        var service = new ShelfDropService(remote, Path.Combine(temp.Path, "cache"));
+        var data = new System.Windows.DataObject(
+            System.Windows.DataFormats.UnicodeText,
+            "data:image/png;base64,bu-base64-degil!?");
+
+        var result = await service.ImportAsync(
+            data,
+            new ShelfSettings(),
+            20,
+            100_000_000,
+            TestContext.Current.CancellationToken);
+
+        Assert.False(result.Succeeded);
+        Assert.Empty(result.Items);
+        Assert.Contains("base64", result.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task RemoteImageDownload_ClosesFileBeforeSignatureAndDimensionValidation()
     {
         using var temp = new TemporaryDirectory();

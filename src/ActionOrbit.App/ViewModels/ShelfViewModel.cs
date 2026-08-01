@@ -129,6 +129,11 @@ public sealed class ShelfViewModel : ViewModelBase, IDisposable
         try
         {
             IsImporting = true;
+            var formatNames = data.GetFormats(autoConvert: false)
+                .Where(format => !string.IsNullOrWhiteSpace(format))
+                .Take(20)
+                .Select(format => LogService.SafeValue(format));
+            _logService.Info($"Shelf drop formats: {string.Join(", ", formatNames)}.");
             var result = await _dropService.ImportAsync(
                 data,
                 Settings,
