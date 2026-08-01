@@ -11,7 +11,7 @@ public sealed class LogService
     public LogService(string? appDirectory = null)
     {
         AppDirectory = string.IsNullOrWhiteSpace(appDirectory)
-            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ActionOrbit")
+            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ActionOrbitPro")
             : appDirectory;
         Directory.CreateDirectory(LogDirectory);
     }

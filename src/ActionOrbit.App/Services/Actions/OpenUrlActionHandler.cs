@@ -4,9 +4,12 @@ namespace ActionOrbit.App.Services.Actions;
 
 public sealed class OpenUrlActionHandler : ProcessActionHandlerBase
 {
-    public OpenUrlActionHandler(LogService logService)
+    private readonly BrowserLaunchService _browserLaunchService;
+
+    public OpenUrlActionHandler(LogService logService, BrowserLaunchService? browserLaunchService = null)
         : base(logService)
     {
+        _browserLaunchService = browserLaunchService ?? new BrowserLaunchService();
     }
 
     public override bool CanHandle(OrbitAction action) =>
@@ -21,6 +24,6 @@ public sealed class OpenUrlActionHandler : ProcessActionHandlerBase
             return Task.FromResult(ActionExecutionResult.Failure("Web adresi http:// veya https:// ile başlamalı."));
         }
 
-        return StartShellAsync(target);
+        return _browserLaunchService.OpenAsync(action.Browser, target);
     }
 }

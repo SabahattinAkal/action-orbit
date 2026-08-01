@@ -1,7 +1,7 @@
 <Window x:Class="ActionOrbit.App.Overlay.OverlayWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Action Orbit"
+        Title="Action Orbit Pro"
         AllowsTransparency="True"
         Background="Transparent"
         ResizeMode="NoResize"
@@ -12,6 +12,8 @@
         UseLayoutRounding="True"
         WindowStyle="None"
         PreviewKeyDown="Window_PreviewKeyDown"
+        PreviewMouseWheel="Window_PreviewMouseWheel"
+        PreviewMouseMove="Window_PreviewMouseMove"
         Deactivated="Window_Deactivated">
     <Window.Resources>
         <Style x:Key="OrbitButtonStyle" TargetType="Button">
@@ -325,6 +327,13 @@
                 <TextBlock Margin="0,2,0,0"
                            HorizontalAlignment="Center"
                            FontSize="11"
+                           Foreground="{Binding OverlayInfoMutedForeground}"
+                           Text="{Binding CurrentRingName, StringFormat=Halka: {0}}"
+                           TextAlignment="Center"
+                           TextTrimming="CharacterEllipsis" />
+                <TextBlock Margin="0,2,0,0"
+                           HorizontalAlignment="Center"
+                           FontSize="10"
                            Foreground="{Binding OverlayInfoMutedForeground}"
                            Text="{Binding FolderStatusText}"
                            TextAlignment="Center"

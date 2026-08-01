@@ -1,0 +1,194 @@
+<UserControl x:Class="ActionOrbit.App.Views.Shelf.ShelfWorkspaceView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             AllowDrop="True"
+             DragEnter="Shelf_DragEnter"
+             DragOver="Shelf_DragOver"
+             DragLeave="Shelf_DragLeave"
+             Drop="Shelf_Drop"
+             PreviewMouseLeftButtonDown="Shelf_PreviewMouseLeftButtonDown"
+             PreviewMouseMove="Shelf_PreviewMouseMove"
+             AutomationProperties.Name="Orbit Shelf">
+    <Border Style="{DynamicResource Surface}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock FontSize="20" FontWeight="Bold" Text="Orbit Shelf" />
+                    <TextBlock Margin="0,4,0,0"
+                               Style="{DynamicResource MutedText}"
+                               Text="Yüzen rafı aç; Chrome, Explorer veya başka bir uygulamadan görsel, dosya, bağlantı ve metin bırak." />
+                </StackPanel>
+                <Button Grid.Column="1"
+                        Command="{Binding OpenFloatingShelfCommand}"
+                        Content="Yüzen Rafı Aç" />
+            </Grid>
+
+            <Border Grid.Row="1"
+                    Margin="0,14,0,0"
+                    Padding="10"
+                    Background="{DynamicResource SoftSurfaceBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="12">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <ComboBox Margin="0,0,8,0"
+                              DisplayMemberPath="DisplayName"
+                              ItemsSource="{Binding Shelves}"
+                              SelectedItem="{Binding SelectedShelf}" />
+                    <TextBox Grid.Column="1"
+                             Margin="0,0,8,0"
+                             ToolTip="Raf adı"
+                             Text="{Binding SelectedShelf.Name, UpdateSourceTrigger=PropertyChanged}" />
+                    <WrapPanel Grid.Column="2">
+                        <Button Padding="9,5" Command="{Binding NewShelfCommand}" Content="+ Yeni" />
+                        <Button Padding="9,5" Command="{Binding TogglePinCommand}" Content="{Binding SelectedShelfPinButtonText}" />
+                        <Button Padding="9,5" Command="{Binding ClearShelfCommand}" Content="Temizle" />
+                        <Button Padding="9,5" Command="{Binding DeleteShelfCommand}" Content="Rafı Sil" />
+                    </WrapPanel>
+                </Grid>
+            </Border>
+
+            <Border x:Name="DropZone"
+                    Grid.Row="2"
+                    Margin="0,12,0,0"
+                    Padding="20"
+                    Background="{DynamicResource InfoSurfaceBrush}"
+                    BorderBrush="{DynamicResource InfoBorderBrush}"
+                    BorderThickness="2"
+                    CornerRadius="16">
+                <StackPanel HorizontalAlignment="Center">
+                    <TextBlock HorizontalAlignment="Center"
+                               FontSize="24"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource InfoTextBrush}"
+                               Text="Buraya Bırak" />
+                    <TextBlock Margin="0,5,0,0"
+                               HorizontalAlignment="Center"
+                               Foreground="{DynamicResource InfoTextBrush}"
+                               Text="Dosya · görsel · URL · metin" />
+                    <TextBlock Margin="0,4,0,0"
+                               HorizontalAlignment="Center"
+                               Style="{DynamicResource MutedText}"
+                               Text="{Binding SelectedShelfSummary}" />
+                </StackPanel>
+            </Border>
+
+            <Grid Grid.Row="3" Margin="0,12,0,0">
+                <TextBlock HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Text="Raf boş. Bir içeriği yukarıdaki alana sürükle.">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
+                            <Setter Property="FontSize" Value="12" />
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedShelf.Items.Count}" Value="0">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <ListBox x:Name="ShelfItems"
+                         ItemsSource="{Binding SelectedShelf.Items}"
+                         ItemContainerStyle="{DynamicResource CleanListBoxItem}"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border Margin="0,0,0,8"
+                                    Padding="10"
+                                    Background="{DynamicResource SoftSurfaceBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="12">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="58" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border Width="50" Height="50"
+                                            Background="{DynamicResource SurfaceBrush}"
+                                            BorderBrush="{DynamicResource BorderBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="9">
+                                        <Grid>
+                                            <Image Margin="3"
+                                                   Source="{Binding PreviewPath}"
+                                                   Stretch="UniformToFill"
+                                                   Visibility="{Binding IsImage, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                            <TextBlock HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       FontSize="22"
+                                                       Text="{Binding Glyph}">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsImage}" Value="True">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Grid>
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Margin="10,0" VerticalAlignment="Center">
+                                        <TextBlock FontWeight="SemiBold" Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Margin="0,3,0,0" Style="{DynamicResource MutedText}" Text="{Binding Subtitle}" />
+                                        <TextBlock Margin="0,3,0,0"
+                                                   FontSize="10"
+                                                   Style="{DynamicResource MutedText}"
+                                                   Text="Dışarı sürükleyebilir veya Kopyala ile hedef uygulamada Ctrl+V kullanabilirsin." />
+                                    </StackPanel>
+                                    <WrapPanel Grid.Column="2" VerticalAlignment="Center">
+                                        <Button Padding="8,5"
+                                                Command="{Binding DataContext.CopyItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                Content="Kopyala" />
+                                        <Button Padding="8,5"
+                                                Command="{Binding DataContext.SaveItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                Content="Kaydet" />
+                                        <Button Padding="8,5"
+                                                Command="{Binding DataContext.ResizeImageCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                Content="1600 px"
+                                                Visibility="{Binding IsImage, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        <Button Padding="8,5"
+                                                Command="{Binding DataContext.ConvertToPngCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                Content="PNG"
+                                                Visibility="{Binding IsImage, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        <Button Padding="8,5"
+                                                Command="{Binding DataContext.RemoveItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                Content="Kaldır" />
+                                    </WrapPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+        </Grid>
+    </Border>
+</UserControl>

@@ -1,4 +1,4 @@
-# Action Orbit yayın kontrol listesi
+# Action Orbit Pro yayın kontrol listesi
 
 ## Otomatik kontroller
 
@@ -25,12 +25,21 @@
 - UNC/mutlak ikon yolunun yüklenmediğini, büyük SVG/raster dosyasının reddedildiğini doğrula
 - %100, %125, %150 DPI ve çoklu monitör senaryolarını kontrol et
 - Açık/koyu/sistem temalarını, canlı Windows tema geçişini ve animasyon kapalı durumunu kontrol et
+- Ana ve ek halka setleri arasında mouse tekerleğiyle geçişi ve halka adlarını doğrula
+- Bas-aç, basılı-tut/bırakınca çalıştır ve çift-bas tetikleme modlarını doğrula
+- Devre dışı process listesindeki bir uygulama öndeyken overlay'in açılmadığını doğrula
+- URL aksiyonlarını sistem tarayıcısı, Chrome, Edge, Firefox ve Brave seçimleriyle dene
+- Doğrudan aksiyon hotkey'lerinde kayıt, çakışma bildirimi ve doğru profil çözümlemesini dene
+- Chrome'dan görseli yüzen rafa bırak, panoya kopyala ve başka bir uygulamaya geri sürükle
+- Dosya, URL ve metin drop; çoklu raf; yeniden adlandırma; sabitleme ve yeniden açma senaryolarını dene
+- PNG dönüştürme, 1600 px küçültme, öğe/boyut sınırları ve süreli cache temizliğini doğrula
+- Yerel/özel IP, güvenli olmayan redirect, MIME/imza uyuşmazlığı ve aşırı büyük uzak görselin reddedildiğini doğrula
 
 ## Dağıtım
 
 - `src\ActionOrbit.App\bin\publish\win-x64` çıktısını zararlı yazılım taramasından geçir
 - Sürüm numarası ve değişiklik notlarını hazırla
-- GitHub Actions tarafından üretilen `ActionOrbit-win-x64` artifact'ını doğrula
+- GitHub Actions tarafından üretilen `ActionOrbitPro-win-x64` artifact'ını doğrula
 - Release paketindeki runtime marker'ın 10.0.10 olduğunu doğrula
 - SPDX SBOM, `SHA256SUMS.txt` ve GitHub provenance attestation dosyalarını doğrula
 - Authenticode secretları tanımlıysa imzayı, tanımlı değilse Release'deki imzasız uyarısını doğrula

@@ -5,7 +5,7 @@ namespace ActionOrbit.App.Services;
 public sealed class StartupService : IStartupRegistration
 {
     private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
-    private const string ValueName = "ActionOrbit";
+    private const string ValueName = "ActionOrbitPro";
     private readonly LogService _logService;
 
     public StartupService(LogService logService)

@@ -80,6 +80,8 @@ public partial class MainWindow : Window
                 _viewModel.ShowOverlayCommand.Execute(null);
             }
         });
+        menu.Items.Add("Orbit Shelf'i Aç", null, (_, _) =>
+            _viewModel.Shelf.OpenFloatingShelfCommand.Execute(null));
         menu.Items.Add(new Forms.ToolStripSeparator());
         menu.Items.Add("Çıkış", null, (_, _) => ExitFromTray());
 
@@ -87,7 +89,7 @@ public partial class MainWindow : Window
         {
             ContextMenuStrip = menu,
             Icon = Drawing.SystemIcons.Application,
-            Text = "Action Orbit",
+            Text = "Action Orbit Pro",
             Visible = true
         };
 

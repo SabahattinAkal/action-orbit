@@ -109,6 +109,7 @@ public sealed class ActionEditorRowViewModel : ViewModelBase
             OnPropertyChanged(nameof(IsFolder));
             OnPropertyChanged(nameof(IsNotFolder));
             OnPropertyChanged(nameof(IsRunCommand));
+            OnPropertyChanged(nameof(IsOpenUrl));
             OnPropertyChanged(nameof(IsTargetEditable));
             OnPropertyChanged(nameof(TargetBoxMinHeight));
             OnPropertyChanged(nameof(TypeLabel));
@@ -151,9 +152,40 @@ public sealed class ActionEditorRowViewModel : ViewModelBase
         }
     }
 
+    public string Browser
+    {
+        get => Action.Browser;
+        set
+        {
+            if (Action.Browser == value)
+            {
+                return;
+            }
+
+            Action.Browser = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string Shortcut
+    {
+        get => Action.Shortcut;
+        set
+        {
+            if (Action.Shortcut == value)
+            {
+                return;
+            }
+
+            Action.Shortcut = value;
+            OnPropertyChanged();
+        }
+    }
+
     public bool IsFolder => Action.IsFolder;
     public bool IsNotFolder => !IsFolder;
     public bool IsRunCommand => string.Equals(Type, "run_command", StringComparison.OrdinalIgnoreCase);
+    public bool IsOpenUrl => string.Equals(Type, "open_url", StringComparison.OrdinalIgnoreCase);
     public bool IsTargetEditable => !IsFolder;
     public double TargetBoxMinHeight => string.Equals(Type, "type_text", StringComparison.OrdinalIgnoreCase) ? 88 : 36;
     public string? IconImagePath => IconCatalog.GetImagePath(Icon);

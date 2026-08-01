@@ -14,6 +14,32 @@
                 <TextBlock Margin="0,-8,0,14"
                            Style="{DynamicResource MutedText}"
                            Text="Aksiyonu bir klasör satırının üstüne bırakıp alt aksiyon yapabilirsin." />
+                <Border Margin="0,0,0,12"
+                        Padding="10"
+                        Background="{DynamicResource SoftSurfaceBrush}"
+                        BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="10"
+                        DataContext="{Binding DataContext.RingSets, RelativeSource={RelativeSource AncestorType=Window}}">
+                    <StackPanel>
+                        <TextBlock Style="{DynamicResource TinyLabel}" Text="HALKA SETİ" />
+                        <ComboBox Margin="0,6,0,0"
+                                  DisplayMemberPath="DisplayName"
+                                  ItemsSource="{Binding Rings}"
+                                  SelectedItem="{Binding SelectedRing}" />
+                        <TextBox Margin="0,7,0,0"
+                                 ToolTip="Aktif halka setinin adı"
+                                 Text="{Binding SelectedRingName, UpdateSourceTrigger=PropertyChanged}" />
+                        <WrapPanel Margin="0,7,0,0">
+                            <Button Padding="9,5" Command="{Binding AddRingCommand}" Content="+ Halka" />
+                            <Button Padding="9,5" Command="{Binding DuplicateRingCommand}" Content="Kopyala" />
+                            <Button Padding="9,5"
+                                    Command="{Binding DeleteRingCommand}"
+                                    IsEnabled="{Binding CanDeleteSelectedRing}"
+                                    Content="Sil" />
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
                 <WrapPanel Margin="0,0,0,12">
                     <Button Command="{Binding AddActionCommand}" Content="+ Aksiyon" />
                     <Button Command="{Binding AddFolderCommand}" Content="+ Klasör" />

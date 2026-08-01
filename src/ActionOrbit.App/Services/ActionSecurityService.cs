@@ -73,6 +73,10 @@ public static class ActionSecurityService
         foreach (var profile in profiles)
         {
             AddRisks(profile.Actions, profile.Name, risks);
+            foreach (var ring in profile.RingSets)
+            {
+                AddRisks(ring.Actions, $"{profile.Name} / {ring.Name}", risks);
+            }
         }
 
         return risks;
@@ -84,7 +88,8 @@ public static class ActionSecurityService
         bool replacesConfiguration)
     {
         var profileList = profiles.ToList();
-        var actionCount = profileList.Sum(profile => CountActions(profile.Actions));
+        var actionCount = profileList.Sum(profile =>
+            CountActions(profile.Actions) + profile.RingSets.Sum(ring => CountActions(ring.Actions)));
         var risks = FindImportedActionRisks(profileList);
         var message =
             $"{sourceName}\n\n" +

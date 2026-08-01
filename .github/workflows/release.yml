@@ -80,7 +80,7 @@ jobs:
           $version = '${{ github.ref_name }}'.TrimStart('v')
           $publish = Resolve-Path 'src/ActionOrbit.App/bin/publish/win-x64'
           $release = Join-Path $PWD 'release'
-          $stage = Join-Path $release "ActionOrbit-v$version-win-x64"
+          $stage = Join-Path $release "ActionOrbitPro-v$version-win-x64"
           New-Item -ItemType Directory -Path $stage -Force | Out-Null
 
           dotnet tool install `
@@ -92,7 +92,7 @@ jobs:
             -b $publish `
             -bc $PWD `
             -m $release `
-            -pn ActionOrbit `
+            -pn ActionOrbitPro `
             -pv $version `
             -ps 'Action Orbit contributors' `
             -nsb 'https://github.com/SabahattinAkal/action-orbit' `
@@ -102,13 +102,13 @@ jobs:
 
           $sbom = Get-ChildItem $release -Recurse -Filter 'manifest.spdx.json' | Select-Object -First 1
           if ($null -eq $sbom) { throw 'SPDX SBOM bulunamadı.' }
-          Copy-Item $sbom.FullName (Join-Path $release "ActionOrbit-v$version.spdx.json")
+          Copy-Item $sbom.FullName (Join-Path $release "ActionOrbitPro-v$version.spdx.json")
 
           Copy-Item (Join-Path $publish 'ActionOrbit.App.exe') $stage
           Copy-Item README.md, LICENSE, CHANGELOG.md, SECURITY.md $stage
-          Copy-Item (Join-Path $release "ActionOrbit-v$version.spdx.json") $stage
+          Copy-Item (Join-Path $release "ActionOrbitPro-v$version.spdx.json") $stage
 
-          $zip = Join-Path $release "ActionOrbit-v$version-win-x64.zip"
+          $zip = Join-Path $release "ActionOrbitPro-v$version-win-x64.zip"
           Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zip -CompressionLevel Optimal
           $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
           "$hash  $(Split-Path $zip -Leaf)" |
@@ -116,7 +116,7 @@ jobs:
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ActionOrbit-${{ github.ref_name }}-release
+          name: ActionOrbitPro-${{ github.ref_name }}-release
           path: |
             release/*.zip
             release/*.json
@@ -137,15 +137,15 @@ jobs:
         run: |
           $version = '${{ github.ref_name }}'.TrimStart('v')
           $notes = @"
-          ## Action Orbit v$version
+          ## Action Orbit Pro v$version
 
-          Güvenlik stabilizasyonu:
+          Pro özellikleri:
 
+          - Uygulamalar arası Orbit Shelf ve güvenli uzak görsel alma
+          - Adlandırılmış çoklu halka setleri
+          - Basılı-tut, çift-bas ve uygulama devre dışı listesi
+          - Tarayıcı seçimi ve aksiyon bazlı global hotkey
           - Self-contained .NET runtime 10.0.10
-          - Güvenli config/profil içe aktarma incelemesi ve kaynak sınırları
-          - Komut aksiyonları için varsayılan kapalı durum ve çalıştırma onayı
-          - UNC/harici ikon yolu engelleme ve ikon boyut sınırları
-          - Hassas komut içeriğini loglardan çıkarma
           - SPDX SBOM ve GitHub build provenance attestation
 
           Paket bütünlüğü `SHA256SUMS.txt` ile doğrulanabilir. Authenticode sertifikası yapılandırılmadıysa Windows SmartScreen bilinmeyen yayıncı uyarısı gösterebilir.
@@ -163,6 +163,6 @@ jobs:
           gh release create '${{ github.ref_name }}' `
             @assets `
             --verify-tag `
-            --title "Action Orbit v$version" `
+            --title "Action Orbit Pro v$version" `
             --notes-file $notesPath `
             --latest

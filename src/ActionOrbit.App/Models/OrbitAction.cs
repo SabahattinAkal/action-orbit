@@ -8,6 +8,8 @@ public sealed class OrbitAction
     public string Type { get; set; } = "";
     public string Target { get; set; } = "";
     public string Arguments { get; set; } = "";
+    public string Browser { get; set; } = "system";
+    public string Shortcut { get; set; } = "";
     public List<OrbitAction> Children { get; set; } = [];
 
     public bool IsFolder => string.Equals(Type, "folder", StringComparison.OrdinalIgnoreCase);

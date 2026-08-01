@@ -9,6 +9,7 @@ public sealed class ConfigService : IConfigPersistence
     internal const long MaxConfigFileBytes = 2 * 1024 * 1024;
     internal const int MaxProfiles = 64;
     internal const int MaxMatchesPerProfile = 128;
+    internal const int MaxRingSetsPerProfile = 16;
     internal const int MaxActionsPerProfile = 1024;
     internal const int MaxActionDepth = 8;
     internal const int MaxIdentifierLength = 128;
@@ -28,7 +29,7 @@ public sealed class ConfigService : IConfigPersistence
     {
         _logService = logService;
         AppDirectory = string.IsNullOrWhiteSpace(appDirectory)
-            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ActionOrbit")
+            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ActionOrbitPro")
             : appDirectory;
         Directory.CreateDirectory(AppDirectory);
         Directory.CreateDirectory(IconDirectory);
@@ -258,6 +259,7 @@ public sealed class ConfigService : IConfigPersistence
 
         config.Theme ??= new ThemeConfig();
         config.Settings ??= new AppSettings();
+        NormalizeSettings(config.Settings);
         NormalizeTheme(config.Theme);
         ValidateActionTypes(config.Profiles);
     }
@@ -266,6 +268,7 @@ public sealed class ConfigService : IConfigPersistence
     {
         EnsureTextLength(profile.Id, MaxIdentifierLength, "profile.id");
         EnsureTextLength(profile.Name, MaxTitleLength, "profile.name");
+        EnsureTextLength(profile.MainRingName, MaxTitleLength, "profile.mainRingName");
 
         if (string.IsNullOrWhiteSpace(profile.Id))
         {
@@ -298,6 +301,29 @@ public sealed class ConfigService : IConfigPersistence
         var actionCount = 0;
         NormalizeActions(profile.Actions, depth: 0, ref actionCount);
         EnsureUniqueActionIds(profile.Actions);
+
+        profile.RingSets = profile.RingSets?.OfType<RingSetConfig>().ToList() ?? [];
+        if (profile.RingSets.Count > MaxRingSetsPerProfile)
+        {
+            throw new InvalidOperationException(
+                $"Bir profil ana halka dışında en fazla {MaxRingSetsPerProfile} halka seti içerebilir.");
+        }
+
+        profile.MainRingName = string.IsNullOrWhiteSpace(profile.MainRingName)
+            ? "Ana Halka"
+            : profile.MainRingName.Trim();
+
+        var usedRingIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "main" };
+        foreach (var ring in profile.RingSets)
+        {
+            EnsureTextLength(ring.Id, MaxIdentifierLength, "profile.ringSets.id");
+            EnsureTextLength(ring.Name, MaxTitleLength, "profile.ringSets.name");
+            ring.Id = CreateUniqueId(ring.Id, "ring", usedRingIds);
+            ring.Name = string.IsNullOrWhiteSpace(ring.Name) ? "Yeni Halka" : ring.Name.Trim();
+            ring.Actions = ring.Actions?.OfType<OrbitAction>().ToList() ?? [];
+            NormalizeActions(ring.Actions, depth: 0, ref actionCount);
+            EnsureUniqueActionIds(ring.Actions);
+        }
     }
 
     private static void NormalizeActions(
@@ -326,6 +352,8 @@ public sealed class ConfigService : IConfigPersistence
             EnsureTextLength(action.Type, 64, "action.type");
             EnsureTextLength(action.Target, MaxTargetLength, "action.target");
             EnsureTextLength(action.Arguments, MaxTargetLength, "action.arguments");
+            EnsureTextLength(action.Browser, MaxIdentifierLength, "action.browser");
+            EnsureTextLength(action.Shortcut, MaxIdentifierLength, "action.shortcut");
 
             action.Id = action.Id?.Trim() ?? "";
             action.Title = action.Title?.Trim() ?? "";
@@ -338,6 +366,25 @@ public sealed class ConfigService : IConfigPersistence
             action.Type = action.Type?.Trim().ToLowerInvariant() ?? "";
             action.Target ??= "";
             action.Arguments ??= "";
+            action.Browser = action.Browser?.Trim().ToLowerInvariant() switch
+            {
+                "chrome" => "chrome",
+                "edge" => "edge",
+                "firefox" => "firefox",
+                "brave" => "brave",
+                _ => "system"
+            };
+            action.Shortcut = action.Shortcut?.Trim() ?? "";
+            if (action.Shortcut.Length > 0)
+            {
+                if (!HotkeyParser.TryParseDisplay(action.Shortcut, out var shortcut, out _))
+                {
+                    throw new InvalidOperationException(
+                        $"'{action.Title}' aksiyonundaki doğrudan kısayol okunamadı: {action.Shortcut}");
+                }
+
+                action.Shortcut = shortcut.Display;
+            }
             action.Children = action.Children?.OfType<OrbitAction>().ToList() ?? [];
             if (action.Children.Count > 0)
             {
@@ -371,6 +418,45 @@ public sealed class ConfigService : IConfigPersistence
         theme.ButtonSize = ClampFinite(theme.ButtonSize, 54, 96, 60);
         theme.RadiusX = ClampFinite(theme.RadiusX, 96, 190, 116);
         theme.RadiusY = ClampFinite(theme.RadiusY, 82, 168, 98);
+    }
+
+    private static void NormalizeSettings(AppSettings settings)
+    {
+        settings.Activation ??= new ActivationSettings();
+        settings.Activation.Mode = settings.Activation.Mode?.Trim().ToLowerInvariant() switch
+        {
+            "hold" => "hold",
+            "double_press" => "double_press",
+            _ => "toggle"
+        };
+        settings.Activation.HoldDelayMilliseconds = Math.Clamp(
+            settings.Activation.HoldDelayMilliseconds,
+            100,
+            1200);
+        settings.Activation.DoublePressWindowMilliseconds = Math.Clamp(
+            settings.Activation.DoublePressWindowMilliseconds,
+            200,
+            900);
+        settings.Activation.SuppressedProcesses = settings.Activation.SuppressedProcesses?
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => value.Trim())
+            .Select(value => value.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ? value : $"{value}.exe")
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(MaxMatchesPerProfile)
+            .ToList() ?? [];
+        foreach (var processName in settings.Activation.SuppressedProcesses)
+        {
+            EnsureTextLength(processName, MaxIdentifierLength, "settings.activation.suppressedProcesses");
+        }
+
+        settings.Shelf ??= new ShelfSettings();
+        settings.Shelf.MaxItemsPerShelf = Math.Clamp(settings.Shelf.MaxItemsPerShelf, 1, 100);
+        settings.Shelf.MaxItemBytes = Math.Clamp(settings.Shelf.MaxItemBytes, 1024 * 1024, 250L * 1024 * 1024);
+        settings.Shelf.MaxTotalBytes = Math.Clamp(
+            settings.Shelf.MaxTotalBytes,
+            settings.Shelf.MaxItemBytes,
+            1024L * 1024 * 1024);
+        settings.Shelf.RetentionHours = Math.Clamp(settings.Shelf.RetentionHours, 1, 24 * 30);
     }
 
     private static double ClampFinite(double value, double min, double max, double fallback) =>
@@ -451,6 +537,10 @@ public sealed class ConfigService : IConfigPersistence
         foreach (var profile in profiles)
         {
             ValidateActionTypes(profile.Actions, profile.Name, supportedTypes);
+            foreach (var ring in profile.RingSets)
+            {
+                ValidateActionTypes(ring.Actions, $"{profile.Name} / {ring.Name}", supportedTypes);
+            }
         }
     }
 
@@ -479,8 +569,9 @@ public sealed class ConfigService : IConfigPersistence
         }
 
         var defaults = DefaultConfigFactory.Create();
+        var requiresLegacyDefaults = config.ConfigVersion < 7;
 
-        if (IsKnownDefaultTheme(config.Theme))
+        if (requiresLegacyDefaults && IsKnownDefaultTheme(config.Theme))
         {
             config.Theme.Accent = defaults.Theme.Accent;
             config.Theme.ButtonSize = defaults.Theme.ButtonSize;
@@ -489,7 +580,7 @@ public sealed class ConfigService : IConfigPersistence
             config.Theme.Animation = defaults.Theme.Animation;
         }
 
-        foreach (var defaultProfile in defaults.Profiles)
+        foreach (var defaultProfile in requiresLegacyDefaults ? defaults.Profiles : [])
         {
             var profile = config.Profiles.FirstOrDefault(item =>
                 string.Equals(item.Id, defaultProfile.Id, StringComparison.OrdinalIgnoreCase));
@@ -503,6 +594,9 @@ public sealed class ConfigService : IConfigPersistence
         }
 
         config.ConfigVersion = DefaultConfigFactory.CurrentVersion;
+        config.Settings ??= new AppSettings();
+        config.Settings.Activation ??= new ActivationSettings();
+        config.Settings.Shelf ??= new ShelfSettings();
         return true;
     }
 

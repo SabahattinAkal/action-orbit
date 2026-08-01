@@ -3,7 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:actionViews="clr-namespace:ActionOrbit.App.Views.Actions"
         xmlns:settingsViews="clr-namespace:ActionOrbit.App.Views.Settings"
-        Title="Action Orbit"
+        xmlns:shelfViews="clr-namespace:ActionOrbit.App.Views.Shelf"
+        Title="Action Orbit Pro"
         Width="1180"
         Height="800"
         MinWidth="920"
@@ -18,6 +19,7 @@
         <KeyBinding Key="D2" Modifiers="Control" Command="{Binding NavigateWorkspaceCommand}" CommandParameter="editor" />
         <KeyBinding Key="D3" Modifiers="Control" Command="{Binding NavigateWorkspaceCommand}" CommandParameter="library" />
         <KeyBinding Key="D4" Modifiers="Control" Command="{Binding NavigateWorkspaceCommand}" CommandParameter="settings" />
+        <KeyBinding Key="D5" Modifiers="Control" Command="{Binding NavigateWorkspaceCommand}" CommandParameter="shelf" />
     </Window.InputBindings>
     <Window.Resources>
         <Style TargetType="TextBlock">
@@ -621,7 +623,7 @@
             <StackPanel VerticalAlignment="Center">
                 <TextBlock FontSize="30"
                            FontWeight="Bold"
-                           Text="Action Orbit" />
+                           Text="Action Orbit Pro" />
                 <TextBlock Margin="0,5,0,0"
                            Style="{StaticResource MutedText}"
                            Text="Mouse makro tuşuna bağladığın hotkey ile imlecin yanında action ring açılır." />
@@ -657,6 +659,9 @@
                 <Button Command="{Binding ShowOverlayCommand}"
                         Style="{StaticResource SubtleButton}"
                         Content="Önizle" />
+                <Button Command="{Binding Shelf.OpenFloatingShelfCommand}"
+                        Style="{StaticResource SubtleButton}"
+                        Content="Yüzen Raf" />
                 <Border Padding="11,8"
                         Background="{Binding Autosave.StateBackground}"
                         CornerRadius="10">
@@ -717,6 +722,23 @@
                         <Style TargetType="Button" BasedOn="{StaticResource SubtleButton}">
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsLibraryWorkspace}" Value="True">
+                                    <Setter Property="Background" Value="{DynamicResource PrimaryActionBrush}" />
+                                    <Setter Property="Foreground" Value="{DynamicResource OnPrimaryActionBrush}" />
+                                    <Setter Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+                <Button Command="{Binding NavigateWorkspaceCommand}"
+                        CommandParameter="shelf"
+                        AutomationProperties.Name="Orbit Shelf"
+                        ToolTip="Geçici içerik rafı"
+                        Content="Orbit Shelf">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource SubtleButton}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsShelfWorkspace}" Value="True">
                                     <Setter Property="Background" Value="{DynamicResource PrimaryActionBrush}" />
                                     <Setter Property="Foreground" Value="{DynamicResource OnPrimaryActionBrush}" />
                                     <Setter Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" />
@@ -886,6 +908,11 @@
             </Expander>
             </StackPanel>
         </Border>
+
+        <shelfViews:ShelfWorkspaceView Grid.Row="2"
+                                       Margin="0,12,0,16"
+                                       DataContext="{Binding Shelf}"
+                                       Visibility="{Binding IsShelfWorkspace, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
         <settingsViews:SettingsView Grid.Row="2"
                                     Margin="0,12,0,0"

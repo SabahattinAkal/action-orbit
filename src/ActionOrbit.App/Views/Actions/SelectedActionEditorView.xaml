@@ -200,6 +200,44 @@
                                      Text="{Binding Arguments, UpdateSourceTrigger=PropertyChanged}"
                                      Visibility="{Binding IsNotFolder, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
+                            <Border Margin="0,14,0,0"
+                                    Padding="10"
+                                    Background="{DynamicResource SoftSurfaceBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="10"
+                                    Visibility="{Binding IsOpenUrl, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <StackPanel>
+                                    <TextBlock Style="{DynamicResource TinyLabel}" Text="HEDEF TARAYICI" />
+                                    <ComboBox Margin="0,6,0,0"
+                                              DisplayMemberPath="Label"
+                                              ItemsSource="{Binding DataContext.ActionEditor.BrowserOptions, RelativeSource={RelativeSource AncestorType=Window}}"
+                                              SelectedValue="{Binding Browser, UpdateSourceTrigger=PropertyChanged}"
+                                              SelectedValuePath="Key" />
+                                    <TextBlock Margin="0,5,0,0"
+                                               Style="{DynamicResource MutedText}"
+                                               Text="Seçilen tarayıcı kurulu değilse aksiyon açık bir hata verir." />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Margin="0,14,0,0"
+                                    Padding="10"
+                                    Background="{DynamicResource SoftSurfaceBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="10"
+                                    Visibility="{Binding IsNotFolder, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <StackPanel>
+                                    <TextBlock Style="{DynamicResource TinyLabel}" Text="DOĞRUDAN KISAYOL · İSTEĞE BAĞLI" />
+                                    <TextBox Margin="0,6,0,0"
+                                             ToolTip="Örn: Ctrl+Alt+D veya F14"
+                                             Text="{Binding Shortcut, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBlock Margin="0,5,0,0"
+                                               Style="{DynamicResource MutedText}"
+                                               Text="Halka açılmadan bu aksiyonu çalıştırır. Aynı kısayolu bir profilde yalnızca bir kez kullan." />
+                                </StackPanel>
+                            </Border>
+
                             <StackPanel Margin="0,16,0,0" Orientation="Horizontal">
                                 <Button Command="{Binding DataContext.ActionEditor.TestActionCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                         IsEnabled="{Binding DataContext.ActionEditor.CanTestSelectedAction, RelativeSource={RelativeSource AncestorType=Window}}"

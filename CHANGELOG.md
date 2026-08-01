@@ -3,6 +3,29 @@
 Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 [Semantic Versioning](https://semver.org/) düzenini izler.
 
+## [2.0.0] - 2026-08-01
+
+### Eklendi
+
+- Chrome ve diğer uygulamalardan görsel, dosya, URL ve metin alabilen Orbit Shelf.
+- Çoklu raf, yeniden adlandırma, sabitleme, isteğe bağlı yakın geçmiş ve geçici önbellek temizliği.
+- Raf öğesini panoya kopyalama, dışarı sürükleme, PNG dönüştürme ve 1600 px küçültme.
+- Profil başına adlandırılmış ek halka setleri ve mouse tekerleğiyle halka değiştirme.
+- Bas-aç, basılı-tut ve çift-bas tetikleme modları ile uygulama devre dışı bırakma listesi.
+- URL aksiyonlarında tarayıcı seçimi ve aksiyonlara doğrudan global hotkey atama.
+
+### Güvenlik
+
+- Uzak raf görsellerinde protokol, yönlendirme, MIME, imza, dosya boyutu ve piksel sınırları.
+- SSRF'e karşı yerel/özel/link-local/multicast/IPv4-mapped adres engeli ve bağlantı anında DNS doğrulaması.
+- Sürüklenen çalıştırılabilir dosyalar otomatik çalıştırılmadan yalnızca veri olarak tutulur.
+- Pro config, log, raf verisi, mutex ve başlangıç kaydı klasik sürümden ayrıldı.
+
+### Düzeltildi
+
+- Yeni raf görünümünün ana pencere açılışında oluşturduğu WPF kaynak çözümleme hatası.
+- Klasik sürümle varsayılan hotkey çakışması; Pro varsayılanı `Ctrl+Alt+Shift+P` oldu.
+
 ## [1.0.1] - 2026-07-30
 
 ### Güvenlik
@@ -46,3 +69,4 @@ Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 
 [1.0.1]: https://github.com/SabahattinAkal/action-orbit/releases/tag/v1.0.1
 [1.0.0]: https://github.com/SabahattinAkal/action-orbit/releases/tag/v1.0.0
+[2.0.0]: https://github.com/SabahattinAkal/action-orbit/releases/tag/v2.0.0

@@ -23,6 +23,15 @@ public sealed class SettingsViewModel : ViewModelBase
     private bool _closeToTray = true;
     private bool _allowCommandActions;
     private bool _overlayAnimation = true;
+    private string _activationMode = "toggle";
+    private double _holdDelayMilliseconds = 260;
+    private double _doublePressWindowMilliseconds = 380;
+    private bool _cancelWhenPointerLeaves;
+    private string _suppressedProcessesText = "";
+    private bool _shelfEnabled = true;
+    private bool _rememberRecentShelves;
+    private double _shelfMaxItems = 20;
+    private double _shelfRetentionHours = 24;
 
     public SettingsViewModel(
         ConfigService configService,
@@ -42,6 +51,12 @@ public sealed class SettingsViewModel : ViewModelBase
     }
 
     public IReadOnlyList<string> ThemeModeOptions { get; } = ["system", "light", "dark"];
+    public IReadOnlyList<ActivationModeOption> ActivationModeOptions { get; } =
+    [
+        new("toggle", "Basınca aç / tekrar basınca kapat"),
+        new("hold", "Basılı tut / bırakınca çalıştır"),
+        new("double_press", "Çift basınca aç")
+    ];
     public ICommand ApplyThemeSettingsCommand { get; }
 
     public bool StartupWithWindows
@@ -125,6 +140,150 @@ public sealed class SettingsViewModel : ViewModelBase
         }
     }
 
+    public string ActivationMode
+    {
+        get => _activationMode;
+        set
+        {
+            var normalized = value is "hold" or "double_press" ? value : "toggle";
+            if (!SetProperty(ref _activationMode, normalized) || _isSyncingFields)
+            {
+                return;
+            }
+
+            _configService.CurrentConfig.Settings.Activation.Mode = normalized;
+            _markDirty();
+        }
+    }
+
+    public double HoldDelayMilliseconds
+    {
+        get => _holdDelayMilliseconds;
+        set
+        {
+            var clamped = Math.Round(Math.Clamp(value, 100, 1200));
+            if (!SetProperty(ref _holdDelayMilliseconds, clamped) || _isSyncingFields)
+            {
+                return;
+            }
+
+            _configService.CurrentConfig.Settings.Activation.HoldDelayMilliseconds = (int)clamped;
+            _markDirty();
+        }
+    }
+
+    public double DoublePressWindowMilliseconds
+    {
+        get => _doublePressWindowMilliseconds;
+        set
+        {
+            var clamped = Math.Round(Math.Clamp(value, 200, 900));
+            if (!SetProperty(ref _doublePressWindowMilliseconds, clamped) || _isSyncingFields)
+            {
+                return;
+            }
+
+            _configService.CurrentConfig.Settings.Activation.DoublePressWindowMilliseconds = (int)clamped;
+            _markDirty();
+        }
+    }
+
+    public bool CancelWhenPointerLeaves
+    {
+        get => _cancelWhenPointerLeaves;
+        set
+        {
+            if (!SetProperty(ref _cancelWhenPointerLeaves, value) || _isSyncingFields)
+            {
+                return;
+            }
+
+            _configService.CurrentConfig.Settings.Activation.CancelWhenPointerLeaves = value;
+            _markDirty();
+        }
+    }
+
+    public string SuppressedProcessesText
+    {
+        get => _suppressedProcessesText;
+        set
+        {
+            if (!SetProperty(ref _suppressedProcessesText, value) || _isSyncingFields)
+            {
+                return;
+            }
+
+            _configService.CurrentConfig.Settings.Activation.SuppressedProcesses = ParseProcesses(value);
+            _markDirty();
+        }
+    }
+
+    public bool ShelfEnabled
+    {
+        get => _shelfEnabled;
+        set
+        {
+            if (!SetProperty(ref _shelfEnabled, value) || _isSyncingFields)
+            {
+                return;
+            }
+
+            _configService.CurrentConfig.Settings.Shelf.Enabled = value;
+            _markDirty();
+            _setStatus(value ? "Orbit Shelf etkinleştirildi." : "Orbit Shelf devre dışı bırakıldı.");
+        }
+    }
+
+    public bool RememberRecentShelves
+    {
+        get => _rememberRecentShelves;
+        set
+        {
+            if (!SetProperty(ref _rememberRecentShelves, value) || _isSyncingFields)
+            {
+                return;
+            }
+
+            _configService.CurrentConfig.Settings.Shelf.RememberRecentShelves = value;
+            _markDirty();
+            _setStatus(value
+                ? "Son kullanılan raflar uygulama kapanınca da korunacak."
+                : "Yalnızca sabitlenen raflar uygulama kapanınca korunacak.");
+        }
+    }
+
+    public double ShelfMaxItems
+    {
+        get => _shelfMaxItems;
+        set
+        {
+            var clamped = Math.Round(Math.Clamp(value, 5, 100));
+            if (!SetProperty(ref _shelfMaxItems, clamped) || _isSyncingFields)
+            {
+                return;
+            }
+
+            _configService.CurrentConfig.Settings.Shelf.MaxItemsPerShelf = (int)clamped;
+            _markDirty();
+        }
+    }
+
+    public double ShelfRetentionHours
+    {
+        get => _shelfRetentionHours;
+        set
+        {
+            var clamped = Math.Round(Math.Clamp(value, 1, 168));
+            if (!SetProperty(ref _shelfRetentionHours, clamped) || _isSyncingFields)
+            {
+                return;
+            }
+
+            _configService.CurrentConfig.Settings.Shelf.RetentionHours = (int)clamped;
+            _markDirty();
+        }
+    }
+
     public string ThemeMode
     {
         get => _themeMode;
@@ -198,6 +357,8 @@ public sealed class SettingsViewModel : ViewModelBase
     public void RefreshFromConfig()
     {
         _configService.CurrentConfig.Settings ??= new AppSettings();
+        _configService.CurrentConfig.Settings.Activation ??= new ActivationSettings();
+        _configService.CurrentConfig.Settings.Shelf ??= new ShelfSettings();
         _configService.CurrentConfig.Theme ??= new ThemeConfig();
 
         _isSyncingFields = true;
@@ -214,6 +375,15 @@ public sealed class SettingsViewModel : ViewModelBase
             OverlayRadiusX = Math.Clamp(_configService.CurrentConfig.Theme.RadiusX, 96, 190);
             OverlayRadiusY = Math.Clamp(_configService.CurrentConfig.Theme.RadiusY, 82, 168);
             OverlayAnimation = _configService.CurrentConfig.Theme.Animation;
+            ActivationMode = _configService.CurrentConfig.Settings.Activation.Mode;
+            HoldDelayMilliseconds = _configService.CurrentConfig.Settings.Activation.HoldDelayMilliseconds;
+            DoublePressWindowMilliseconds = _configService.CurrentConfig.Settings.Activation.DoublePressWindowMilliseconds;
+            CancelWhenPointerLeaves = _configService.CurrentConfig.Settings.Activation.CancelWhenPointerLeaves;
+            SuppressedProcessesText = string.Join(", ", _configService.CurrentConfig.Settings.Activation.SuppressedProcesses);
+            ShelfEnabled = _configService.CurrentConfig.Settings.Shelf.Enabled;
+            RememberRecentShelves = _configService.CurrentConfig.Settings.Shelf.RememberRecentShelves;
+            ShelfMaxItems = _configService.CurrentConfig.Settings.Shelf.MaxItemsPerShelf;
+            ShelfRetentionHours = _configService.CurrentConfig.Settings.Shelf.RetentionHours;
         }
         finally
         {
@@ -301,4 +471,14 @@ public sealed class SettingsViewModel : ViewModelBase
         && value.Length == 7
         && value[0] == '#'
         && value[1..].All(Uri.IsHexDigit);
+
+    private static List<string> ParseProcesses(string? value) =>
+        (value ?? "")
+            .Split([',', ';', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(process => process.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ? process : $"{process}.exe")
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(ConfigService.MaxMatchesPerProfile)
+            .ToList();
 }
+
+public sealed record ActivationModeOption(string Key, string Label);
