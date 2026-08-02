@@ -12,6 +12,15 @@ public sealed class HotkeySettingsViewModelTests : IDisposable
         $"action-orbit-hotkey-tests-{Guid.NewGuid():N}");
 
     [Fact]
+    public void Suggestions_ExposeRequestedDefaultHotkey()
+    {
+        var registrar = new FakeHotkeyRegistrar();
+        var (_, viewModel, _) = CreateViewModel(registrar);
+
+        Assert.Equal("Ctrl+Alt+Shift+R", viewModel.Suggestions[0]);
+    }
+
+    [Fact]
     public void SaveHotkey_WithValidInput_RegistersAndPersistsNewHotkey()
     {
         var registrar = new FakeHotkeyRegistrar();

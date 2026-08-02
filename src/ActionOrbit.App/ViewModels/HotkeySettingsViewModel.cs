@@ -38,7 +38,7 @@ public sealed class HotkeySettingsViewModel : ViewModelBase
     }
 
     public IReadOnlyList<string> Suggestions { get; } =
-        ["F13", "F14", "Ctrl+Alt+Shift+O", "Ctrl+Space"];
+        ["Ctrl+Alt+Shift+R", "F13", "F14", "Ctrl+Space"];
 
     public ICommand SaveHotkeyCommand { get; }
     public ICommand UseSuggestedHotkeyCommand { get; }
@@ -216,7 +216,7 @@ public sealed class HotkeySettingsViewModel : ViewModelBase
     {
         if (exception is Win32Exception { NativeErrorCode: 1409 })
         {
-            return $"{display} başka bir uygulama tarafından kullanılıyor. Aşağıdaki alternatiflerden birini deneyebilirsin.";
+            return $"{display} başka bir uygulama tarafından kullanılıyor. Eski Action Orbit açıksa sistem tepsisinden kapat veya aşağıdaki alternatiflerden birini dene.";
         }
 
         return $"{display} etkinleştirilemedi. Farklı bir kısayol dene. Teknik ayrıntı: {exception.Message}";

@@ -3,6 +3,13 @@
 Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 [Semantic Versioning](https://semver.org/) düzenini izler.
 
+## [Unreleased]
+
+### Düzeltildi
+
+- Varsayılan ve önerilen ana hotkey yeniden `Ctrl+Alt+Shift+R` olarak ayarlandı.
+- Hotkey çakışması mesajı, açık kalmış eski Action Orbit sürümünü kontrol etmeyi açıkça belirtiyor.
+
 ## [2.0.0] - 2026-08-01
 
 ### Eklendi

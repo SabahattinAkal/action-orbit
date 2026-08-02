@@ -12,9 +12,9 @@ public static class DefaultConfigFactory
             ConfigVersion = CurrentVersion,
             Hotkey = new HotkeyConfig
             {
-                Display = "Ctrl+Alt+Shift+P",
+                Display = "Ctrl+Alt+Shift+R",
                 Modifiers = ["Control", "Alt", "Shift"],
-                Key = "P"
+                Key = "R"
             },
             DefaultProfileId = "default",
             Settings = new AppSettings
