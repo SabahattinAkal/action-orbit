@@ -7,6 +7,16 @@ namespace ActionOrbit.App.Tests;
 public sealed class ProFeatureConfigTests
 {
     [Fact]
+    public void Create_UsesRequestedDefaultHotkey()
+    {
+        var hotkey = DefaultConfigFactory.Create().Hotkey;
+
+        Assert.Equal("Ctrl+Alt+Shift+R", hotkey.Display);
+        Assert.Equal(["Control", "Alt", "Shift"], hotkey.Modifiers);
+        Assert.Equal("R", hotkey.Key);
+    }
+
+    [Fact]
     public void Save_NormalizesProSettingsRingBrowserAndShortcut()
     {
         using var temp = new TemporaryDirectory();

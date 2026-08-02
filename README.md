@@ -11,7 +11,7 @@ Amaç: Logitech Actions Ring benzeri ama daha esnek, klasör mantıklı, uygulam
 
 ## Ana fikir
 
-Kullanıcı mouse üzerindeki makro tuşuna örneğin `F13` veya `Ctrl+Alt+Shift+P` atar. Action Orbit Pro bu kısayolu dinler ve imlecin olduğu yerde oval/radial bir menü açar.
+Kullanıcı mouse üzerindeki makro tuşuna örneğin `F13` veya `Ctrl+Alt+Shift+R` atar. Action Orbit Pro bu kısayolu dinler ve imlecin olduğu yerde oval/radial bir menü açar.
 
 Menü içerisindeki aksiyonlar:
 
@@ -176,7 +176,7 @@ src\ActionOrbit.App\bin\Debug\net10.0-windows\ActionOrbit.App.exe
 Varsayılan global hotkey:
 
 ```text
-Ctrl+Alt+Shift+P
+Ctrl+Alt+Shift+R
 ```
 
 Config ve log konumları:
@@ -196,6 +196,6 @@ etkinleştirilse bile her komut çalıştırılmadan önce tam komut gösteriler
 
 ## Notlar
 
-- Mouse makro tuşunu doğrudan yakalamak yerine mouse yazılımında `Ctrl+Alt+Shift+P`, `F13` gibi bir klavye kısayoluna map etmek gerekir.
+- Mouse makro tuşunu doğrudan yakalamak yerine mouse yazılımında `Ctrl+Alt+Shift+R`, `F13` gibi bir klavye kısayoluna map etmek gerekir.
 - Normal yetkiyle çalışan Action Orbit, admin yetkili pencerelere input göndermekte sınırlı kalabilir.
 - Çok monitör ve DPI davranışı için temel konumlama vardır; farklı scaling senaryolarında ek test önerilir.
