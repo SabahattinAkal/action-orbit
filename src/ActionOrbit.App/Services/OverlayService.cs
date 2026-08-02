@@ -16,6 +16,7 @@ public sealed class OverlayService
     private readonly ActionExecutionService _actionExecutionService;
     private readonly LogService _logService;
     private OverlayWindow? _currentWindow;
+    private Action? _openShelf;
 
     public OverlayService(
         ConfigService configService,
@@ -65,6 +66,9 @@ public sealed class OverlayService
 
     public void CloseCurrentOverlay() => _currentWindow?.Close();
 
+    public void SetShelfOpener(Action openShelf) =>
+        _openShelf = openShelf ?? throw new ArgumentNullException(nameof(openShelf));
+
     private bool TryGetSuppressedForegroundProcess(out string processName)
     {
         var ownProcessName = $"{Process.GetCurrentProcess().ProcessName}.exe";
@@ -100,7 +104,8 @@ public sealed class OverlayService
             config.Settings.Activation,
             _actionExecutionService,
             _logService,
-            actionTargetWindow)
+            actionTargetWindow,
+            _openShelf)
         {
             WindowStartupLocation = WindowStartupLocation.Manual
         };

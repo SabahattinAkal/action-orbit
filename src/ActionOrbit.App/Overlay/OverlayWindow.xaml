@@ -361,6 +361,33 @@
                         Content="Geri"
                         Style="{StaticResource OverlayInfoButtonStyle}"
                         Visibility="{Binding CanCollapseFolder, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                <Border Height="1"
+                        Margin="24,8,24,0"
+                        Background="{Binding OverlayInfoMutedForeground}"
+                        Opacity="0.18" />
+                <Button Width="178"
+                        MinHeight="32"
+                        Margin="0,8,0,0"
+                        HorizontalAlignment="Center"
+                        AutomationProperties.Name="Orbit Shelf'i Aç"
+                        Background="{Binding AccentBrush}"
+                        Command="{Binding OpenShelfCommand}"
+                        Foreground="{Binding AccentForegroundBrush}"
+                        Style="{StaticResource OverlayInfoButtonStyle}"
+                        ToolTip="Yüzen Orbit Shelf penceresini aç">
+                    <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                        <Viewbox Width="14" Height="14" Margin="0,0,7,0">
+                            <Path Data="M4,5 L20,5 L20,19 L4,19 Z M4,14 L9,14 L11,16 L13,16 L15,14 L20,14"
+                                  Fill="Transparent"
+                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                  StrokeEndLineCap="Round"
+                                  StrokeLineJoin="Round"
+                                  StrokeStartLineCap="Round"
+                                  StrokeThickness="2" />
+                        </Viewbox>
+                        <TextBlock VerticalAlignment="Center" Text="Orbit Shelf'i Aç" />
+                    </StackPanel>
+                </Button>
             </StackPanel>
         </Border>
 

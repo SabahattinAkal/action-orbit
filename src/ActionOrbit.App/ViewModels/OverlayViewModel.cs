@@ -20,6 +20,7 @@ public sealed class OverlayViewModel : ViewModelBase
     private readonly ActionExecutionService _actionExecutionService;
     private readonly LogService _logService;
     private readonly IntPtr _restoreWindow;
+    private readonly Action? _openShelf;
     private readonly Stack<FolderNavigationState> _folderHistory = [];
     private ProfileConfig _currentProfile;
     private OrbitAction? _expandedFolder;
@@ -47,7 +48,8 @@ public sealed class OverlayViewModel : ViewModelBase
         ThemeConfig theme,
         ActionExecutionService actionExecutionService,
         LogService logService,
-        IntPtr restoreWindow)
+        IntPtr restoreWindow,
+        Action? openShelf = null)
     {
         _activeProfile = profile;
         _defaultProfile = defaultProfile;
@@ -58,8 +60,10 @@ public sealed class OverlayViewModel : ViewModelBase
         _actionExecutionService = actionExecutionService;
         _logService = logService;
         _restoreWindow = restoreWindow;
+        _openShelf = openShelf;
         ToggleDefaultProfileCommand = new RelayCommand(ToggleDefaultProfile);
         CollapseFolderCommand = new RelayCommand(CollapseFolder);
+        OpenShelfCommand = new RelayCommand(OpenShelf, () => _openShelf is not null);
 
         ButtonSize = Math.Clamp(theme.ButtonSize > 0 ? theme.ButtonSize : 60, 54, 96);
         SatelliteButtonSize = Math.Clamp(ButtonSize - 10, 42, 78);
@@ -101,6 +105,7 @@ public sealed class OverlayViewModel : ViewModelBase
 
     public ICommand ToggleDefaultProfileCommand { get; }
     public ICommand CollapseFolderCommand { get; }
+    public ICommand OpenShelfCommand { get; }
 
     public string CenterButtonText =>
         _isShowingDefaultProfile ? "↩" : "↝";
@@ -686,6 +691,18 @@ public sealed class OverlayViewModel : ViewModelBase
         }
 
         await _actionExecutionService.ExecuteAsync(action);
+    }
+
+    private void OpenShelf()
+    {
+        if (_openShelf is null)
+        {
+            return;
+        }
+
+        _logService.Info("Orbit Shelf requested from overlay.");
+        CloseRequested?.Invoke();
+        _openShelf();
     }
 
     public bool TryCollapseFolder()

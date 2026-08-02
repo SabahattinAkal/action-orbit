@@ -56,6 +56,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
             message => Status.SetMessage(message));
         _shelfWindowService = new ShelfWindowService(Shelf);
         Shelf.SetFloatingShelfOpener(_shelfWindowService.Show);
+        _overlayService.SetShelfOpener(_shelfWindowService.Show);
         Autosave = new AutosaveViewModel(
             _configService,
             _logService,
