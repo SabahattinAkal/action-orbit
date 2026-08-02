@@ -126,6 +126,34 @@ public sealed class OverlayPaginationTests : IDisposable
     }
 
     [Fact]
+    public void OpenShelfCommand_ClosesOverlayBeforeOpeningShelf()
+    {
+        var profile = new ProfileConfig
+        {
+            Id = "default",
+            Name = "Default",
+            Actions = [CreateAction(1)]
+        };
+        var log = new LogService(_tempDirectory);
+        var executor = new ActionExecutionService(log, []);
+        var calls = new List<string>();
+        var viewModel = new OverlayViewModel(
+            profile,
+            profile,
+            new ThemeConfig(),
+            executor,
+            log,
+            IntPtr.Zero,
+            () => calls.Add("shelf"));
+        viewModel.CloseRequested += () => calls.Add("close");
+
+        Assert.True(viewModel.OpenShelfCommand.CanExecute(null));
+        viewModel.OpenShelfCommand.Execute(null);
+
+        Assert.Equal(["close", "shelf"], calls);
+    }
+
+    [Fact]
     public void NestedFolder_BackReturnsToParentBeforeMainRing()
     {
         var nested = new OrbitAction

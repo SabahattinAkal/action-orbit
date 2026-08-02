@@ -10,6 +10,10 @@ Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 - Varsayılan ve önerilen ana hotkey yeniden `Ctrl+Alt+Shift+R` olarak ayarlandı.
 - Hotkey çakışması mesajı, açık kalmış eski Action Orbit sürümünü kontrol etmeyi açıkça belirtiyor.
 
+### Eklendi
+
+- Overlay bilgi kartına, halkayı kapatıp yüzen Orbit Shelf'i açan sabit hızlı erişim düğmesi eklendi.
+
 ## [2.0.0] - 2026-08-01
 
 ### Eklendi

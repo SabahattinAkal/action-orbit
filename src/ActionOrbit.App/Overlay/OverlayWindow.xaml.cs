@@ -24,12 +24,20 @@ public partial class OverlayWindow : Window
         ActivationSettings activationSettings,
         ActionExecutionService actionExecutionService,
         LogService logService,
-        IntPtr restoreWindow)
+        IntPtr restoreWindow,
+        Action? openShelf = null)
     {
         InitializeComponent();
         _cancelWhenPointerLeaves = activationSettings.CancelWhenPointerLeaves;
 
-        var viewModel = new OverlayViewModel(profile, defaultProfile, theme, actionExecutionService, logService, restoreWindow);
+        var viewModel = new OverlayViewModel(
+            profile,
+            defaultProfile,
+            theme,
+            actionExecutionService,
+            logService,
+            restoreWindow,
+            openShelf);
         viewModel.CloseRequested += CloseOverlay;
         DataContext = viewModel;
 
