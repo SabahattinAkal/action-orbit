@@ -12,6 +12,7 @@ Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 
 ### Eklendi
 
+- Action Orbit'in halka ve hızlı aksiyon fikrini taşıyan yeni uygulama logosu; EXE, görev çubuğu, bildirim alanı ve yardımcı pencerelere uygulandı.
 - Overlay bilgi kartına, halkayı kapatıp yüzen Orbit Shelf'i açan sabit hızlı erişim düğmesi eklendi.
 - Sürüklenebilir ve isteğe bağlı üstte sabitlenebilir ortak mini araç penceresi eklendi.
 - `Mini Araçlar` klasörüne zamanlayıcı, uyanık tutma, sistem durumu, güvenli hesap makinesi ve ekran renk seçici eklendi.

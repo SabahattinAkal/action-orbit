@@ -1,5 +1,9 @@
 # Action Orbit Pro
 
+<p align="center">
+  <img src="src/ActionOrbit.App/Assets/Brand/ActionOrbitLogo.png" width="128" alt="Action Orbit Pro logosu" />
+</p>
+
 [![CI](https://github.com/SabahattinAkal/action-orbit/actions/workflows/ci.yml/badge.svg)](https://github.com/SabahattinAkal/action-orbit/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/SabahattinAkal/action-orbit/actions/workflows/codeql.yml/badge.svg)](https://github.com/SabahattinAkal/action-orbit/actions/workflows/codeql.yml)
 [![GitHub Release](https://img.shields.io/github/v/release/SabahattinAkal/action-orbit)](https://github.com/SabahattinAkal/action-orbit/releases/latest)
