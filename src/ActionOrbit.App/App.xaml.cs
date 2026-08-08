@@ -3,6 +3,7 @@ using System.Windows.Threading;
 using Microsoft.Win32;
 using ActionOrbit.App.Services;
 using ActionOrbit.App.Services.Actions;
+using ActionOrbit.App.Services.MiniTools;
 using ActionOrbit.App.ViewModels;
 
 namespace ActionOrbit.App;
@@ -14,6 +15,7 @@ public partial class App : System.Windows.Application
     private HotkeyService? _hotkeyService;
     private SingleInstanceService? _singleInstanceService;
     private MainWindowViewModel? _mainWindowViewModel;
+    private MiniToolWindowService? _miniToolWindowService;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -43,6 +45,7 @@ public partial class App : System.Windows.Application
         var startupSyncIssue = SyncStartupRegistration(startupService);
         var inputService = new InputSimulationService(_logService);
         var confirmationService = new MessageBoxConfirmationService();
+        _miniToolWindowService = new MiniToolWindowService();
 
         var actionExecutionService = new ActionExecutionService(
             _logService,
@@ -56,6 +59,7 @@ public partial class App : System.Windows.Application
                         $"Aşağıdaki uygulama argümanlarla başlatılacak:\n\n{target}\n{arguments}\n\nDevam edilsin mi?")),
                 new OpenFileActionHandler(_logService),
                 new OpenFolderActionHandler(_logService),
+                new MiniToolActionHandler(_miniToolWindowService),
                 new SendHotkeyActionHandler(inputService),
                 new TypeTextActionHandler(inputService),
                 new RunCommandActionHandler(
@@ -105,6 +109,7 @@ public partial class App : System.Windows.Application
         DispatcherUnhandledException -= OnDispatcherUnhandledException;
         SystemEvents.UserPreferenceChanged -= OnUserPreferenceChanged;
         _hotkeyService?.Dispose();
+        _miniToolWindowService?.Dispose();
         _singleInstanceService?.Dispose();
         _logService?.Info("Action Orbit stopped.");
         base.OnExit(e);

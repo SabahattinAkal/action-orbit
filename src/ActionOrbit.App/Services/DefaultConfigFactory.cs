@@ -4,7 +4,7 @@ namespace ActionOrbit.App.Services;
 
 public static class DefaultConfigFactory
 {
-    public const int CurrentVersion = 8;
+    public const int CurrentVersion = 9;
 
     public static AppConfig Create() =>
         new()
@@ -71,7 +71,8 @@ public static class DefaultConfigFactory
                 Action("screenshot", "Ekran Al", "scissors", "send_hotkey", "Win+Shift+S"),
                 Action("chatgpt", "ChatGPT", "sparkles", "open_url", "https://chatgpt.com"),
                 Action("copy", "Kopyala", "copy", "send_hotkey", "Ctrl+C"),
-                Action("paste", "Yapıştır", "clipboard", "send_hotkey", "Ctrl+V")
+                Action("paste", "Yapıştır", "clipboard", "send_hotkey", "Ctrl+V"),
+                CreateMiniToolsFolder()
             ]
         };
 
@@ -168,4 +169,15 @@ public static class DefaultConfigFactory
             Type = "folder",
             Children = [.. children]
         };
+
+    internal static OrbitAction CreateMiniToolsFolder() =>
+        Folder(
+            "mini_tools",
+            "Mini Araçlar",
+            "sparkles",
+            Action("mini_timer", "Zamanlayıcı", "clock", "mini_tool", "timer"),
+            Action("mini_caffeine", "Uyanık Tut", "coffee", "mini_tool", "caffeine"),
+            Action("mini_system_glance", "Sistem Durumu", "layout-dashboard", "mini_tool", "system_glance"),
+            Action("mini_calculator", "Hesap Makinesi", "calculator", "mini_tool", "calculator"),
+            Action("mini_color_picker", "Renk Seçici", "color-picker", "mini_tool", "color_picker"));
 }

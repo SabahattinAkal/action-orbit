@@ -569,7 +569,8 @@ public sealed class ConfigService : IConfigPersistence
         }
 
         var defaults = DefaultConfigFactory.Create();
-        var requiresLegacyDefaults = config.ConfigVersion < 7;
+        var previousVersion = config.ConfigVersion;
+        var requiresLegacyDefaults = previousVersion < 7;
 
         if (requiresLegacyDefaults && IsKnownDefaultTheme(config.Theme))
         {
@@ -591,6 +592,19 @@ public sealed class ConfigService : IConfigPersistence
 
             profile.Name = defaultProfile.Name;
             ApplyActionDefaults(profile.Actions, defaultProfile.Actions);
+        }
+
+        if (previousVersion < 9)
+        {
+            var defaultProfile = config.Profiles.FirstOrDefault(profile =>
+                string.Equals(profile.Id, config.DefaultProfileId, StringComparison.OrdinalIgnoreCase))
+                ?? config.Profiles.FirstOrDefault();
+            if (defaultProfile is not null &&
+                !defaultProfile.Actions.Any(action =>
+                    string.Equals(action.Id, "mini_tools", StringComparison.OrdinalIgnoreCase)))
+            {
+                defaultProfile.Actions.Add(DefaultConfigFactory.CreateMiniToolsFolder());
+            }
         }
 
         config.ConfigVersion = DefaultConfigFactory.CurrentVersion;

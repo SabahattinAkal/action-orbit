@@ -1,0 +1,62 @@
+<UserControl x:Class="ActionOrbit.App.Views.MiniTools.ColorPickerToolView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Focusable="True"
+             PreviewKeyDown="View_PreviewKeyDown">
+    <StackPanel>
+        <Border x:Name="ColorSwatch"
+                Height="118"
+                Background="#A51E39"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="1"
+                CornerRadius="14" />
+        <Grid Margin="0,13,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Border Margin="0,0,5,0"
+                    Padding="12,9"
+                    Background="{DynamicResource SoftSurfaceBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10">
+                <StackPanel>
+                    <TextBlock FontSize="10" Foreground="{DynamicResource MutedTextBrush}" Text="HEX" />
+                    <TextBlock x:Name="HexText" Margin="0,3,0,0" FontSize="16" FontWeight="SemiBold" Text="#A51E39" />
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="1"
+                    Margin="5,0,0,0"
+                    Padding="12,9"
+                    Background="{DynamicResource SoftSurfaceBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10">
+                <StackPanel>
+                    <TextBlock FontSize="10" Foreground="{DynamicResource MutedTextBrush}" Text="RGB" />
+                    <TextBlock x:Name="RgbText" Margin="0,3,0,0" FontSize="16" FontWeight="SemiBold" Text="165, 30, 57" />
+                </StackPanel>
+            </Border>
+        </Grid>
+        <Button x:Name="TrackButton"
+                Margin="0,14,0,0"
+                Content="İmleci izlemeye başla"
+                Click="Track_Click"
+                Style="{DynamicResource ToolPrimaryButton}" />
+        <TextBlock x:Name="HintText"
+                   Margin="0,8,0,0"
+                   HorizontalAlignment="Center"
+                   FontSize="10"
+                   Foreground="{DynamicResource MutedTextBrush}"
+                   Text="Başlattıktan sonra imleci renge götür; Space ile dondur" />
+        <Grid Margin="0,13,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Button Margin="0,0,5,0" Content="HEX kopyala" Click="CopyHex_Click" Style="{DynamicResource ToolButton}" />
+            <Button Grid.Column="1" Margin="5,0,0,0" Content="RGB kopyala" Click="CopyRgb_Click" Style="{DynamicResource ToolButton}" />
+        </Grid>
+    </StackPanel>
+</UserControl>

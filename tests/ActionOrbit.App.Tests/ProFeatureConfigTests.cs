@@ -94,6 +94,40 @@ public sealed class ProFeatureConfigTests
     }
 
     [Fact]
+    public void Load_UpgradesVersionEightWithMiniToolsWithoutOverwritingCustomActions()
+    {
+        using var temp = new TemporaryDirectory();
+        var service = new ConfigService(new LogService(temp.Path), temp.Path);
+        var config = DefaultConfigFactory.Create();
+        config.ConfigVersion = 8;
+        var defaultProfile = config.Profiles.Single(profile => profile.Id == config.DefaultProfileId);
+        defaultProfile.Actions.RemoveAll(action => action.Id == "mini_tools");
+        defaultProfile.Actions.Insert(0, new OrbitAction
+        {
+            Id = "personal_action",
+            Title = "Benim Butonum",
+            Icon = "star",
+            Type = "open_url",
+            Target = "https://example.com"
+        });
+        File.WriteAllText(
+            service.ConfigPath,
+            JsonSerializer.Serialize(config, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            }));
+
+        var loaded = service.Load();
+
+        Assert.Equal(DefaultConfigFactory.CurrentVersion, loaded.ConfigVersion);
+        var upgradedProfile = loaded.Profiles.Single(profile => profile.Id == loaded.DefaultProfileId);
+        Assert.Contains(upgradedProfile.Actions, action =>
+            action.Id == "personal_action" && action.Target == "https://example.com");
+        var miniTools = Assert.Single(upgradedProfile.Actions, action => action.Id == "mini_tools");
+        Assert.Equal(5, miniTools.Children.Count);
+    }
+
+    [Fact]
     public void ImportedRiskSummary_IncludesAdditionalRingActions()
     {
         var profile = new ProfileConfig
