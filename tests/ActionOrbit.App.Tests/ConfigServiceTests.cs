@@ -189,7 +189,7 @@ public sealed class ConfigServiceTests : IDisposable
         var profile = Assert.Single(imported.Profiles);
         Assert.Single(profile.Matches);
         Assert.Equal("Code.exe", profile.Matches[0].ProcessName);
-        var action = Assert.Single(profile.Actions);
+        var action = Assert.Single(profile.Actions, candidate => candidate.Id == "open");
         Assert.Equal("Open", action.Title);
         Assert.Equal("open_url", action.Type);
         Assert.Empty(action.Children);

@@ -46,6 +46,7 @@ Güncel Pro geliştirme sürümü `v2.0.0`:
 - Belirlenen uygulamalarda halkayı devre dışı bırakan process listesi
 - URL aksiyonunu sistem tarayıcısı, Chrome, Edge, Firefox veya Brave ile açma
 - Her aksiyona isteğe bağlı doğrudan global klavye kısayolu atama
+- Halkadan açılan, sürüklenebilir ve isteğe bağlı üstte sabitlenebilir mini araçlar: zamanlayıcı, uyanık tutma, sistem durumu, hesap makinesi ve renk seçici
 - Pro sürümünün config, log, mutex ve başlangıç kaydını klasik sürümden ayıran izolasyon
 
 - `src/ActionOrbit.App` altında WPF uygulaması
@@ -56,7 +57,7 @@ Güncel Pro geliştirme sürümü `v2.0.0`:
 - Aktif pencere process adına göre profil seçimi
 - Transparent, topmost radial overlay
 - Folder/alt menü ve geri navigasyonu
-- `open_app`, `open_file`, `open_folder`, `open_url`, `send_hotkey`, `type_text`, `run_command` action handler'ları
+- `open_app`, `open_file`, `open_folder`, `open_url`, `mini_tool`, `send_hotkey`, `type_text`, `run_command` action handler'ları
 - Ana Sayfa, Ring Editörü, Aksiyon Kütüphanesi ve Ayarlar çalışma alanları
 - Aranabilir/kategorili hazır aksiyon kütüphanesi ve canlı ring önizlemesi
 - Hazır aksiyonu profile ekleme ve seçili aksiyona uygulama için ayrı kontroller
@@ -125,6 +126,13 @@ iş akışında üretildiğini kanıtlar.
   - Öğeyi raftan doğrudan başka bir uygulamaya sürükleyebilirsin
   - İstersen PNG'ye dönüştürebilir veya 1600 px'e küçültebilirsin
 
+- `Mini Araçlar` klasörünü aç:
+  - 1, 5, 10 veya 25 dakikalık zamanlayıcı başlat
+  - Bilgisayarın uykuya geçmesini 15 dakika–2 saat ya da sen kapatana kadar engelle
+  - İşlemci, bellek ve pil durumunu tek bakışta gör
+  - Komut çalıştırmadan matematiksel ifade hesapla
+  - İmlecin altındaki ekran rengini yakalayıp HEX/RGB olarak kopyala
+
 ## Pro özellik kapsamı
 
 Pro sürüm temel Action Orbit kapsamına şunları ekler:
@@ -135,6 +143,7 @@ Pro sürüm temel Action Orbit kapsamına şunları ekler:
 4. Uygulama bazlı devre dışı bırakma listesi.
 5. Tarayıcı seçimi.
 6. Aksiyon bazlı doğrudan hotkey.
+7. Ortak, sabitlenebilir mini araç pencereleri.
 
 ## Çalıştırma
 

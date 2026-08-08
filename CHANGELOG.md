@@ -13,6 +13,14 @@ Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 ### Eklendi
 
 - Overlay bilgi kartına, halkayı kapatıp yüzen Orbit Shelf'i açan sabit hızlı erişim düğmesi eklendi.
+- Sürüklenebilir ve isteğe bağlı üstte sabitlenebilir ortak mini araç penceresi eklendi.
+- `Mini Araçlar` klasörüne zamanlayıcı, uyanık tutma, sistem durumu, güvenli hesap makinesi ve ekran renk seçici eklendi.
+- Config v9 göçü, mevcut kişisel aksiyonları koruyarak eksik mini araç klasörünü varsayılan profile ekliyor.
+
+### Güvenlik
+
+- `mini_tool` aksiyonu yalnızca uygulama içindeki beş izinli araç kimliğini çalıştırabiliyor.
+- Mini hesap makinesi shell, betik veya dinamik kod çalıştırmadan yerel ifade ayrıştırıcısı kullanıyor.
 
 ## [2.0.0] - 2026-08-01
 
