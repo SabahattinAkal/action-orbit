@@ -11,6 +11,7 @@ public partial class MainWindow : Window
 {
     private readonly MainWindowViewModel _viewModel;
     private readonly HotkeyService _hotkeyService;
+    private readonly Drawing.Icon? _applicationIcon;
     private readonly Forms.NotifyIcon _trayIcon;
     private bool _allowClose;
     private bool _hasShownTrayTip;
@@ -21,6 +22,7 @@ public partial class MainWindow : Window
         _hotkeyService = hotkeyService;
         DataContext = _viewModel;
         InitializeComponent();
+        _applicationIcon = LoadApplicationIcon();
         _trayIcon = CreateTrayIcon();
         _viewModel.Status.UserNotificationRequested += ShowUserNotification;
     }
@@ -65,6 +67,7 @@ public partial class MainWindow : Window
         _viewModel.Dispose();
         _trayIcon.Visible = false;
         _trayIcon.Dispose();
+        _applicationIcon?.Dispose();
         base.OnClosed(e);
     }
 
@@ -88,13 +91,27 @@ public partial class MainWindow : Window
         var trayIcon = new Forms.NotifyIcon
         {
             ContextMenuStrip = menu,
-            Icon = Drawing.SystemIcons.Application,
+            Icon = _applicationIcon ?? Drawing.SystemIcons.Application,
             Text = "Action Orbit Pro",
             Visible = true
         };
 
         trayIcon.DoubleClick += (_, _) => ShowFromTray();
         return trayIcon;
+    }
+
+    private static Drawing.Icon? LoadApplicationIcon()
+    {
+        try
+        {
+            return string.IsNullOrWhiteSpace(Environment.ProcessPath)
+                ? null
+                : Drawing.Icon.ExtractAssociatedIcon(Environment.ProcessPath);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private void RunInBackground_Click(object sender, RoutedEventArgs e) =>
