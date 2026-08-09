@@ -1,0 +1,40 @@
+<UserControl x:Class="ActionOrbit.App.Views.MiniTools.TextToolsToolView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel>
+        <TextBox x:Name="TextBox"
+                 MinHeight="235"
+                 MaxLength="100000"
+                 AcceptsReturn="True"
+                 AcceptsTab="True"
+                 TextWrapping="Wrap"
+                 VerticalScrollBarVisibility="Auto"
+                 TextChanged="TextBox_TextChanged"
+                 Style="{DynamicResource ToolTextBox}" />
+        <TextBlock x:Name="CountText"
+                   Margin="0,8,0,10"
+                   Style="{DynamicResource ToolMutedText}"
+                   Text="0 kelime · 0 karakter · 0 satır" />
+        <WrapPanel>
+            <Button Margin="0,0,6,6" Content="BÜYÜK" Tag="upper" Click="Transform_Click" Style="{DynamicResource ToolButton}" />
+            <Button Margin="0,0,6,6" Content="küçük" Tag="lower" Click="Transform_Click" Style="{DynamicResource ToolButton}" />
+            <Button Margin="0,0,6,6" Content="Başlık" Tag="title" Click="Transform_Click" Style="{DynamicResource ToolButton}" />
+            <Button Margin="0,0,6,6" Content="Boşlukları temizle" Tag="spaces" Click="Transform_Click" Style="{DynamicResource ToolButton}" />
+        </WrapPanel>
+        <Grid Margin="0,5,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="StatusText"
+                       VerticalAlignment="Center"
+                       Style="{DynamicResource ToolMutedText}"
+                       Text="Metin cihazdan ayrılmaz."
+                       TextWrapping="Wrap" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button Margin="0,0,7,0" Content="Kopyala" Click="Copy_Click" Style="{DynamicResource ToolPrimaryButton}" />
+                <Button Content="Temizle" Click="Clear_Click" Style="{DynamicResource ToolButton}" />
+            </StackPanel>
+        </Grid>
+    </StackPanel>
+</UserControl>

@@ -1,0 +1,46 @@
+<UserControl x:Class="ActionOrbit.App.Views.MiniTools.QuickNoteToolView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel>
+        <TextBox x:Name="NoteBox"
+                 MinHeight="250"
+                 MaxLength="64000"
+                 AcceptsReturn="True"
+                 AcceptsTab="True"
+                 TextWrapping="Wrap"
+                 VerticalScrollBarVisibility="Auto"
+                 TextChanged="NoteBox_TextChanged"
+                 Style="{DynamicResource ToolTextBox}" />
+        <Grid Margin="0,10,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock x:Name="SaveStateText"
+                           FontSize="11"
+                           Foreground="{DynamicResource MutedTextBrush}"
+                           Text="Yerel not hazırlanıyor" />
+                <TextBlock x:Name="CountText"
+                           Margin="0,2,0,0"
+                           FontSize="10"
+                           Foreground="{DynamicResource MutedTextBrush}"
+                           Text="0 karakter" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button Margin="0,0,7,0"
+                        Content="Kopyala"
+                        Click="Copy_Click"
+                        Style="{DynamicResource ToolButton}" />
+                <Button Content="Temizle"
+                        Click="Clear_Click"
+                        Style="{DynamicResource ToolButton}" />
+            </StackPanel>
+        </Grid>
+        <TextBlock Margin="0,9,0,0"
+                   FontSize="10"
+                   Foreground="{DynamicResource MutedTextBrush}"
+                   Text="Not yalnızca bu bilgisayarda, Action Orbit uygulama klasöründe tutulur."
+                   TextWrapping="Wrap" />
+    </StackPanel>
+</UserControl>

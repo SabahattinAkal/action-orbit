@@ -19,8 +19,8 @@
         <KeyBinding Key="D1" Modifiers="Control" Command="{Binding NavigateWorkspaceCommand}" CommandParameter="home" />
         <KeyBinding Key="D2" Modifiers="Control" Command="{Binding NavigateWorkspaceCommand}" CommandParameter="editor" />
         <KeyBinding Key="D3" Modifiers="Control" Command="{Binding NavigateWorkspaceCommand}" CommandParameter="library" />
-        <KeyBinding Key="D4" Modifiers="Control" Command="{Binding NavigateWorkspaceCommand}" CommandParameter="settings" />
-        <KeyBinding Key="D5" Modifiers="Control" Command="{Binding NavigateWorkspaceCommand}" CommandParameter="shelf" />
+        <KeyBinding Key="D4" Modifiers="Control" Command="{Binding NavigateWorkspaceCommand}" CommandParameter="shelf" />
+        <KeyBinding Key="D5" Modifiers="Control" Command="{Binding NavigateWorkspaceCommand}" CommandParameter="settings" />
     </Window.InputBindings>
     <Window.Resources>
         <Style TargetType="TextBlock">
@@ -741,8 +741,8 @@
                 </Button>
                 <Button Command="{Binding NavigateWorkspaceCommand}"
                         CommandParameter="shelf"
-                        AutomationProperties.Name="Orbit Shelf"
-                        ToolTip="Geçici içerik rafı"
+                        AutomationProperties.Name="Orbit Shelf, Ctrl+4"
+                        ToolTip="Geçici içerik rafı · Ctrl+4"
                         Content="Orbit Shelf">
                     <Button.Style>
                         <Style TargetType="Button" BasedOn="{StaticResource SubtleButton}">
@@ -758,8 +758,8 @@
                 </Button>
                 <Button Command="{Binding NavigateWorkspaceCommand}"
                         CommandParameter="settings"
-                        AutomationProperties.Name="Ayarlar, Ctrl+4"
-                        ToolTip="Ayarlar · Ctrl+4"
+                        AutomationProperties.Name="Ayarlar, Ctrl+5"
+                        ToolTip="Ayarlar · Ctrl+5"
                         Content="Ayarlar">
                     <Button.Style>
                         <Style TargetType="Button" BasedOn="{StaticResource SubtleButton}">

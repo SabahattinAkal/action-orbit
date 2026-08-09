@@ -1,6 +1,7 @@
 using System.Text.Json;
 using ActionOrbit.App.Models;
 using ActionOrbit.App.Services;
+using ActionOrbit.App.Services.MiniTools;
 
 namespace ActionOrbit.App.Tests;
 
@@ -124,7 +125,46 @@ public sealed class ProFeatureConfigTests
         Assert.Contains(upgradedProfile.Actions, action =>
             action.Id == "personal_action" && action.Target == "https://example.com");
         var miniTools = Assert.Single(upgradedProfile.Actions, action => action.Id == "mini_tools");
-        Assert.Equal(5, miniTools.Children.Count);
+        Assert.Equal(10, miniTools.Children.Count);
+    }
+
+    [Fact]
+    public void Load_UpgradesVersionNineByAppendingNewMiniToolsAndKeepingCustomChildren()
+    {
+        using var temp = new TemporaryDirectory();
+        var service = new ConfigService(new LogService(temp.Path), temp.Path);
+        var config = DefaultConfigFactory.Create();
+        config.ConfigVersion = 9;
+        var defaultProfile = config.Profiles.Single(profile => profile.Id == config.DefaultProfileId);
+        var miniTools = defaultProfile.Actions.Single(action => action.Id == "mini_tools");
+        miniTools.Children.RemoveAll(action => action.Target is
+            "stopwatch" or "quick_note" or "unit_converter" or "text_tools" or "password_generator");
+        miniTools.Children.Add(new OrbitAction
+        {
+            Id = "my_custom_child",
+            Title = "Özel",
+            Icon = "star",
+            Type = "open_url",
+            Target = "https://example.com"
+        });
+        File.WriteAllText(
+            service.ConfigPath,
+            JsonSerializer.Serialize(config, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            }));
+
+        var loaded = service.Load();
+
+        var upgradedFolder = loaded.Profiles
+            .Single(profile => profile.Id == loaded.DefaultProfileId)
+            .Actions.Single(action => action.Id == "mini_tools");
+        Assert.Contains(upgradedFolder.Children, action => action.Id == "my_custom_child");
+        Assert.Equal(
+            MiniToolCatalog.Tools.Select(tool => tool.Id),
+            upgradedFolder.Children
+                .Where(action => action.Type == "mini_tool")
+                .Select(action => action.Target));
     }
 
     [Fact]

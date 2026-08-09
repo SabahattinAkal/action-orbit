@@ -594,16 +594,33 @@ public sealed class ConfigService : IConfigPersistence
             ApplyActionDefaults(profile.Actions, defaultProfile.Actions);
         }
 
-        if (previousVersion < 9)
+        if (previousVersion < 10)
         {
             var defaultProfile = config.Profiles.FirstOrDefault(profile =>
                 string.Equals(profile.Id, config.DefaultProfileId, StringComparison.OrdinalIgnoreCase))
                 ?? config.Profiles.FirstOrDefault();
-            if (defaultProfile is not null &&
-                !defaultProfile.Actions.Any(action =>
-                    string.Equals(action.Id, "mini_tools", StringComparison.OrdinalIgnoreCase)))
+            if (defaultProfile is not null)
             {
-                defaultProfile.Actions.Add(DefaultConfigFactory.CreateMiniToolsFolder());
+                var expectedFolder = DefaultConfigFactory.CreateMiniToolsFolder();
+                var miniToolsFolder = defaultProfile.Actions.FirstOrDefault(action =>
+                    action.IsFolder &&
+                    string.Equals(action.Id, "mini_tools", StringComparison.OrdinalIgnoreCase));
+                if (miniToolsFolder is null)
+                {
+                    defaultProfile.Actions.Add(expectedFolder);
+                }
+                else
+                {
+                    foreach (var expectedAction in expectedFolder.Children)
+                    {
+                        if (!miniToolsFolder.Children.Any(action =>
+                            string.Equals(action.Type, "mini_tool", StringComparison.OrdinalIgnoreCase) &&
+                            string.Equals(action.Target, expectedAction.Target, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            miniToolsFolder.Children.Add(expectedAction);
+                        }
+                    }
+                }
             }
         }
 

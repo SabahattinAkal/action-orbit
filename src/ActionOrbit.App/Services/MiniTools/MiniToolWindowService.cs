@@ -57,6 +57,11 @@ public sealed class MiniToolWindowService : IMiniToolLauncher, IDisposable
         "system_glance" => new SystemGlanceToolView(),
         "calculator" => new CalculatorToolView(),
         "color_picker" => new ColorPickerToolView(),
+        "stopwatch" => new StopwatchToolView(),
+        "quick_note" => new QuickNoteToolView(),
+        "unit_converter" => new UnitConverterToolView(),
+        "text_tools" => new TextToolsToolView(),
+        "password_generator" => new PasswordGeneratorToolView(),
         _ => throw new ArgumentOutOfRangeException(nameof(toolId))
     };
 }

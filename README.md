@@ -50,7 +50,7 @@ Güncel Pro geliştirme sürümü `v2.0.0`:
 - Belirlenen uygulamalarda halkayı devre dışı bırakan process listesi
 - URL aksiyonunu sistem tarayıcısı, Chrome, Edge, Firefox veya Brave ile açma
 - Her aksiyona isteğe bağlı doğrudan global klavye kısayolu atama
-- Halkadan açılan, sürüklenebilir ve isteğe bağlı üstte sabitlenebilir mini araçlar: zamanlayıcı, uyanık tutma, sistem durumu, hesap makinesi ve renk seçici
+- Halkadan açılan, sürüklenebilir ve isteğe bağlı üstte sabitlenebilir mini araçlar: zamanlayıcı, uyanık tutma, sistem durumu, hesap makinesi, renk seçici, kronometre, hızlı not, birim dönüştürücü, metin araçları ve parola üretici
 - Pro sürümünün config, log, mutex ve başlangıç kaydını klasik sürümden ayıran izolasyon
 
 - `src/ActionOrbit.App` altında WPF uygulaması
@@ -136,6 +136,11 @@ iş akışında üretildiğini kanıtlar.
   - İşlemci, bellek ve pil durumunu tek bakışta gör
   - Komut çalıştırmadan matematiksel ifade hesapla
   - İmlecin altındaki ekran rengini yakalayıp HEX/RGB olarak kopyala
+  - Kronometreyi başlat, duraklat ve tur sürelerini kaydet
+  - Otomatik ve yerel kaydedilen hızlı nota geçici metin bırak
+  - Uzunluk, ağırlık, sıcaklık ve veri birimlerini dönüştür
+  - Türkçe büyük/küçük/başlık dönüşümü yap, boşlukları temizle ve kelime say
+  - Diske yazılmayan, kriptografik güçlü ve özelleştirilebilir parola üret
 
 ## Pro özellik kapsamı
 
@@ -147,7 +152,8 @@ Pro sürüm temel Action Orbit kapsamına şunları ekler:
 4. Uygulama bazlı devre dışı bırakma listesi.
 5. Tarayıcı seçimi.
 6. Aksiyon bazlı doğrudan hotkey.
-7. Ortak, sabitlenebilir mini araç pencereleri.
+7. On yerel araç içeren ortak, sabitlenebilir mini araç pencereleri.
+8. Kaydırılabilir, doğrulamalı ve bağlama duyarlı gelişmiş ayarlar çalışma alanı.
 
 ## Çalıştırma
 

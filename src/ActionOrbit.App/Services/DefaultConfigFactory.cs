@@ -4,7 +4,7 @@ namespace ActionOrbit.App.Services;
 
 public static class DefaultConfigFactory
 {
-    public const int CurrentVersion = 9;
+    public const int CurrentVersion = 10;
 
     public static AppConfig Create() =>
         new()
@@ -179,5 +179,10 @@ public static class DefaultConfigFactory
             Action("mini_caffeine", "Uyanık Tut", "coffee", "mini_tool", "caffeine"),
             Action("mini_system_glance", "Sistem Durumu", "layout-dashboard", "mini_tool", "system_glance"),
             Action("mini_calculator", "Hesap Makinesi", "calculator", "mini_tool", "calculator"),
-            Action("mini_color_picker", "Renk Seçici", "color-picker", "mini_tool", "color_picker"));
+            Action("mini_color_picker", "Renk Seçici", "color-picker", "mini_tool", "color_picker"),
+            Action("mini_stopwatch", "Kronometre", "clock", "mini_tool", "stopwatch"),
+            Action("mini_quick_note", "Hızlı Not", "notes", "mini_tool", "quick_note"),
+            Action("mini_unit_converter", "Birim Dönüştürücü", "refresh", "mini_tool", "unit_converter"),
+            Action("mini_text_tools", "Metin Araçları", "text", "mini_tool", "text_tools"),
+            Action("mini_password_generator", "Parola Üretici", "key", "mini_tool", "password_generator"));
 }

@@ -47,6 +47,66 @@ public sealed class SettingsViewModelTests : IDisposable
         viewModel.ApplyThemeSettingsCommand.Execute(null);
 
         Assert.Contains("#RRGGBB", status);
+        Assert.True(viewModel.HasAccentIssue);
+        Assert.False(viewModel.CanApplyVisualSettings);
+        Assert.NotEmpty(viewModel.AccentIssueMessage);
+    }
+
+    [Fact]
+    public void ActivationMode_UpdatesDependentSettingAvailability()
+    {
+        var viewModel = CreateViewModel(() => { }, _ => { });
+        viewModel.RefreshFromConfig();
+        var changedProperties = new List<string?>();
+        viewModel.PropertyChanged += (_, args) => changedProperties.Add(args.PropertyName);
+
+        GetConfigService().CurrentConfig.Settings.Activation.Mode = "hold";
+        viewModel.RefreshFromConfig();
+
+        Assert.True(viewModel.IsHoldMode);
+        Assert.False(viewModel.IsDoublePressMode);
+        Assert.Contains(nameof(SettingsViewModel.IsHoldMode), changedProperties);
+        Assert.Contains(nameof(SettingsViewModel.IsDoublePressMode), changedProperties);
+
+        viewModel.ActivationMode = "double_press";
+
+        Assert.False(viewModel.IsHoldMode);
+        Assert.True(viewModel.IsDoublePressMode);
+    }
+
+    [Fact]
+    public void AccentPreset_AppliesAndPersistsSelectedColor()
+    {
+        string? status = null;
+        var viewModel = CreateViewModel(() => { }, message => status = message);
+        viewModel.RefreshFromConfig();
+
+        viewModel.UseAccentPresetCommand.Execute("#2563EB");
+
+        Assert.Equal("#2563EB", viewModel.AccentInput);
+        Assert.Equal("#2563EB", GetConfigService().CurrentConfig.Theme.Accent);
+        Assert.Contains("kaydedildi", status, StringComparison.OrdinalIgnoreCase);
+        Assert.False(viewModel.HasAccentIssue);
+        Assert.True(viewModel.CanApplyVisualSettings);
+    }
+
+    [Fact]
+    public void ResetVisualSettings_RestoresDefaultThemeAndOverlayValues()
+    {
+        var viewModel = CreateViewModel(() => { }, _ => { });
+        viewModel.RefreshFromConfig();
+        viewModel.ThemeMode = "light";
+        viewModel.AccentInput = "#2563EB";
+        viewModel.OverlayButtonSize = 95;
+
+        viewModel.ResetVisualSettingsCommand.Execute(null);
+
+        var defaults = DefaultConfigFactory.Create().Theme;
+        Assert.Equal(defaults.Mode, viewModel.ThemeMode);
+        Assert.Equal(defaults.Accent, viewModel.AccentInput);
+        Assert.Equal(defaults.ButtonSize, viewModel.OverlayButtonSize);
+        Assert.Equal(defaults.RadiusX, viewModel.OverlayRadiusX);
+        Assert.Equal(defaults.RadiusY, viewModel.OverlayRadiusY);
     }
 
     private ConfigService? _configService;

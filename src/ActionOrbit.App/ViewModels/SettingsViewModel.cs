@@ -48,9 +48,24 @@ public sealed class SettingsViewModel : ViewModelBase
         _setStatus = setStatus;
         _setSaveState = setSaveState;
         ApplyThemeSettingsCommand = new RelayCommand(ApplyThemeSettings);
+        UseAccentPresetCommand = new RelayCommand(parameter => UseAccentPreset(parameter?.ToString()));
+        ResetVisualSettingsCommand = new RelayCommand(ResetVisualSettings);
     }
 
-    public IReadOnlyList<string> ThemeModeOptions { get; } = ["system", "light", "dark"];
+    public IReadOnlyList<ThemeModeOption> ThemeModeOptions { get; } =
+    [
+        new("system", "Windows ile aynı"),
+        new("dark", "Koyu"),
+        new("light", "Açık")
+    ];
+    public IReadOnlyList<AccentPresetOption> AccentPresets { get; } =
+    [
+        new("Orbit", "#A51E39"),
+        new("Mavi", "#2563EB"),
+        new("Mor", "#7C3AED"),
+        new("Yeşil", "#15803D"),
+        new("Turuncu", "#C2410C")
+    ];
     public IReadOnlyList<ActivationModeOption> ActivationModeOptions { get; } =
     [
         new("toggle", "Basınca aç / tekrar basınca kapat"),
@@ -58,6 +73,15 @@ public sealed class SettingsViewModel : ViewModelBase
         new("double_press", "Çift basınca aç")
     ];
     public ICommand ApplyThemeSettingsCommand { get; }
+    public ICommand UseAccentPresetCommand { get; }
+    public ICommand ResetVisualSettingsCommand { get; }
+    public bool IsHoldMode => string.Equals(ActivationMode, "hold", StringComparison.Ordinal);
+    public bool IsDoublePressMode => string.Equals(ActivationMode, "double_press", StringComparison.Ordinal);
+    public bool HasAccentIssue => !IsValidAccent(AccentInput);
+    public bool CanApplyVisualSettings => !HasAccentIssue;
+    public string AccentIssueMessage => HasAccentIssue
+        ? "Renk #RRGGBB biçiminde olmalı. Örn: #A51E39"
+        : "";
 
     public bool StartupWithWindows
     {
@@ -146,7 +170,14 @@ public sealed class SettingsViewModel : ViewModelBase
         set
         {
             var normalized = value is "hold" or "double_press" ? value : "toggle";
-            if (!SetProperty(ref _activationMode, normalized) || _isSyncingFields)
+            if (!SetProperty(ref _activationMode, normalized))
+            {
+                return;
+            }
+
+            OnPropertyChanged(nameof(IsHoldMode));
+            OnPropertyChanged(nameof(IsDoublePressMode));
+            if (_isSyncingFields)
             {
                 return;
             }
@@ -303,7 +334,17 @@ public sealed class SettingsViewModel : ViewModelBase
     public string AccentInput
     {
         get => _accentInput;
-        set => SetProperty(ref _accentInput, value);
+        set
+        {
+            if (!SetProperty(ref _accentInput, value ?? ""))
+            {
+                return;
+            }
+
+            OnPropertyChanged(nameof(HasAccentIssue));
+            OnPropertyChanged(nameof(CanApplyVisualSettings));
+            OnPropertyChanged(nameof(AccentIssueMessage));
+        }
     }
 
     public double OverlayButtonSize
@@ -458,6 +499,29 @@ public sealed class SettingsViewModel : ViewModelBase
         }
     }
 
+    private void UseAccentPreset(string? color)
+    {
+        if (!IsValidAccent(color ?? ""))
+        {
+            return;
+        }
+
+        AccentInput = color!.ToUpperInvariant();
+        ApplyThemeSettings();
+    }
+
+    private void ResetVisualSettings()
+    {
+        var defaults = DefaultConfigFactory.Create().Theme;
+        ThemeMode = defaults.Mode;
+        AccentInput = defaults.Accent;
+        OverlayButtonSize = defaults.ButtonSize;
+        OverlayRadiusX = defaults.RadiusX;
+        OverlayRadiusY = defaults.RadiusY;
+        OverlayAnimation = defaults.Animation;
+        ApplyThemeSettings();
+    }
+
     private static string NormalizeThemeMode(string? value) =>
         value?.Trim().ToLowerInvariant() switch
         {
@@ -482,3 +546,5 @@ public sealed class SettingsViewModel : ViewModelBase
 }
 
 public sealed record ActivationModeOption(string Key, string Label);
+public sealed record ThemeModeOption(string Key, string Label);
+public sealed record AccentPresetOption(string Label, string Color);

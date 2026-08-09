@@ -9,19 +9,25 @@ Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 
 - Varsayılan ve önerilen ana hotkey yeniden `Ctrl+Alt+Shift+R` olarak ayarlandı.
 - Hotkey çakışması mesajı, açık kalmış eski Action Orbit sürümünü kontrol etmeyi açıkça belirtiyor.
+- Ayarlar çalışma alanı düşük pencere yüksekliği ve yüksek DPI'da içerik kesilmemesi için kaydırılabilir kart düzenine geçirildi.
+- Ayarlardaki tema adları Türkçeleştirildi; ana hotkey aynı ekrana taşındı ve moda bağlı kontroller yalnızca ilgili tetikleme modunda etkinleşiyor.
+- Ana pencerenin görsel sırasıyla klavye sırası eşitlendi: Orbit Shelf `Ctrl+4`, Ayarlar `Ctrl+5`.
 
 ### Eklendi
 
 - Action Orbit'in halka ve hızlı aksiyon fikrini taşıyan yeni uygulama logosu; EXE, görev çubuğu, bildirim alanı ve yardımcı pencerelere uygulandı.
 - Overlay bilgi kartına, halkayı kapatıp yüzen Orbit Shelf'i açan sabit hızlı erişim düğmesi eklendi.
 - Sürüklenebilir ve isteğe bağlı üstte sabitlenebilir ortak mini araç penceresi eklendi.
-- `Mini Araçlar` klasörüne zamanlayıcı, uyanık tutma, sistem durumu, güvenli hesap makinesi ve ekran renk seçici eklendi.
-- Config v9 göçü, mevcut kişisel aksiyonları koruyarak eksik mini araç klasörünü varsayılan profile ekliyor.
+- `Mini Araçlar` klasörüne zamanlayıcı, uyanık tutma, sistem durumu, güvenli hesap makinesi, ekran renk seçici, kronometre, otomatik kaydedilen hızlı not, birim dönüştürücü, metin araçları ve parola üretici eklendi.
+- Ayarlara doğrulamalı vurgu rengi, hazır renkler ve görsel varsayılanlara dönüş kontrolleri eklendi.
+- Config v10 göçü, mevcut kişisel aksiyonları ve özel klasör çocuklarını koruyarak eksik mini araçları varsayılan profile ekliyor.
 
 ### Güvenlik
 
-- `mini_tool` aksiyonu yalnızca uygulama içindeki beş izinli araç kimliğini çalıştırabiliyor.
+- `mini_tool` aksiyonu yalnızca uygulama içindeki on izinli araç kimliğini çalıştırabiliyor.
 - Mini hesap makinesi shell, betik veya dinamik kod çalıştırmadan yerel ifade ayrıştırıcısı kullanıyor.
+- Parola üretici kriptografik güvenli rastgelelik kullanıyor; üretilen parolaları diske veya loglara yazmıyor.
+- Hızlı not 128 KB sınırıyla atomik ve yalnızca yerel dosya yazımı kullanıyor.
 
 ## [2.0.0] - 2026-08-01
 

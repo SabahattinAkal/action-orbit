@@ -1,0 +1,73 @@
+<UserControl x:Class="ActionOrbit.App.Views.MiniTools.UnitConverterToolView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel>
+        <TextBlock Margin="0,0,0,5" Style="{DynamicResource ToolMutedText}" Text="Kategori" />
+        <ComboBox x:Name="CategoryBox"
+                  MinHeight="37"
+                  DisplayMemberPath="Label"
+                  SelectionChanged="CategoryBox_SelectionChanged" />
+        <Grid Margin="0,13,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="42" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Margin="0,0,0,5" Style="{DynamicResource ToolMutedText}" Text="Kaynak" />
+                <ComboBox x:Name="FromUnitBox"
+                          MinHeight="37"
+                          DisplayMemberPath="Label"
+                          SelectionChanged="UnitBox_SelectionChanged" />
+            </StackPanel>
+            <Button Grid.Column="1"
+                    Width="34"
+                    Height="34"
+                    Margin="4,20,4,0"
+                    Content="⇄"
+                    ToolTip="Birimleri değiştir"
+                    Click="Swap_Click"
+                    Style="{DynamicResource ToolIconButton}" />
+            <StackPanel Grid.Column="2">
+                <TextBlock Margin="0,0,0,5" Style="{DynamicResource ToolMutedText}" Text="Hedef" />
+                <ComboBox x:Name="ToUnitBox"
+                          MinHeight="37"
+                          DisplayMemberPath="Label"
+                          SelectionChanged="UnitBox_SelectionChanged" />
+            </StackPanel>
+        </Grid>
+        <TextBlock Margin="0,13,0,5" Style="{DynamicResource ToolMutedText}" Text="Değer" />
+        <TextBox x:Name="ValueBox"
+                 Text="1"
+                 TextChanged="ValueBox_TextChanged"
+                 Style="{DynamicResource ToolTextBox}" />
+        <Border Margin="0,12,0,0"
+                Padding="13,11"
+                Background="{DynamicResource SoftSurfaceBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="1"
+                CornerRadius="11">
+            <Grid>
+                <StackPanel>
+                    <TextBlock Style="{DynamicResource ToolMutedText}" Text="Sonuç" />
+                    <TextBlock x:Name="ResultText"
+                               Margin="0,3,0,0"
+                               FontSize="23"
+                               FontWeight="SemiBold"
+                               Text="—"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+                <Button HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Content="Kopyala"
+                        Click="Copy_Click"
+                        Style="{DynamicResource ToolButton}" />
+            </Grid>
+        </Border>
+        <TextBlock x:Name="StatusText"
+                   Margin="0,9,0,0"
+                   Style="{DynamicResource ToolMutedText}"
+                   Text="Ondalık ayırıcı olarak virgül veya nokta kullanabilirsin."
+                   TextWrapping="Wrap" />
+    </StackPanel>
+</UserControl>
