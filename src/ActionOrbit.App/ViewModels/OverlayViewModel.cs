@@ -13,6 +13,10 @@ public sealed class OverlayViewModel : ViewModelBase
 {
     private const int MainPageSize = 7;
     private const int FolderPageSize = 8;
+    private const double CanvasEdgePadding = 22;
+    private const double OverlayInfoGap = 12;
+    internal const double OverlayInfoReservedHeight = 184;
+    internal const double OverlayInfoBottomPadding = 16;
 
     private readonly ProfileConfig _activeProfile;
     private readonly ProfileConfig _defaultProfile;
@@ -74,8 +78,15 @@ public sealed class OverlayViewModel : ViewModelBase
 
         var horizontalReach = RadiusX + SatelliteAnchorOffset + SatelliteRadius + SatelliteButtonSize;
         var verticalReach = RadiusY + SatelliteAnchorOffset + SatelliteRadius + SatelliteButtonSize;
-        WindowWidth = horizontalReach * 2 + 44;
-        WindowHeight = verticalReach * 2 + 44;
+        var orbitalHalfHeight = verticalReach + CanvasEdgePadding;
+        var infoPanelHalfHeight = RadiusY
+            + ButtonSize / 2
+            + OverlayInfoGap
+            + OverlayInfoReservedHeight
+            + OverlayInfoBottomPadding;
+        var windowHalfHeight = Math.Max(orbitalHalfHeight, infoPanelHalfHeight);
+        WindowWidth = (horizontalReach + CanvasEdgePadding) * 2;
+        WindowHeight = windowHalfHeight * 2;
         CenterX = WindowWidth / 2;
         CenterY = WindowHeight / 2;
 
@@ -230,7 +241,7 @@ public sealed class OverlayViewModel : ViewModelBase
     public double CenterX { get; }
     public double CenterY { get; }
     public double OverlayInfoLeft => CenterX - 132;
-    public double OverlayInfoTop => CenterY + RadiusY + ButtonSize / 2 + 12;
+    public double OverlayInfoTop => CenterY + RadiusY + ButtonSize / 2 + OverlayInfoGap;
     public double CenterHintLeft => CenterX - 46;
     public double CenterHintTop => CenterY + 24;
     public System.Windows.Media.Brush AccentBrush { get; }

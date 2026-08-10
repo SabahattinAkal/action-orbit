@@ -154,6 +154,26 @@ public sealed class OverlayPaginationTests : IDisposable
     }
 
     [Fact]
+    public void OverlayWindow_ReservesEnoughBottomSpaceForExpandedFolderInfoPanel()
+    {
+        var profile = new ProfileConfig
+        {
+            Id = "default",
+            Name = "Default",
+            Actions = [CreateAction(1)]
+        };
+        var viewModel = CreateViewModel(profile);
+
+        var remainingBottomSpace = viewModel.WindowHeight
+            - viewModel.OverlayInfoTop
+            - OverlayViewModel.OverlayInfoReservedHeight;
+
+        Assert.True(
+            remainingBottomSpace >= OverlayViewModel.OverlayInfoBottomPadding,
+            $"Bilgi panelinin altında yalnızca {remainingBottomSpace:0.##} px kaldı.");
+    }
+
+    [Fact]
     public void NestedFolder_BackReturnsToParentBeforeMainRing()
     {
         var nested = new OrbitAction

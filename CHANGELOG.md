@@ -7,6 +7,7 @@ Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 
 ### Düzeltildi
 
+- Klasör halkası açıldığında eklenen geri kontrolü nedeniyle alt bilgi panelinin overlay penceresi tarafından kesilmesi düzeltildi.
 - Varsayılan ve önerilen ana hotkey yeniden `Ctrl+Alt+Shift+R` olarak ayarlandı.
 - Hotkey çakışması mesajı, açık kalmış eski Action Orbit sürümünü kontrol etmeyi açıkça belirtiyor.
 - Ayarlar çalışma alanı düşük pencere yüksekliği ve yüksek DPI'da içerik kesilmemesi için kaydırılabilir kart düzenine geçirildi.
