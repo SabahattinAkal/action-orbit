@@ -3,7 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              AutomationProperties.Name="Canlı halka önizlemesi">
     <Expander Header="Canlı halka önizlemesi"
-              IsExpanded="True">
+              IsExpanded="False"
+              ToolTip="Halkadaki sıralamayı görsel olarak düzenle">
         <Border Margin="0,8,0,0" Style="{DynamicResource SoftSurface}">
             <StackPanel>
                 <TextBlock Margin="0,0,0,6"

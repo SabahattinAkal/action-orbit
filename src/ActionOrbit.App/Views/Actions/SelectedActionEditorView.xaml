@@ -4,142 +4,196 @@
              DataContext="{Binding ActionEditor}"
              AutomationProperties.Name="Seçili aksiyon düzenleyicisi">
     <Border Style="{DynamicResource Surface}">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-                    <DockPanel LastChildFill="True">
-                        <StackPanel>
-                            <TextBlock FontSize="18" FontWeight="Bold" Text="3. Seçili Aksiyon" />
-                            <TextBlock Margin="0,4,0,0"
-                                       Style="{DynamicResource MutedText}"
-                                       Text="Buton adı, ikon, tip ve hedef değerlerini düzenle." />
-                        </StackPanel>
-                    </DockPanel>
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock FontSize="18" FontWeight="Bold" Text="3. Seçili Aksiyon" />
+                    <TextBlock Margin="0,4,12,0"
+                               Style="{DynamicResource MutedText}"
+                               Text="Davranışı, hedefi ve görünümü tek yerden düzenle."
+                               TextWrapping="Wrap" />
+                </StackPanel>
+                <Border Grid.Column="1"
+                        MaxWidth="180"
+                        Padding="10,5"
+                        VerticalAlignment="Top"
+                        Background="{DynamicResource SelectedSurfaceBrush}"
+                        BorderBrush="{DynamicResource SelectedBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="999"
+                        Visibility="{Binding HasSelectedAction, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <TextBlock FontSize="11"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource PrimaryTextBrush}"
+                               Text="{Binding SelectedAction.Title}"
+                               TextTrimming="CharacterEllipsis" />
+                </Border>
+            </Grid>
 
-                    <Border Grid.Row="1"
-                            Margin="0,16,0,0"
-                            Style="{DynamicResource SoftSurface}"
-                            Visibility="{Binding HasNoSelectedAction, Converter={StaticResource BooleanToVisibilityConverter}}">
-                        <StackPanel VerticalAlignment="Center">
-                            <TextBlock FontSize="16"
-                                       FontWeight="Bold"
-                                       Text="Düzenlemek için bir aksiyon seç" />
-                            <TextBlock Margin="0,7,0,0"
-                                       Style="{DynamicResource MutedText}"
-                                       TextWrapping="Wrap"
-                                       Text="Soldan bir aksiyon seçebilir, yeni aksiyon ekleyebilir veya hazır eylem uygulayabilirsin." />
-                        </StackPanel>
+            <Border Grid.Row="1"
+                    Margin="0,16,0,0"
+                    Padding="18"
+                    Background="{DynamicResource SoftSurfaceBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    Visibility="{Binding HasNoSelectedAction, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Border Width="46"
+                            Height="46"
+                            HorizontalAlignment="Center"
+                            Background="{DynamicResource IconSurfaceBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="23">
+                        <TextBlock HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   FontSize="20"
+                                   Foreground="{DynamicResource MutedTextBrush}"
+                                   Text="＋" />
+                    </Border>
+                    <TextBlock Margin="0,12,0,0"
+                               HorizontalAlignment="Center"
+                               FontSize="16"
+                               FontWeight="Bold"
+                               Text="Bir aksiyon seç" />
+                    <TextBlock MaxWidth="320"
+                               Margin="0,6,0,0"
+                               HorizontalAlignment="Center"
+                               Style="{DynamicResource MutedText}"
+                               Text="Soldaki listeden bir aksiyon seçtiğinde düzenleme alanları burada açılır."
+                               TextAlignment="Center"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <ScrollViewer Grid.Row="1"
+                          Margin="0,16,0,0"
+                          Padding="0,0,5,0"
+                          VerticalScrollBarVisibility="Auto"
+                          Visibility="{Binding HasSelectedAction, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <StackPanel DataContext="{Binding SelectedAction}">
+                    <Border Padding="12"
+                            Background="{DynamicResource SoftSurfaceBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="12">
+                        <Grid DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock FontWeight="SemiBold" Text="Hazır eylem" />
+                                <TextBlock Margin="0,2,12,0"
+                                           Style="{DynamicResource MutedText}"
+                                           Text="Seçili aksiyona hazır bir davranış uygula."
+                                           TextWrapping="Wrap" />
+                                <ComboBox Margin="0,8,10,0"
+                                          AutomationProperties.Name="Hazır eylem"
+                                          ItemTemplate="{DynamicResource PresetTemplate}"
+                                          ItemsSource="{Binding ActionEditor.ActionPresets}"
+                                          SelectedItem="{Binding ActionEditor.SelectedPreset}" />
+                            </StackPanel>
+                            <Button Grid.Column="1"
+                                    Margin="0"
+                                    VerticalAlignment="Bottom"
+                                    Command="{Binding ActionEditor.ApplyPresetCommand}"
+                                    Content="Uygula"
+                                    Style="{DynamicResource PrimaryButton}" />
+                        </Grid>
                     </Border>
 
-                    <ScrollViewer Grid.Row="1"
-                                  Margin="0,16,0,0"
-                                  VerticalScrollBarVisibility="Auto"
-                                  Visibility="{Binding HasSelectedAction, Converter={StaticResource BooleanToVisibilityConverter}}">
-                        <StackPanel DataContext="{Binding SelectedAction}">
-                            <Border Style="{DynamicResource SoftSurface}"
-                                    DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel>
-                                        <TextBlock Style="{DynamicResource TinyLabel}" Text="Hazır eylem uygula" />
-                                        <ComboBox Margin="0,7,12,0"
-                                                  ItemTemplate="{DynamicResource PresetTemplate}"
-                                                  ItemsSource="{Binding ActionEditor.ActionPresets}"
-                                                  SelectedItem="{Binding ActionEditor.SelectedPreset}" />
-                                    </StackPanel>
-                                    <Button Grid.Column="1"
-                                            VerticalAlignment="Bottom"
-                                            Command="{Binding ActionEditor.ApplyPresetCommand}"
-                                            Content="Uygula" />
-                                </Grid>
-                            </Border>
+                    <Border Margin="0,12,0,0"
+                            Padding="14"
+                            Background="{DynamicResource SoftSurfaceBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="12">
+                        <StackPanel>
+                            <TextBlock Style="{DynamicResource TinyLabel}" Text="TEMEL BİLGİLER" />
 
-                            <Grid Margin="0,18,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="0" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="0" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0" Visibility="Collapsed">
-                                    <TextBlock Style="{DynamicResource TinyLabel}" Text="İkon" />
-                                    <ComboBox Margin="0,6,12,0"
-                                              IsEditable="True"
-                                              ItemsSource="{Binding DataContext.ActionEditor.AvailableIconKeys, RelativeSource={RelativeSource AncestorType=Window}}"
-                                              SelectedItem="{Binding Icon, UpdateSourceTrigger=PropertyChanged}"
-                                              Text="{Binding Icon, UpdateSourceTrigger=PropertyChanged}" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="1">
-                                    <TextBlock Style="{DynamicResource TinyLabel}" Text="Ad" />
-                                    <TextBox Margin="0,6,12,0"
-                                             Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="2" Visibility="Collapsed">
-                                    <TextBlock Style="{DynamicResource TinyLabel}" Text="ID (otomatik)" />
-                                    <TextBox Margin="0,6,0,0"
-                                             Text="{Binding Id, UpdateSourceTrigger=PropertyChanged}" />
-                                </StackPanel>
-                            </Grid>
+                            <TextBlock Margin="0,12,0,0"
+                                       Style="{DynamicResource TinyLabel}"
+                                       Text="Ad" />
+                            <TextBox Margin="0,6,0,0"
+                                     AutomationProperties.Name="Aksiyon adı"
+                                     Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}" />
 
-                            <Border Margin="0,14,0,0"
+                            <Border Margin="0,12,0,0"
                                     Padding="10"
                                     Background="{DynamicResource InfoSurfaceBrush}"
                                     BorderBrush="{DynamicResource InfoBorderBrush}"
                                     BorderThickness="1"
-                                    CornerRadius="10"
+                                    CornerRadius="9"
                                     Visibility="{Binding IsFolder, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                <StackPanel>
-                                    <TextBlock FontWeight="SemiBold"
-                                               Foreground="{DynamicResource InfoTextBrush}"
-                                               Text="{Binding FolderBadgeText, StringFormat=Bu klasörde {0} aksiyon var.}" />
-                                    <TextBlock Margin="0,4,0,0"
-                                               Style="{DynamicResource MutedText}"
-                                               TextWrapping="Wrap"
-                                               Text="+ Alt Aksiyon ile yeni child ekleyebilir veya soldaki listeden bir aksiyonu bu klasör satırının üstüne bırakabilirsin." />
-                                </StackPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border MinWidth="42"
+                                            Padding="8,4"
+                                            VerticalAlignment="Center"
+                                            Background="{DynamicResource SurfaceBrush}"
+                                            CornerRadius="999">
+                                        <TextBlock HorizontalAlignment="Center"
+                                                   FontWeight="Bold"
+                                                   Foreground="{DynamicResource InfoTextBrush}"
+                                                   Text="{Binding FolderBadgeText}" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                        <TextBlock FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource InfoTextBrush}"
+                                                   Text="Alt aksiyon" />
+                                        <TextBlock Margin="0,2,0,0"
+                                                   Style="{DynamicResource MutedText}"
+                                                   Text="Soldaki Alt aksiyon düğmesiyle bu klasöre içerik ekleyebilirsin."
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Grid>
                             </Border>
 
-                            <Border Margin="0,14,0,0"
+                            <Border Margin="0,12,0,0"
                                     Padding="10"
-                                    Background="{DynamicResource SoftSurfaceBrush}"
+                                    Background="{DynamicResource SurfaceBrush}"
                                     BorderBrush="{DynamicResource BorderBrush}"
                                     BorderThickness="1"
-                                    CornerRadius="10"
+                                    CornerRadius="9"
                                     Visibility="{Binding IsChild, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                <DockPanel LastChildFill="True">
-                                    <Button DockPanel.Dock="Right"
-                                            Margin="10,0,0,0"
-                                            Padding="10,5"
-                                            Command="{Binding DataContext.ActionEditor.MoveActionOutOfFolderCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                            Content="Klasörden Çıkar" />
-                                    <TextBlock VerticalAlignment="Center"
-                                               Style="{DynamicResource MutedText}"
-                                               Text="{Binding ParentTitle, StringFormat=Bu aksiyon {0} klasörünün içinde.}"
-                                               TextWrapping="Wrap" />
-                                </DockPanel>
+                                <TextBlock Style="{DynamicResource MutedText}"
+                                           Text="{Binding ParentTitle, StringFormat={}{0} klasörünün içinde}"
+                                           TextWrapping="Wrap" />
                             </Border>
 
-                            <Grid Margin="0,16,0,0">
+                            <Grid Margin="0,14,0,0">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="190" />
+                                    <ColumnDefinition Width="180" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Style="{DynamicResource TinyLabel}" Text="Eylem türü" />
-                                    <ComboBox Margin="0,6,12,0"
+                                    <ComboBox Margin="0,6,10,0"
+                                              AutomationProperties.Name="Eylem türü"
                                               DisplayMemberPath="Label"
                                               IsEnabled="{Binding CanChangeType}"
                                               ItemsSource="{Binding DataContext.ActionEditor.ActionTypeOptions, RelativeSource={RelativeSource AncestorType=Window}}"
                                               SelectedValue="{Binding Type, UpdateSourceTrigger=PropertyChanged}"
                                               SelectedValuePath="Key"
-                                              ToolTip="Alt aksiyonları olan klasörün türünü değiştirmek için önce alt aksiyonları taşı veya sil." />
+                                              ToolTip="Alt aksiyonları olan bir klasörün türünü değiştirmek için önce içeriğini taşı veya sil." />
                                 </StackPanel>
-                                <StackPanel Grid.Column="1">
+                                <StackPanel Grid.Column="1"
+                                            Visibility="{Binding IsNotFolder, Converter={StaticResource BooleanToVisibilityConverter}}">
                                     <TextBlock Style="{DynamicResource TinyLabel}" Text="{Binding TargetLabel}" />
                                     <Grid Margin="0,6,0,0">
                                         <Grid.ColumnDefinitions>
@@ -149,12 +203,12 @@
                                         <TextBox Grid.Column="0"
                                                  MinHeight="{Binding TargetBoxMinHeight}"
                                                  AcceptsReturn="True"
+                                                 AutomationProperties.Name="Aksiyon hedefi"
                                                  IsEnabled="{Binding IsTargetEditable}"
-                                                 TextWrapping="Wrap"
-                                                 Text="{Binding Target, UpdateSourceTrigger=PropertyChanged}" />
+                                                 Text="{Binding Target, UpdateSourceTrigger=PropertyChanged}"
+                                                 TextWrapping="Wrap" />
                                         <Button Grid.Column="1"
                                                 Margin="8,0,0,0"
-                                                VerticalAlignment="Top"
                                                 Command="{Binding DataContext.ActionEditor.BrowseActionTargetCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                 Content="Gözat"
                                                 Visibility="{Binding DataContext.ActionEditor.CanBrowseSelectedAction, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}" />
@@ -162,149 +216,160 @@
                                 </StackPanel>
                             </Grid>
 
-                            <TextBlock Margin="0,8,0,0"
+                            <TextBlock Margin="0,7,0,0"
                                        Style="{DynamicResource MutedText}"
                                        Text="{Binding TypeHelp}"
                                        TextWrapping="Wrap" />
 
-                            <Border Margin="0,10,0,0"
+                            <StackPanel Margin="0,14,0,0"
+                                        Visibility="{Binding IsNotFolder, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <TextBlock Style="{DynamicResource TinyLabel}" Text="{Binding ArgumentsLabel}" />
+                                <TextBox Margin="0,6,0,0"
+                                         AutomationProperties.Name="Ek bilgi"
+                                         Text="{Binding Arguments, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+
+                            <Border Margin="0,12,0,0"
+                                    Padding="10"
+                                    Background="{DynamicResource SurfaceBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="9"
+                                    Visibility="{Binding IsOpenUrl, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <StackPanel>
+                                    <TextBlock Style="{DynamicResource TinyLabel}" Text="Hedef tarayıcı" />
+                                    <ComboBox Margin="0,6,0,0"
+                                              AutomationProperties.Name="Hedef tarayıcı"
+                                              DisplayMemberPath="Label"
+                                              ItemsSource="{Binding DataContext.ActionEditor.BrowserOptions, RelativeSource={RelativeSource AncestorType=Window}}"
+                                              SelectedValue="{Binding Browser, UpdateSourceTrigger=PropertyChanged}"
+                                              SelectedValuePath="Key" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Margin="0,12,0,0"
                                     Padding="10"
                                     Background="{DynamicResource WarningSurfaceBrush}"
                                     BorderBrush="{DynamicResource WarningBorderBrush}"
                                     BorderThickness="1"
-                                    CornerRadius="10"
+                                    CornerRadius="9"
                                     Visibility="{Binding IsRunCommand, Converter={StaticResource BooleanToVisibilityConverter}}">
                                 <TextBlock Foreground="{DynamicResource WarningTextBrush}"
-                                           TextWrapping="Wrap"
-                                           Text="Komut çalıştırma gelişmiş kullanımdır. Yalnızca güvendiğin komutları ekle." />
+                                           Text="Yalnızca güvendiğin komutları çalıştır."
+                                           TextWrapping="Wrap" />
                             </Border>
 
-                            <Border Margin="0,10,0,0"
+                            <Border Margin="0,12,0,0"
                                     Padding="10"
                                     Background="{DynamicResource DangerSurfaceBrush}"
                                     BorderBrush="{DynamicResource DangerBorderBrush}"
                                     BorderThickness="1"
-                                    CornerRadius="10"
+                                    CornerRadius="9"
                                     DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}"
                                     Visibility="{Binding ActionEditor.HasSelectedActionValidation, Converter={StaticResource BooleanToVisibilityConverter}}">
                                 <TextBlock Foreground="{DynamicResource DangerTextBrush}"
                                            Text="{Binding ActionEditor.SelectedActionValidationMessage}"
                                            TextWrapping="Wrap" />
                             </Border>
-
-                            <TextBlock Margin="0,16,0,0"
-                                       Style="{DynamicResource TinyLabel}"
-                                       Text="{Binding ArgumentsLabel}"
-                                       Visibility="{Binding IsNotFolder, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                            <TextBox Margin="0,6,0,0"
-                                     Text="{Binding Arguments, UpdateSourceTrigger=PropertyChanged}"
-                                     Visibility="{Binding IsNotFolder, Converter={StaticResource BooleanToVisibilityConverter}}" />
-
-                            <Border Margin="0,14,0,0"
-                                    Padding="10"
-                                    Background="{DynamicResource SoftSurfaceBrush}"
-                                    BorderBrush="{DynamicResource BorderBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="10"
-                                    Visibility="{Binding IsOpenUrl, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                <StackPanel>
-                                    <TextBlock Style="{DynamicResource TinyLabel}" Text="HEDEF TARAYICI" />
-                                    <ComboBox Margin="0,6,0,0"
-                                              DisplayMemberPath="Label"
-                                              ItemsSource="{Binding DataContext.ActionEditor.BrowserOptions, RelativeSource={RelativeSource AncestorType=Window}}"
-                                              SelectedValue="{Binding Browser, UpdateSourceTrigger=PropertyChanged}"
-                                              SelectedValuePath="Key" />
-                                    <TextBlock Margin="0,5,0,0"
-                                               Style="{DynamicResource MutedText}"
-                                               Text="Seçilen tarayıcı kurulu değilse aksiyon açık bir hata verir." />
-                                </StackPanel>
-                            </Border>
-
-                            <Border Margin="0,14,0,0"
-                                    Padding="10"
-                                    Background="{DynamicResource SoftSurfaceBrush}"
-                                    BorderBrush="{DynamicResource BorderBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="10"
-                                    Visibility="{Binding IsNotFolder, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                <StackPanel>
-                                    <TextBlock Style="{DynamicResource TinyLabel}" Text="DOĞRUDAN KISAYOL · İSTEĞE BAĞLI" />
-                                    <TextBox Margin="0,6,0,0"
-                                             ToolTip="Örn: Ctrl+Alt+D veya F14"
-                                             Text="{Binding Shortcut, UpdateSourceTrigger=PropertyChanged}" />
-                                    <TextBlock Margin="0,5,0,0"
-                                               Style="{DynamicResource MutedText}"
-                                               Text="Halka açılmadan bu aksiyonu çalıştırır. Aynı kısayolu bir profilde yalnızca bir kez kullan." />
-                                </StackPanel>
-                            </Border>
-
-                            <StackPanel Margin="0,16,0,0" Orientation="Horizontal">
-                                <Button Command="{Binding DataContext.ActionEditor.TestActionCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        IsEnabled="{Binding DataContext.ActionEditor.CanTestSelectedAction, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        Style="{DynamicResource PrimaryButton}"
-                                        Content="Aksiyonu Test Et" />
-                            </StackPanel>
-
-                            <DockPanel Margin="0,18,0,8" LastChildFill="False">
-                                <TextBlock DockPanel.Dock="Left"
-                                           VerticalAlignment="Center"
-                                           Style="{DynamicResource TinyLabel}"
-                                           Text="İkon galerisi" />
-                                <Button DockPanel.Dock="Right"
-                                        Padding="10,5"
-                                        Command="{Binding DataContext.ActionEditor.ImportIconCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        Content="PNG/SVG ekle" />
-                            </DockPanel>
-                            <ListBox MaxHeight="150"
-                                     ItemContainerStyle="{DynamicResource IconTileItem}"
-                                     ItemTemplate="{DynamicResource IconTileTemplate}"
-                                     ItemsSource="{Binding DataContext.ActionEditor.AvailableIcons, RelativeSource={RelativeSource AncestorType=Window}}"
-                                     SelectedValue="{Binding Icon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                     SelectedValuePath="Key"
-                                     ScrollViewer.VerticalScrollBarVisibility="Auto">
-                                <ListBox.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <WrapPanel />
-                                    </ItemsPanelTemplate>
-                                </ListBox.ItemsPanel>
-                            </ListBox>
-
-                            <Border Margin="0,18,0,0"
-                                    Style="{DynamicResource SoftSurface}">
-                            <TextBlock Foreground="{DynamicResource MutedTextBrush}"
-                                           TextWrapping="Wrap"
-                                           Text="Kopyala, yapıştır, kes gibi işlemler için hazır eylem seçip Uygula demen yeterli. Gelişmiş ID normal kullanımda otomatik kalabilir." />
-                            </Border>
-
-                            <Border Margin="0,18,0,0"
-                                    Style="{DynamicResource SoftSurface}">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0">
-                                        <TextBlock Style="{DynamicResource TinyLabel}" Text="Aktif process" />
-                                        <TextBlock Margin="0,5,0,0"
-                                                   FontFamily="Consolas"
-                                                   FontWeight="SemiBold"
-                                                   Text="{Binding DataContext.ProfileEditor.ActiveProcessName, RelativeSource={RelativeSource AncestorType=Window}}" />
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1" Margin="14,0,14,0">
-                                        <TextBlock Style="{DynamicResource TinyLabel}" Text="Eşleşen profil" />
-                                        <TextBlock Margin="0,5,0,0"
-                                                   FontWeight="SemiBold"
-                                                   Text="{Binding DataContext.ProfileEditor.ActiveProfileName, RelativeSource={RelativeSource AncestorType=Window}}" />
-                                    </StackPanel>
-                                    <Button Grid.Column="2"
-                                            VerticalAlignment="Center"
-                                            Command="{Binding DataContext.ProfileEditor.DetectProfileCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                            Content="Algıla" />
-                                </Grid>
-                            </Border>
                         </StackPanel>
-                    </ScrollViewer>
+                    </Border>
+
+                    <Expander Margin="0,12,0,0"
+                              Header="Doğrudan kısayol · isteğe bağlı"
+                              IsExpanded="False"
+                              Visibility="{Binding IsNotFolder, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Border Margin="0,8,0,0"
+                                Padding="12"
+                                Background="{DynamicResource SoftSurfaceBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="12">
+                            <StackPanel>
+                                <TextBox AutomationProperties.Name="Doğrudan aksiyon kısayolu"
+                                         ToolTip="Örn: Ctrl+Alt+D veya F14"
+                                         Text="{Binding Shortcut, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBlock Margin="0,6,0,0"
+                                           Style="{DynamicResource MutedText}"
+                                           Text="Bu kısayol aksiyonu halka açılmadan çalıştırır; aynı profilde benzersiz olmalıdır."
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+                    </Expander>
+
+                    <Expander Margin="0,12,0,8" IsExpanded="False">
+                        <Expander.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock FontWeight="SemiBold" Text="İkon seç" />
+                                <TextBlock Margin="8,0,0,0"
+                                           Foreground="{DynamicResource MutedTextBrush}"
+                                           Text="{Binding Icon, StringFormat=· {0}}"
+                                           TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                        </Expander.Header>
+                        <Border Margin="0,8,0,0"
+                                Padding="12"
+                                Background="{DynamicResource SoftSurfaceBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="12">
+                            <StackPanel>
+                                <DockPanel Margin="0,0,0,10" LastChildFill="True">
+                                    <Button DockPanel.Dock="Right"
+                                            Margin="10,0,0,0"
+                                            Padding="10,5"
+                                            Command="{Binding DataContext.ActionEditor.ImportIconCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            Content="PNG/SVG ekle" />
+                                    <TextBlock VerticalAlignment="Center"
+                                               Style="{DynamicResource MutedText}"
+                                               Text="Galeriden seç veya kendi ikonunu ekle."
+                                               TextWrapping="Wrap" />
+                                </DockPanel>
+                                <ListBox MaxHeight="230"
+                                         AutomationProperties.Name="İkon galerisi"
+                                         ItemContainerStyle="{DynamicResource IconTileItem}"
+                                         ItemTemplate="{DynamicResource IconTileTemplate}"
+                                         ItemsSource="{Binding DataContext.ActionEditor.AvailableIcons, RelativeSource={RelativeSource AncestorType=Window}}"
+                                         SelectedValue="{Binding Icon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         SelectedValuePath="Key"
+                                         ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                    <ListBox.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel />
+                                        </ItemsPanelTemplate>
+                                    </ListBox.ItemsPanel>
+                                </ListBox>
+                            </StackPanel>
+                        </Border>
+                    </Expander>
+                </StackPanel>
+            </ScrollViewer>
+
+            <Border Grid.Row="2"
+                    Margin="0,12,0,0"
+                    Padding="10"
+                    Background="{DynamicResource SoftSurfaceBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    Visibility="{Binding HasSelectedAction, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Button Margin="0"
+                            HorizontalAlignment="Left"
+                            Command="{Binding TestActionCommand}"
+                            Content="Aksiyonu test et"
+                            IsEnabled="{Binding CanTestSelectedAction}"
+                            Style="{DynamicResource PrimaryButton}" />
+                    <Button Grid.Column="1"
+                            Margin="0"
+                            Command="{Binding DeleteActionCommand}"
+                            Content="Aksiyonu sil"
+                            Style="{DynamicResource DangerButton}" />
                 </Grid>
+            </Border>
+        </Grid>
     </Border>
 </UserControl>

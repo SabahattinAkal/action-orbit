@@ -4,96 +4,241 @@
              xmlns:actionViews="clr-namespace:ActionOrbit.App.Views.Actions"
              DataContext="{Binding ActionEditor}"
              AutomationProperties.Name="Aksiyon listesi">
+    <UserControl.Resources>
+        <Style x:Key="ActionPanelListItem" TargetType="ListBoxItem">
+            <Setter Property="Margin" Value="0,0,0,6" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="ItemShell"
+                                Padding="8,5"
+                                Background="{DynamicResource SurfaceBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="10">
+                            <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ItemShell" Property="Background" Value="{DynamicResource HoverSurfaceBrush}" />
+                                <Setter TargetName="ItemShell" Property="BorderBrush" Value="{DynamicResource SelectedBorderBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="ItemShell" Property="Background" Value="{DynamicResource SelectedSurfaceBrush}" />
+                                <Setter TargetName="ItemShell" Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" />
+                            </Trigger>
+                            <DataTrigger Binding="{Binding IsDropTarget}" Value="True">
+                                <Setter TargetName="ItemShell" Property="Background" Value="{DynamicResource InfoSurfaceBrush}" />
+                                <Setter TargetName="ItemShell" Property="BorderBrush" Value="{DynamicResource InfoBorderBrush}" />
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
     <Border Style="{DynamicResource Surface}">
-        <DockPanel LastChildFill="True">
-            <StackPanel DockPanel.Dock="Top">
-                <TextBlock FontSize="18" FontWeight="Bold" Text="2. Aksiyonlar" />
-                <TextBlock Margin="0,4,0,14"
-                           Style="{DynamicResource MutedText}"
-                           Text="Sıralama halkadaki konumu belirler." />
-                <TextBlock Margin="0,-8,0,14"
-                           Style="{DynamicResource MutedText}"
-                           Text="Aksiyonu bir klasör satırının üstüne bırakıp alt aksiyon yapabilirsin." />
-                <Border Margin="0,0,0,12"
-                        Padding="10"
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock FontSize="18" FontWeight="Bold" Text="2. Aksiyonlar" />
+                    <TextBlock Margin="0,4,12,0"
+                               Style="{DynamicResource MutedText}"
+                               Text="Halkadaki düğmeleri ekle, seç ve sırala."
+                               TextWrapping="Wrap" />
+                </StackPanel>
+                <Border Grid.Column="1"
+                        Padding="9,5"
+                        VerticalAlignment="Top"
                         Background="{DynamicResource SoftSurfaceBrush}"
                         BorderBrush="{DynamicResource BorderBrush}"
                         BorderThickness="1"
-                        CornerRadius="10"
-                        DataContext="{Binding DataContext.RingSets, RelativeSource={RelativeSource AncestorType=Window}}">
-                    <StackPanel>
-                        <TextBlock Style="{DynamicResource TinyLabel}" Text="HALKA SETİ" />
-                        <ComboBox Margin="0,6,0,0"
-                                  DisplayMemberPath="DisplayName"
-                                  ItemsSource="{Binding Rings}"
-                                  SelectedItem="{Binding SelectedRing}" />
-                        <TextBox Margin="0,7,0,0"
+                        CornerRadius="999">
+                    <TextBlock FontSize="11"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource MutedTextBrush}"
+                               Text="{Binding ActionRows.Count, StringFormat={}{0} aksiyon}" />
+                </Border>
+            </Grid>
+
+            <Border Grid.Row="1"
+                    Margin="0,14,0,0"
+                    Padding="12"
+                    Background="{DynamicResource SoftSurfaceBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    DataContext="{Binding DataContext.RingSets, RelativeSource={RelativeSource AncestorType=Window}}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <DockPanel Grid.Row="0" LastChildFill="True">
+                        <TextBlock DockPanel.Dock="Left"
+                                   Style="{DynamicResource TinyLabel}"
+                                   Text="HALKA DÜZENİ" />
+                        <TextBlock HorizontalAlignment="Right"
+                                   Style="{DynamicResource MutedText}"
+                                   Text="{Binding SelectedRing.DisplayName}"
+                                   TextTrimming="CharacterEllipsis" />
+                    </DockPanel>
+                    <ComboBox Grid.Row="1"
+                              Margin="0,8,0,0"
+                              AutomationProperties.Name="Düzenlenen halka"
+                              DisplayMemberPath="DisplayName"
+                              ItemsSource="{Binding Rings}"
+                              SelectedItem="{Binding SelectedRing}" />
+                    <Grid Grid.Row="2" Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0"
+                                 Margin="0,0,8,0"
+                                 AutomationProperties.Name="Halka adı"
                                  ToolTip="Aktif halka setinin adı"
                                  Text="{Binding SelectedRingName, UpdateSourceTrigger=PropertyChanged}" />
-                        <WrapPanel Margin="0,7,0,0">
-                            <Button Padding="9,5" Command="{Binding AddRingCommand}" Content="+ Halka" />
-                            <Button Padding="9,5" Command="{Binding DuplicateRingCommand}" Content="Kopyala" />
-                            <Button Padding="9,5"
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <Button MinHeight="34"
+                                    Padding="9,5"
+                                    Command="{Binding AddRingCommand}"
+                                    Content="Yeni" />
+                            <Button MinHeight="34"
+                                    Padding="9,5"
+                                    Command="{Binding DuplicateRingCommand}"
+                                    Content="Kopyala" />
+                            <Button MinHeight="34"
+                                    Margin="0"
+                                    Padding="9,5"
                                     Command="{Binding DeleteRingCommand}"
+                                    Content="Sil"
                                     IsEnabled="{Binding CanDeleteSelectedRing}"
-                                    Content="Sil" />
-                        </WrapPanel>
+                                    Style="{DynamicResource DangerButton}" />
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <Grid Grid.Row="2" Margin="0,12,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal">
+                    <Button Command="{Binding AddActionCommand}"
+                            Content="+ Aksiyon"
+                            Style="{DynamicResource PrimaryButton}" />
+                    <Button Command="{Binding AddFolderCommand}"
+                            Content="+ Klasör" />
+                    <Button Margin="0"
+                            Command="{Binding AddChildActionCommand}"
+                            Content="+ Alt aksiyon"
+                            IsEnabled="{Binding SelectedActionIsFolder}"
+                            ToolTip="Seçili klasöre yeni bir alt aksiyon ekle" />
+                </StackPanel>
+            </Grid>
+
+            <Border Grid.Row="3"
+                    Padding="10"
+                    Background="{DynamicResource SoftSurfaceBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <DockPanel Margin="2,0,2,8">
+                        <TextBlock DockPanel.Dock="Left"
+                                   FontWeight="SemiBold"
+                                   Text="Halka aksiyonları" />
+                        <TextBlock HorizontalAlignment="Right"
+                                   Style="{DynamicResource MutedText}"
+                                   Text="Sürükleyerek sırala" />
+                    </DockPanel>
+                    <ListBox x:Name="ActionList"
+                             Grid.Row="1"
+                             Padding="0,0,4,0"
+                             AllowDrop="True"
+                             ItemsSource="{Binding ActionRows}"
+                             SelectedItem="{Binding SelectedAction}"
+                             ItemTemplate="{DynamicResource ActionRowTemplate}"
+                             ItemContainerStyle="{StaticResource ActionPanelListItem}"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             PreviewMouseLeftButtonDown="ActionList_PreviewMouseLeftButtonDown"
+                             PreviewMouseMove="ActionList_PreviewMouseMove"
+                             DragOver="ActionList_DragOver"
+                             DragLeave="ActionList_DragLeave"
+                             Drop="ActionList_Drop" />
+                </Grid>
+            </Border>
+
+            <actionViews:RingPreviewView Grid.Row="4" Margin="0,10,0,0" />
+
+            <Border Grid.Row="5"
+                    Margin="0,10,0,0"
+                    Padding="10"
+                    Background="{DynamicResource SoftSurfaceBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    Visibility="{Binding HasSelectedAction, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock FontWeight="SemiBold"
+                                   Text="{Binding SelectedAction.Title}"
+                                   TextTrimming="CharacterEllipsis" />
+                        <TextBlock Margin="0,2,8,0"
+                                   Style="{DynamicResource MutedText}"
+                                   Text="Seçili aksiyon"
+                                   TextTrimming="CharacterEllipsis" />
                     </StackPanel>
-                </Border>
-                <WrapPanel Margin="0,0,0,12">
-                    <Button Command="{Binding AddActionCommand}" Content="+ Aksiyon" />
-                    <Button Command="{Binding AddFolderCommand}" Content="+ Klasör" />
-                    <Button Command="{Binding AddChildActionCommand}" Content="+ Alt Aksiyon" />
-                </WrapPanel>
-
-                <actionViews:RingPreviewView Margin="0,0,0,12" />
-
-                <Border Margin="0,0,0,12"
-                        Style="{DynamicResource SoftSurface}">
-                    <StackPanel>
-                        <TextBlock Style="{DynamicResource TinyLabel}" Text="Hazır eylem" />
-                        <Grid Margin="0,7,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <ComboBox Grid.Column="0"
-                                      Margin="0,0,8,0"
-                                      ItemTemplate="{DynamicResource PresetTemplate}"
-                                      ItemsSource="{Binding ActionPresets}"
-                                      SelectedItem="{Binding SelectedPreset}" />
-                            <Button Grid.Column="1"
-                                    Command="{Binding ApplyPresetCommand}"
-                                    Content="Uygula" />
-                        </Grid>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <Button MinHeight="32"
+                                Padding="9,5"
+                                Command="{Binding MoveActionUpCommand}"
+                                Content="←"
+                                ToolTip="Önceki konuma taşı" />
+                        <Button MinHeight="32"
+                                Padding="9,5"
+                                Command="{Binding MoveActionDownCommand}"
+                                Content="→"
+                                ToolTip="Sonraki konuma taşı" />
+                        <Button MinHeight="32"
+                                Margin="0"
+                                Padding="9,5"
+                                Command="{Binding MoveActionOutOfFolderCommand}"
+                                Content="Dışarı al"
+                                IsEnabled="{Binding CanMoveSelectedActionOutOfFolder}"
+                                ToolTip="Aksiyonu klasörden ana halkaya çıkar" />
                     </StackPanel>
-                </Border>
-            </StackPanel>
-
-            <StackPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
-                <WrapPanel>
-                    <Button Command="{Binding MoveActionUpCommand}" Content="Yukarı" />
-                    <Button Command="{Binding MoveActionDownCommand}" Content="Aşağı" />
-                    <Button Command="{Binding MoveActionOutOfFolderCommand}"
-                            Content="Klasörden Çıkar"
-                            IsEnabled="{Binding CanMoveSelectedActionOutOfFolder}" />
-                    <Button Command="{Binding DeleteActionCommand}"
-                            Style="{DynamicResource DangerButton}"
-                            Content="Sil" />
-                </WrapPanel>
-            </StackPanel>
-
-            <ListBox x:Name="ActionList"
-                     ItemsSource="{Binding ActionRows}"
-                     SelectedItem="{Binding SelectedAction}"
-                     ItemTemplate="{DynamicResource ActionRowTemplate}"
-                     ItemContainerStyle="{DynamicResource CleanListBoxItem}"
-                     AllowDrop="True"
-                     PreviewMouseLeftButtonDown="ActionList_PreviewMouseLeftButtonDown"
-                     PreviewMouseMove="ActionList_PreviewMouseMove"
-                     DragOver="ActionList_DragOver"
-                     DragLeave="ActionList_DragLeave"
-                     Drop="ActionList_Drop" />
-        </DockPanel>
+                </Grid>
+            </Border>
+        </Grid>
     </Border>
 </UserControl>
