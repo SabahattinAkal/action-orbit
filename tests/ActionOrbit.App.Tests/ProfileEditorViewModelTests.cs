@@ -65,6 +65,21 @@ public sealed class ProfileEditorViewModelTests : IDisposable
         viewModel.SelectedProfileId = "renamed_default";
 
         Assert.Equal("renamed_default", defaultProfile.Id);
+        Assert.Equal("renamed_default", viewModel.DefaultProfileId);
+        Assert.True(viewModel.SelectedProfileIsDefault);
+    }
+
+    [Fact]
+    public void SetDefaultProfile_UpdatesDefaultProfileIdForListBadges()
+    {
+        var viewModel = CreateViewModel();
+        viewModel.ReloadFromConfig();
+        var target = viewModel.Profiles.First(profile => profile.Id != viewModel.DefaultProfileId);
+        viewModel.SelectedProfile = target;
+
+        viewModel.SetDefaultProfileCommand.Execute(null);
+
+        Assert.Equal(target.Id, viewModel.DefaultProfileId);
         Assert.True(viewModel.SelectedProfileIsDefault);
     }
 

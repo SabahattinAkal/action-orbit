@@ -74,6 +74,8 @@ public sealed class ProfileEditorViewModel : ViewModelBase
 
     public int ProfileCount => Profiles.Count;
 
+    public string DefaultProfileId => _configService.CurrentConfig.DefaultProfileId;
+
     public ProfileConfig? SelectedProfile
     {
         get => _selectedProfile;
@@ -146,6 +148,7 @@ public sealed class ProfileEditorViewModel : ViewModelBase
             if (wasDefault)
             {
                 _configService.CurrentConfig.DefaultProfileId = normalized;
+                OnPropertyChanged(nameof(DefaultProfileId));
             }
 
             RefreshProfileList();
@@ -210,6 +213,7 @@ public sealed class ProfileEditorViewModel : ViewModelBase
     {
         _activeProfileResolutionCache.Invalidate();
         OnPropertyChanged(nameof(ProfileCount));
+        OnPropertyChanged(nameof(DefaultProfileId));
         OnPropertyChanged(nameof(SelectedProfileIsDefault));
         OnPropertyChanged(nameof(CanSetDefaultProfile));
         RefreshProfileList();
@@ -465,6 +469,7 @@ public sealed class ProfileEditorViewModel : ViewModelBase
         }
 
         _configService.CurrentConfig.DefaultProfileId = SelectedProfile.Id;
+        OnPropertyChanged(nameof(DefaultProfileId));
         OnPropertyChanged(nameof(SelectedProfileIsDefault));
         OnPropertyChanged(nameof(CanSetDefaultProfile));
         RefreshProfileList();
