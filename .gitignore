@@ -1,10 +1,46 @@
-bin/
-obj/
-*.user
-*.suo
+# Build and test output
+[Bb]in/
+[Oo]bj/
+[Aa]rtifacts/
+[Rr]elease/
+[Pp]ublish/
+TestResults/
+coverage/
+*.trx
+*.coverage
+*.coveragexml
+
+# IDE and local tooling
 .vs/
 .idea/
-TestResults/
-*.trx
-*.tmp
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Local application data
+config.json
+config.lastgood.json
+config.broken.*.json
+shelves.json
+shelf-cache/
+logs/
 *.log
+*.tmp
+*.bak
+
+# Environment files and signing material
+.env
+.env.*
+!.env.example
+*.pfx
+*.p12
+*.pem
+*.key
+*.snk
+
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store

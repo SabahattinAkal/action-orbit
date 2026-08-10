@@ -5,6 +5,10 @@ Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 
 ## [Unreleased]
 
+### Değiştirildi
+
+- Public belgeler güncel uygulama davranışını anlatacak şekilde sadeleştirildi; eski iç geliştirme notları depodan kaldırıldı.
+
 ### Düzeltildi
 
 - Açık klasör zaten aynı klasöre yeniden tıklanarak kapatılabildiği için overlay bilgi kartındaki tekrarlı `Geri` düğmesi kaldırıldı ve panel yüksekliği sıkılaştırıldı; klavye ile geri gezinme korunuyor.
@@ -29,12 +33,13 @@ Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 
 ### Güvenlik
 
+- `.gitignore`, katkı rehberi, güvenlik politikası ve yayın kontrol listesi; yerel kullanıcı verisi, imzalama materyali ve secret sızıntılarına karşı daha açık kontrollerle güncellendi.
 - `mini_tool` aksiyonu yalnızca uygulama içindeki on izinli araç kimliğini çalıştırabiliyor.
 - Mini hesap makinesi shell, betik veya dinamik kod çalıştırmadan yerel ifade ayrıştırıcısı kullanıyor.
 - Parola üretici kriptografik güvenli rastgelelik kullanıyor; üretilen parolaları diske veya loglara yazmıyor.
 - Hızlı not 128 KB sınırıyla atomik ve yalnızca yerel dosya yazımı kullanıyor.
 
-## [2.0.0] - 2026-08-01
+## 2.0.0 - Yayına hazırlanıyor
 
 ### Eklendi
 
@@ -103,4 +108,3 @@ Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 
 [1.0.1]: https://github.com/SabahattinAkal/action-orbit/releases/tag/v1.0.1
 [1.0.0]: https://github.com/SabahattinAkal/action-orbit/releases/tag/v1.0.0
-[2.0.0]: https://github.com/SabahattinAkal/action-orbit/releases/tag/v2.0.0

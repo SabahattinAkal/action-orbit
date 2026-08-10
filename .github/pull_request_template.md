@@ -1,14 +1,26 @@
-## Değişiklik
+# Pull request
 
-Kullanıcı açısından ne değişti?
+## Ne değişti?
+
+Kullanıcının göreceği farkı kısa biçimde anlat.
+
+## Neden?
+
+Çözülen sorunu veya ihtiyacı açıkla.
 
 ## Kontrol
 
-- [ ] `dotnet build ActionOrbit.slnx`
-- [ ] `dotnet test tests\ActionOrbit.App.Tests\ActionOrbit.App.Tests.csproj`
-- [ ] İlgili UI/overlay akışı manuel denendi
-- [ ] Config şeması değiştiyse migration ve test eklendi
+- [ ] Release derlemesi tamamlandı
+- [ ] İlgili otomatik testler geçti
+- [ ] Değişen UI veya overlay akışı manuel denendi
+- [ ] Config şeması değiştiyse migration ve regresyon testi eklendi
+- [ ] `CHANGELOG.md` gerekiyorsa güncellendi
+
+## Gizlilik ve güvenlik
+
+- [ ] Log, config ve ekran görüntülerindeki kişisel bilgiler temizlendi
+- [ ] Secret, sertifika, yerel kullanıcı dosyası veya yayın çıktısı eklenmedi
 
 ## Görsel
 
-UI değişikliği varsa önce/sonra ekran görüntüsü ekle.
+Arayüz değişikliği varsa kişisel bilgi içermeyen bir önce/sonra görüntüsü ekle.

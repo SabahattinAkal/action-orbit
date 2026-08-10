@@ -9,212 +9,169 @@
 [![GitHub Release](https://img.shields.io/github/v/release/SabahattinAkal/action-orbit)](https://github.com/SabahattinAkal/action-orbit/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-Action Orbit Pro, Windows için mouse makro tuşuyla açılan radial/oval aksiyon menüsünü uygulamalar arası geçici içerik rafıyla birleştirir.
+Action Orbit Pro, sık kullandığın işlemleri imlecin yanında açılan bir halkada toplar. Tek bir global kısayolla program açabilir, dosya veya klasöre gidebilir, klavye kısayolu gönderebilir ve uygulamaya özel menüler kullanabilirsin.
 
-Amaç: Logitech Actions Ring benzeri ama daha esnek, klasör mantıklı, uygulama bazlı profil destekli, hızlı ve görsel olarak daha modern bir sistem yapmak.
+Uygulama yalnızca Windows içindir. Ayarlar, profiller ve geçici raf verileri bilgisayarında saklanır.
 
-## Ana fikir
+## Neler sunuyor?
 
-Kullanıcı mouse üzerindeki makro tuşuna örneğin `F13` veya `Ctrl+Alt+Shift+R` atar. Action Orbit Pro bu kısayolu dinler ve imlecin olduğu yerde oval/radial bir menü açar.
+### Aksiyon halkası
 
-Menü içerisindeki aksiyonlar:
+- İmlecin bulunduğu ekranda açılan radial/oval menü
+- Uygulamaya göre otomatik profil seçimi
+- Profil başına birden fazla adlandırılmış halka
+- Klasörler, alt aksiyonlar ve kayıpsız sayfalama
+- Fare, klavye ve mouse tekerleğiyle kullanım
+- Her aksiyona ayrı global kısayol atama
+- Açık, koyu ve sistem teması
 
-- Program açma
-- Dosya açma
-- Klasör açma
-- URL açma
+Desteklenen aksiyon türleri:
+
+- Program, dosya, klasör ve URL açma
 - Klavye kısayolu gönderme
 - Metin yazdırma
-- PowerShell / CMD komutu çalıştırma
-- Alt menü / klasör içine girme
-- Uygulama bazlı farklı menü gösterme
+- Kullanıcı onayıyla PowerShell veya CMD komutu çalıştırma
+- Mini araç açma
+- Alt menü oluşturma
 
-## Hedef platform
+### Orbit Shelf
 
-- Windows 10 ve Windows 11
-- WPF
-- Proje `net10.0-windows` hedefler.
-- GitHub Release paketi self-contained olduğu için son kullanıcıda ayrıca .NET kurulumu gerekmez.
-- .NET 8/9 hedeflenmek istenirse ilgili x64 `Microsoft.WindowsDesktop.App` runtime/SDK kurulup `ActionOrbit.App.csproj` hedef framework değeri değiştirilebilir.
+Orbit Shelf, uygulamalar arasında taşımak istediğin geçici içerikler için yüzen bir raftır.
 
-## Proje durumu
+- Görsel, dosya, bağlantı ve metin kabul eder
+- Öğeyi panoya kopyalayabilir veya başka bir uygulamaya sürükleyebilirsin
+- Birden fazla raf oluşturabilir, adlandırabilir ve sabitleyebilirsin
+- Görselleri PNG'ye dönüştürebilir veya 1600 piksele küçültebilirsin
+- Geçici önbelleği süreye ve boyuta göre temizler
 
-Güncel Pro geliştirme sürümü `v2.0.0`:
+Bir internet adresinden görsel alındığında yalnızca kullanıcının bıraktığı adres istenir. Yerel, özel ve link-local ağ adresleri güvenlik nedeniyle kabul edilmez.
 
-- Chrome, Explorer ve diğer Windows uygulamalarından görsel, dosya, bağlantı ve metin kabul eden topmost **Orbit Shelf**
-- Raf öğesini başka uygulamaya geri sürükleme veya panoya kopyalayıp yapıştırma
-- Çoklu raf, adlandırma, açık sabitleme, isteğe bağlı yakın geçmiş ve süreli geçici önbellek
-- Görselleri güvenli biçimde PNG'ye dönüştürme ve 1600 px sınırına küçültme
-- Profil başına adlandırılmış birden fazla halka; mouse tekerleğiyle halka değiştirme
-- Bas-aç, basılı-tut/bırakınca çalıştır ve çift-bas tetikleme modları
-- Belirlenen uygulamalarda halkayı devre dışı bırakan process listesi
-- URL aksiyonunu sistem tarayıcısı, Chrome, Edge, Firefox veya Brave ile açma
-- Her aksiyona isteğe bağlı doğrudan global klavye kısayolu atama
-- Halkadan açılan, sürüklenebilir ve isteğe bağlı üstte sabitlenebilir mini araçlar: zamanlayıcı, uyanık tutma, sistem durumu, hesap makinesi, renk seçici, kronometre, hızlı not, birim dönüştürücü, metin araçları ve parola üretici
-- Pro sürümünün config, log, mutex ve başlangıç kaydını klasik sürümden ayıran izolasyon
+### Mini araçlar
 
-- `src/ActionOrbit.App` altında WPF uygulaması
-- JSON config oluşturma/yükleme/reload
-- Bozuk config yedekleme ve default config fallback
-- Dosya loglama
-- `RegisterHotKey` ile global hotkey
-- Aktif pencere process adına göre profil seçimi
-- Transparent, topmost radial overlay
-- Folder/alt menü ve geri navigasyonu
-- `open_app`, `open_file`, `open_folder`, `open_url`, `mini_tool`, `send_hotkey`, `type_text`, `run_command` action handler'ları
-- Ana Sayfa, Ring Editörü, Aksiyon Kütüphanesi ve Ayarlar çalışma alanları
-- Aranabilir/kategorili hazır aksiyon kütüphanesi ve canlı ring önizlemesi
-- Hazır aksiyonu profile ekleme ve seçili aksiyona uygulama için ayrı kontroller
-- Profil kopyalama, varsayılan profil atama ve uygulama eşleştirme
-- Silme, sıralama ve klasör taşıma işlemleri için tek adımlı geri alma
-- Ana/klasör halkalarında kayıpsız sayfalama
-- Fareye ek olarak `1–9`, oklar, `Enter`, `Backspace` ve `Esc` ile overlay kontrolü
-- Ana pencerede gerçek light/dark/system tema ve canlı Windows tema takibi
-- Ana pencere kısayolları: `Ctrl+1…4`, `Ctrl+Z` ve `Ctrl+S`
-- Tek uygulama örneği, hotkey rollback ve güvenli config/profil içe aktarma
-- Editör ve çalıştırma katmanında ortak aksiyon doğrulama/tehlikeli komut filtresi
-- Komut aksiyonlarında varsayılan kapalı güvenli mod ve çalıştırma öncesi açık onay
-- Config/profil içe aktarmada çalıştırılabilir aksiyon özeti ve dosya/kaynak sınırları
-- Harici/UNC ikon yollarını engelleyen güvenli özel ikon dizini
-- xUnit v3 regresyon testleri, CodeQL ve Windows GitHub Actions yayın hattı
+Halkadan açılan küçük araçlar ayrı pencerelerde çalışır ve istenirse üstte tutulabilir:
 
-## İndirme
+- Zamanlayıcı ve kronometre
+- Uyanık tutma
+- Sistem durumu
+- Hesap makinesi
+- Ekran renk seçici
+- Hızlı not
+- Birim dönüştürücü
+- Metin araçları
+- Parola üretici
 
-En güncel Windows x64 paketini [GitHub Releases](https://github.com/SabahattinAkal/action-orbit/releases/latest) sayfasından indir:
+## Kurulum
 
-1. `ActionOrbitPro-v2.0.0-win-x64.zip` dosyasını indir.
-2. Arşivi istediğin bir klasöre çıkar.
+Kararlı Windows x64 paketini [Releases](https://github.com/SabahattinAkal/action-orbit/releases/latest) sayfasından indir.
+
+1. En yeni `.zip` paketini indir.
+2. Arşivi yazma iznin olan bir klasöre çıkar.
 3. `ActionOrbit.App.exe` dosyasını çalıştır.
 
-Paket self-contained'dır ve .NET 10.0.10 runtime içerir. Dosya bütünlüğü Release
-sayfasındaki `SHA256SUMS.txt`, SPDX SBOM ve GitHub build provenance attestation ile
-doğrulanabilir:
+Release paketleri self-contained hazırlanır; ayrıca .NET kurman gerekmez. Authenticode sertifikası bulunmayan sürümlerde Windows SmartScreen bilinmeyen yayıncı uyarısı gösterebilir.
+
+`main` dalı yayımlanmamış değişiklikler içerebilir. Günlük kullanım için Releases sayfasındaki son kararlı paketi tercih et.
+
+### Paket doğrulama
+
+Release sayfasındaki `SHA256SUMS.txt` ile paketin özetini karşılaştırabilirsin. Attestation yayımlanmış sürümlerde GitHub CLI ile üretim kaynağını da doğrulayabilirsin:
 
 ```powershell
-gh attestation verify ActionOrbitPro-v2.0.0-win-x64.zip --repo SabahattinAkal/action-orbit
+gh attestation verify <indirilen-zip> --repo SabahattinAkal/action-orbit
 ```
 
-Yayın hattı, depo secretlarında Authenticode sertifikası yapılandırıldığında EXE'yi
-otomatik imzalar. Sertifika henüz yapılandırılmadıysa Windows SmartScreen bilinmeyen
-yayıncı uyarısı gösterebilir; provenance doğrulaması paketin bu depodaki GitHub Actions
-iş akışında üretildiğini kanıtlar.
+## İlk kullanım
 
-## Kullanım örneği
+1. Uygulamayı aç ve **Ayarlar** bölümünden global kısayolu kontrol et.
+2. Mouse yazılımındaki bir makro tuşuna aynı kısayolu ata. Varsayılan değer `Ctrl+Alt+Shift+R`'dir.
+3. **Ring Editörü** bölümünden profilini ve aksiyonlarını düzenle.
+4. **Önizle** ile halkayı açıp dene.
+5. Uygulamayı bildirim alanında çalışır bırak.
 
-- Chrome açıkken mouse makro tuşuna bas:
-  - Yeni sekme
-  - Sekmeyi kapat
-  - YouTube aç
-  - Geliştirici araçları
-  - İndirilenler
-  - ChatGPT
+Action Orbit mouse tuşlarını düşük seviyede dinlemez. Logitech, Razer, SteelSeries veya benzeri mouse yazılımlarında seçtiğin tuşu bir klavye kısayoluna eşleştirmen gerekir.
 
-- VS Code açıkken aynı tuşa bas:
-  - Terminal aç
-  - Command Palette
-  - Format Document
-  - Git menüsü
-  - Proje klasörü aç
+## Halka kontrolleri
 
-- Masaüstünde aynı tuşa bas:
-  - Belgeler
-  - İndirilenler
-  - Ekran görüntüsü
-  - Görev yöneticisi
-  - Terminal
-  - Not defteri
+| Girdi | Davranış |
+| --- | --- |
+| Fare | Aksiyonu seçer veya klasörü açar |
+| `1`–`9` | Görünen aksiyonlardan birini seçer |
+| Ok tuşları | Seçimi halkada hareket ettirir |
+| `Enter` | Seçili aksiyonu çalıştırır |
+| `Backspace` | İç içe klasörde bir üst seviyeye döner |
+| `Esc` | Klasörden çıkar veya halkayı kapatır |
+| Mouse tekerleği | Birden fazla halka varsa halkalar arasında geçer |
 
-- Chrome'daki bir görseli Orbit Shelf penceresine sürükle:
-  - Görsel güvenli geçici önbelleğe alınır
-  - `Kopyala` ile panoya koyup hedef uygulamada `Ctrl+V` kullanabilirsin
-  - Öğeyi raftan doğrudan başka bir uygulamaya sürükleyebilirsin
-  - İstersen PNG'ye dönüştürebilir veya 1600 px'e küçültebilirsin
+Açık bir ana klasöre tekrar tıklamak klasörü kapatır.
 
-- `Mini Araçlar` klasörünü aç:
-  - 1, 5, 10 veya 25 dakikalık zamanlayıcı başlat
-  - Bilgisayarın uykuya geçmesini 15 dakika–2 saat ya da sen kapatana kadar engelle
-  - İşlemci, bellek ve pil durumunu tek bakışta gör
-  - Komut çalıştırmadan matematiksel ifade hesapla
-  - İmlecin altındaki ekran rengini yakalayıp HEX/RGB olarak kopyala
-  - Kronometreyi başlat, duraklat ve tur sürelerini kaydet
-  - Otomatik ve yerel kaydedilen hızlı nota geçici metin bırak
-  - Uzunluk, ağırlık, sıcaklık ve veri birimlerini dönüştür
-  - Türkçe büyük/küçük/başlık dönüşümü yap, boşlukları temizle ve kelime say
-  - Diske yazılmayan, kriptografik güçlü ve özelleştirilebilir parola üret
+## Güvenlik ve yerel veriler
 
-## Pro özellik kapsamı
+Action Orbit telemetri veya kullanım analitiği göndermez. Uygulama verileri varsayılan olarak şu klasörde tutulur:
 
-Pro sürüm temel Action Orbit kapsamına şunları ekler:
+```text
+%AppData%\ActionOrbitPro\
+```
 
-1. Uygulamalar arası görsel/dosya/URL/metin rafı.
-2. Çoklu ve adlandırılmış halka setleri.
-3. Alternatif tetikleme davranışları.
-4. Uygulama bazlı devre dışı bırakma listesi.
-5. Tarayıcı seçimi.
-6. Aksiyon bazlı doğrudan hotkey.
-7. On yerel araç içeren ortak, sabitlenebilir mini araç pencereleri.
-8. Kaydırılabilir, doğrulamalı ve bağlama duyarlı gelişmiş ayarlar çalışma alanı.
+Başlıca dosyalar:
 
-## Çalıştırma
+```text
+config.json
+logs\actionorbit.log
+shelves.json
+shelf-cache\
+```
 
-Önkoşul:
+Bu dosyalarda kişisel klasör yolları, açtığın bağlantılar veya rafa eklediğin içerikler bulunabilir. Hata bildirirken config ve log dosyalarını doğrudan yükleme; yalnızca gerekli bölümü paylaş ve kişisel bilgileri temizle.
 
-- Windows
-- `global.json` ile sabitlenen .NET SDK 10.0.302
+`run_command` aksiyonları varsayılan olarak kapalıdır. Etkinleştirildiklerinde bile her çalıştırmadan önce komutun tamamı gösterilir ve kullanıcı onayı istenir. İnternetten aldığın profil veya config dosyasını içe aktarmadan önce çalıştırılabilir aksiyonları incele.
 
-Derleme:
+Bir güvenlik açığı bildirmek için [SECURITY.md](SECURITY.md) dosyasını kullan.
+
+## Kaynaktan çalıştırma
+
+Gereksinimler:
+
+- Windows 10 veya Windows 11
+- `global.json` dosyasında belirtilen .NET SDK
+
+Bağımlılıkları geri yükle, derle ve testleri çalıştır:
 
 ```powershell
-dotnet build ActionOrbit.slnx
+dotnet restore ActionOrbit.slnx --locked-mode
+dotnet build ActionOrbit.slnx --configuration Release --no-restore
+dotnet test tests\ActionOrbit.App.Tests\ActionOrbit.App.Tests.csproj --configuration Release --no-build --no-restore
 ```
 
-Test:
-
-```powershell
-dotnet test tests\ActionOrbit.App.Tests\ActionOrbit.App.Tests.csproj
-```
-
-Self-contained Windows x64 paketi:
-
-```powershell
-.\scripts\publish.ps1
-```
-
-Çalıştırma:
+Uygulamayı kaynak koddan başlat:
 
 ```powershell
 dotnet run --project src\ActionOrbit.App\ActionOrbit.App.csproj
 ```
 
-Veya derlenmiş exe:
+Self-contained Windows x64 paketi üret:
 
 ```powershell
-src\ActionOrbit.App\bin\Debug\net10.0-windows\ActionOrbit.App.exe
+.\scripts\publish.ps1
 ```
 
-Varsayılan global hotkey:
+## Depo yapısı
 
 ```text
-Ctrl+Alt+Shift+R
+src/ActionOrbit.App/          WPF uygulaması
+tests/ActionOrbit.App.Tests/  Otomatik testler
+samples/profiles/             Örnek profil dosyaları
+scripts/                      Yayın ve imzalama araçları
+.github/workflows/            CI, CodeQL ve Release iş akışları
 ```
 
-Config ve log konumları:
+## Bilinen sınırlar
 
-```text
-%AppData%\ActionOrbitPro\config.json
-%AppData%\ActionOrbitPro\logs\actionorbit.log
-%AppData%\ActionOrbitPro\shelves.json
-%AppData%\ActionOrbitPro\shelf-cache\
-```
+- Normal yetkiyle çalışan uygulama, yönetici yetkili pencerelere input göndermeyebilir.
+- Çoklu monitör ve farklı DPI oranları desteklenir; sıra dışı ekran düzenlerinde konum davranışı değişebilir.
+- Uygulama Windows'a ve WPF'e bağlıdır; macOS veya Linux sürümü yoktur.
 
-İlk açılışta default config otomatik oluşturulur. Config bozuksa `config.broken.yyyyMMddHHmmss.json` olarak yedeklenir ve default config yeniden yazılır.
+## Katkı ve lisans
 
-`run_command` aksiyonları varsayılan olarak kapalıdır. Ayarlar bölümünden açıkça
-etkinleştirilse bile her komut çalıştırılmadan önce tam komut gösterilerek onay istenir.
-İçe aktarılan config dosyaları bu ayarı otomatik olarak açamaz.
+Katkıda bulunmadan önce [CONTRIBUTING.md](CONTRIBUTING.md) dosyasına göz at. Kullanıcıyı etkileyen değişiklikler [CHANGELOG.md](CHANGELOG.md) içinde tutulur.
 
-## Notlar
-
-- Mouse makro tuşunu doğrudan yakalamak yerine mouse yazılımında `Ctrl+Alt+Shift+R`, `F13` gibi bir klavye kısayoluna map etmek gerekir.
-- Normal yetkiyle çalışan Action Orbit, admin yetkili pencerelere input göndermekte sınırlı kalabilir.
-- Çok monitör ve DPI davranışı için temel konumlama vardır; farklı scaling senaryolarında ek test önerilir.
+Proje [MIT lisansı](LICENSE) ile yayımlanır.
