@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Input;
 using ActionOrbit.App.Services.MiniTools;
 
 namespace ActionOrbit.App.Views.MiniTools;
@@ -29,6 +30,22 @@ public partial class PasswordGeneratorToolView : System.Windows.Controls.UserCon
 
     private void Generate_Click(object sender, RoutedEventArgs e) => GeneratePassword();
 
+    private void PasswordBox_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        PasswordBox.Focus();
+        PasswordBox.SelectAll();
+        e.Handled = true;
+    }
+
+    private void SetLength_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is System.Windows.Controls.Button { Tag: string value }
+            && int.TryParse(value, out var length))
+        {
+            LengthSlider.Value = length;
+        }
+    }
+
     private void GeneratePassword()
     {
         try
@@ -48,13 +65,18 @@ public partial class PasswordGeneratorToolView : System.Windows.Controls.UserCon
                 UppercaseBox.IsChecked == true,
                 DigitsBox.IsChecked == true,
                 SymbolsBox.IsChecked == true);
-            StrengthText.Text = GetStrengthLabel(length, groupCount);
-            StatusText.Text = "Yeni parola üretildi; hiçbir yere kaydedilmedi.";
+            var strength = GetStrengthAssessment(length, groupCount);
+            StrengthText.Text = strength.Label;
+            StrengthDescriptionText.Text = strength.Description;
+            StrengthBar.Value = strength.Level;
+            StatusText.Text = "Yeni parola güvenli rastgelelikle cihazında üretildi; hiçbir yere kaydedilmedi.";
         }
         catch (ArgumentException ex)
         {
             PasswordBox.Clear();
             StrengthText.Text = "Seçim gerekli";
+            StrengthDescriptionText.Text = "En az bir grup seç";
+            StrengthBar.Value = 0;
             StatusText.Text = ex.Message;
         }
     }
@@ -78,11 +100,14 @@ public partial class PasswordGeneratorToolView : System.Windows.Controls.UserCon
         }
     }
 
-    private static string GetStrengthLabel(int length, int groupCount) => (length, groupCount) switch
-    {
-        ( >= 24, >= 3) => "Çok güçlü",
-        ( >= 16, >= 3) => "Güçlü",
-        ( >= 14, >= 2) => "İyi",
-        _ => "Temel"
-    };
+    private static PasswordStrengthAssessment GetStrengthAssessment(int length, int groupCount) =>
+        (length, groupCount) switch
+        {
+            ( >= 24, >= 3) => new(4, "Çok güçlü", "Uzun ve yüksek çeşitlilik"),
+            ( >= 16, >= 3) => new(3, "Güçlü", "İyi uzunluk ve çeşitlilik"),
+            ( >= 14, >= 2) => new(2, "İyi", "Bir grup daha ekleyebilirsin"),
+            _ => new(1, "Temel", "Uzunluğu veya çeşitliliği artır")
+        };
+
+    private sealed record PasswordStrengthAssessment(int Level, string Label, string Description);
 }
