@@ -3,7 +3,6 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:actionViews="clr-namespace:ActionOrbit.App.Views.Actions"
         xmlns:settingsViews="clr-namespace:ActionOrbit.App.Views.Settings"
-        xmlns:shelfViews="clr-namespace:ActionOrbit.App.Views.Shelf"
         Title="Action Orbit Pro"
         Icon="Assets/Brand/ActionOrbit.ico"
         Width="1180"
@@ -19,8 +18,7 @@
         <KeyBinding Key="D1" Modifiers="Control" Command="{Binding NavigateWorkspaceCommand}" CommandParameter="home" />
         <KeyBinding Key="D2" Modifiers="Control" Command="{Binding NavigateWorkspaceCommand}" CommandParameter="editor" />
         <KeyBinding Key="D3" Modifiers="Control" Command="{Binding NavigateWorkspaceCommand}" CommandParameter="library" />
-        <KeyBinding Key="D4" Modifiers="Control" Command="{Binding NavigateWorkspaceCommand}" CommandParameter="shelf" />
-        <KeyBinding Key="D5" Modifiers="Control" Command="{Binding NavigateWorkspaceCommand}" CommandParameter="settings" />
+        <KeyBinding Key="D4" Modifiers="Control" Command="{Binding NavigateWorkspaceCommand}" CommandParameter="settings" />
     </Window.InputBindings>
     <Window.Resources>
         <Style TargetType="TextBlock">
@@ -740,26 +738,9 @@
                     </Button.Style>
                 </Button>
                 <Button Command="{Binding NavigateWorkspaceCommand}"
-                        CommandParameter="shelf"
-                        AutomationProperties.Name="Orbit Shelf, Ctrl+4"
-                        ToolTip="Geçici içerik rafı · Ctrl+4"
-                        Content="Orbit Shelf">
-                    <Button.Style>
-                        <Style TargetType="Button" BasedOn="{StaticResource SubtleButton}">
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsShelfWorkspace}" Value="True">
-                                    <Setter Property="Background" Value="{DynamicResource PrimaryActionBrush}" />
-                                    <Setter Property="Foreground" Value="{DynamicResource OnPrimaryActionBrush}" />
-                                    <Setter Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Button.Style>
-                </Button>
-                <Button Command="{Binding NavigateWorkspaceCommand}"
                         CommandParameter="settings"
-                        AutomationProperties.Name="Ayarlar, Ctrl+5"
-                        ToolTip="Ayarlar · Ctrl+5"
+                        AutomationProperties.Name="Ayarlar, Ctrl+4"
+                        ToolTip="Ayarlar · Ctrl+4"
                         Content="Ayarlar">
                     <Button.Style>
                         <Style TargetType="Button" BasedOn="{StaticResource SubtleButton}">
@@ -918,22 +899,26 @@
             </StackPanel>
         </Border>
 
-        <shelfViews:ShelfWorkspaceView Grid.Row="2"
-                                       Margin="0,12,0,16"
-                                       DataContext="{Binding Shelf}"
-                                       Visibility="{Binding IsShelfWorkspace, Converter={StaticResource BooleanToVisibilityConverter}}" />
+        <Border Grid.Row="2"
+                Background="{DynamicResource WindowBackgroundBrush}"
+                ClipToBounds="True"
+                Visibility="{Binding IsSettingsWorkspace, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <settingsViews:SettingsView Margin="0,12,0,0" />
+        </Border>
 
-        <settingsViews:SettingsView Grid.Row="2"
-                                    Margin="0,12,0,0"
-                                    Visibility="{Binding IsSettingsWorkspace, Converter={StaticResource BooleanToVisibilityConverter}}" />
+        <Border Grid.Row="2"
+                Background="{DynamicResource WindowBackgroundBrush}"
+                ClipToBounds="True"
+                Visibility="{Binding IsLibraryWorkspace, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <actionViews:ActionLibraryView Margin="0,12,0,16" />
+        </Border>
 
-        <actionViews:ActionLibraryView Grid.Row="2"
-                                       Margin="0,12,0,16"
-                                       Visibility="{Binding IsLibraryWorkspace, Converter={StaticResource BooleanToVisibilityConverter}}" />
-
-        <actionViews:EditorWorkspaceView Grid.Row="2"
-                                         Margin="0,12,0,16"
-                                         Visibility="{Binding IsEditorWorkspace, Converter={StaticResource BooleanToVisibilityConverter}}" />
+        <Border Grid.Row="2"
+                Background="{DynamicResource WindowBackgroundBrush}"
+                ClipToBounds="True"
+                Visibility="{Binding IsEditorWorkspace, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <actionViews:EditorWorkspaceView Margin="0,12,0,16" />
+        </Border>
 
         <DockPanel Grid.Row="3">
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">

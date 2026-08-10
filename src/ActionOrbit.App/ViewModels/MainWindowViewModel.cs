@@ -199,7 +199,6 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
                 OnPropertyChanged(nameof(IsEditorWorkspace));
                 OnPropertyChanged(nameof(IsLibraryWorkspace));
                 OnPropertyChanged(nameof(IsSettingsWorkspace));
-                OnPropertyChanged(nameof(IsShelfWorkspace));
             }
         }
     }
@@ -208,7 +207,6 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     public bool IsEditorWorkspace => SelectedWorkspace == "editor";
     public bool IsLibraryWorkspace => SelectedWorkspace == "library";
     public bool IsSettingsWorkspace => SelectedWorkspace == "settings";
-    public bool IsShelfWorkspace => SelectedWorkspace == "shelf";
 
     public ProfileConfig? SelectedProfile
     {
@@ -295,7 +293,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
 
     private void NavigateWorkspace(string? workspace)
     {
-        if (workspace is not ("home" or "editor" or "library" or "settings" or "shelf"))
+        if (!WorkspaceNavigationPolicy.IsSupported(workspace))
         {
             return;
         }

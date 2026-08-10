@@ -70,7 +70,7 @@ Güncel Pro geliştirme sürümü `v2.0.0`:
 - Ana/klasör halkalarında kayıpsız sayfalama
 - Fareye ek olarak `1–9`, oklar, `Enter`, `Backspace` ve `Esc` ile overlay kontrolü
 - Ana pencerede gerçek light/dark/system tema ve canlı Windows tema takibi
-- Ana pencere kısayolları: `Ctrl+1…5`, `Ctrl+Z` ve `Ctrl+S`
+- Ana pencere kısayolları: `Ctrl+1…4`, `Ctrl+Z` ve `Ctrl+S`
 - Tek uygulama örneği, hotkey rollback ve güvenli config/profil içe aktarma
 - Editör ve çalıştırma katmanında ortak aksiyon doğrulama/tehlikeli komut filtresi
 - Komut aksiyonlarında varsayılan kapalı güvenli mod ve çalıştırma öncesi açık onay

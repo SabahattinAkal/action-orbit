@@ -7,6 +7,8 @@ Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 
 ### Düzeltildi
 
+- Ring Editörü, Aksiyon Kütüphanesi ve Ayarlar çalışma alanları opak ve kırpılmış yüzeylere dönüştürüldü; Ana Sayfa içeriğinin aktif ekranın arkasından görünmesi engellendi.
+- Orbit Shelf ana navigasyondan kaldırıldı; yüzen rafa üst hızlı erişim, overlay ve bildirim alanı menüsünden ulaşılmaya devam edilirken Ayarlar kısayolu `Ctrl+4` oldu.
 - Ana ve klasör halkalarında sayfa değiştiren yapay aksiyon kaldırıldı; sayfalama, yalnızca gerektiğinde merkez düğmenin iki yanında beliren geri/ileri kontrollerine taşındı.
 - Parola üreticinin koyu temadaki düşük kontrastlı çıktı ve seçenek alanları yüksek okunabilirlikli kart düzeniyle yenilendi.
 - Klasör halkası açıldığında eklenen geri kontrolü nedeniyle alt bilgi panelinin overlay penceresi tarafından kesilmesi düzeltildi.
@@ -14,7 +16,6 @@ Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 - Hotkey çakışması mesajı, açık kalmış eski Action Orbit sürümünü kontrol etmeyi açıkça belirtiyor.
 - Ayarlar çalışma alanı düşük pencere yüksekliği ve yüksek DPI'da içerik kesilmemesi için kaydırılabilir kart düzenine geçirildi.
 - Ayarlardaki tema adları Türkçeleştirildi; ana hotkey aynı ekrana taşındı ve moda bağlı kontroller yalnızca ilgili tetikleme modunda etkinleşiyor.
-- Ana pencerenin görsel sırasıyla klavye sırası eşitlendi: Orbit Shelf `Ctrl+4`, Ayarlar `Ctrl+5`.
 
 ### Eklendi
 
