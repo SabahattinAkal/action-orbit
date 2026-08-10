@@ -766,142 +766,317 @@
                 Margin="0,16,0,0"
                 Style="{StaticResource Surface}"
                 Visibility="{Binding IsHomeWorkspace, Converter={StaticResource BooleanToVisibilityConverter}}">
-            <StackPanel>
-                <Grid>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock FontSize="23" FontWeight="Bold" Text="Kontrol Merkezi" />
+                        <TextBlock Margin="0,5,12,0"
+                                   Style="{StaticResource MutedText}"
+                                   Text="Kısayol durumunu, aktif profili ve ilk kurulum adımlarını tek ekranda takip et."
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Orientation="Horizontal">
+                        <Button Command="{Binding NavigateWorkspaceCommand}"
+                                CommandParameter="editor"
+                                Content="Ring Editörünü Aç" />
+                        <Button Margin="0"
+                                Command="{Binding ShowOverlayCommand}"
+                                Content="Halkayı Önizle"
+                                Style="{StaticResource PrimaryButton}" />
+                    </StackPanel>
+                </Grid>
+
+                <Grid Grid.Row="1" Margin="0,16,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
-                    <Border Grid.Column="0" Margin="0,0,10,0" Style="{StaticResource SoftSurface}">
-                        <StackPanel>
-                            <TextBlock Style="{StaticResource TinyLabel}" Text="GLOBAL HOTKEY" />
-                            <TextBlock Margin="0,7,0,0"
-                                       FontSize="20"
-                                       FontWeight="Bold"
-                                       Text="{Binding Hotkey.HotkeyDisplay}" />
-                            <TextBlock Margin="0,4,0,0"
-                                       Foreground="{Binding Hotkey.HotkeyBadgeForeground}"
-                                       Text="{Binding Hotkey.HotkeyStateText}" />
-                        </StackPanel>
-                    </Border>
-
-                    <Border Grid.Column="1" Margin="5,0" Style="{StaticResource SoftSurface}">
-                        <StackPanel>
-                            <TextBlock Style="{StaticResource TinyLabel}" Text="AKTİF BAĞLAM" />
-                            <TextBlock Margin="0,7,0,0"
-                                       FontSize="20"
-                                       FontWeight="Bold"
-                                       Text="{Binding ProfileEditor.ActiveProfileName}"
-                                       TextTrimming="CharacterEllipsis" />
-                            <TextBlock Margin="0,4,0,0"
-                                       Style="{StaticResource MutedText}"
-                                       Text="{Binding ProfileEditor.ActiveProcessName}"
-                                       TextTrimming="CharacterEllipsis" />
-                        </StackPanel>
-                    </Border>
-
-                    <Border Grid.Column="2" Margin="10,0,0,0" Style="{StaticResource SoftSurface}">
+                    <Border Grid.Column="0"
+                            MinHeight="112"
+                            Margin="0,0,8,0"
+                            Padding="14"
+                            Background="{DynamicResource SoftSurfaceBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="14">
                         <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <TextBlock Style="{StaticResource TinyLabel}" Text="ÇALIŞMA ALANI" />
-                            <TextBlock Grid.Row="1"
-                                       Margin="0,7,0,8"
-                                       FontSize="16"
-                                       FontWeight="Bold"
-                                       Text="{Binding ProfileEditor.ProfileCount, StringFormat={}{0} profil hazır}" />
-                            <WrapPanel Grid.Row="2">
-                                <Button Command="{Binding NavigateWorkspaceCommand}"
-                                        CommandParameter="editor"
-                                        Content="Ring'i Düzenle" />
-                                <Button Command="{Binding ShowOverlayCommand}"
-                                        Content="Önizle" />
-                            </WrapPanel>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="4" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Border Background="{DynamicResource PrimaryActionBrush}" CornerRadius="4" />
+                            <StackPanel Grid.Column="1" Margin="13,0,12,0" VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource TinyLabel}" Text="ANA KISAYOL" />
+                                <TextBlock Margin="0,6,0,0"
+                                           FontSize="20"
+                                           FontWeight="Bold"
+                                           Text="{Binding Hotkey.HotkeyDisplay}"
+                                           TextTrimming="CharacterEllipsis" />
+                                <TextBlock Margin="0,4,0,0"
+                                           Style="{StaticResource MutedText}"
+                                           Text="Mouse makro tuşuna atanacak kombinasyon" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Top">
+                                <StackPanel Orientation="Horizontal">
+                                    <Ellipse Width="7"
+                                             Height="7"
+                                             Margin="0,0,6,0"
+                                             VerticalAlignment="Center"
+                                             Fill="{Binding Hotkey.HotkeyDotBrush}" />
+                                    <TextBlock FontSize="11"
+                                               FontWeight="SemiBold"
+                                               Foreground="{Binding Hotkey.HotkeyBadgeForeground}"
+                                               Text="{Binding Hotkey.HotkeyStateText}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <Border Grid.Column="1"
+                            MinHeight="112"
+                            Margin="4,0"
+                            Padding="14"
+                            Background="{DynamicResource SoftSurfaceBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="14">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="4" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Background="{DynamicResource InfoBorderBrush}" CornerRadius="4" />
+                            <StackPanel Grid.Column="1" Margin="13,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource TinyLabel}" Text="AKTİF BAĞLAM" />
+                                <TextBlock Margin="0,6,0,0"
+                                           FontSize="20"
+                                           FontWeight="Bold"
+                                           Text="{Binding ProfileEditor.ActiveProfileName}"
+                                           TextTrimming="CharacterEllipsis" />
+                                <TextBlock Margin="0,4,0,0"
+                                           FontFamily="Consolas"
+                                           FontSize="11"
+                                           Foreground="{DynamicResource MutedTextBrush}"
+                                           Text="{Binding ProfileEditor.ActiveProcessName}"
+                                           TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <Border Grid.Column="2"
+                            MinHeight="112"
+                            Margin="8,0,0,0"
+                            Padding="14"
+                            Background="{DynamicResource SoftSurfaceBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="14">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="4" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Border Background="{DynamicResource SelectedBorderBrush}" CornerRadius="4" />
+                            <StackPanel Grid.Column="1" Margin="13,0,12,0" VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource TinyLabel}" Text="PROFİLLER" />
+                                <TextBlock Margin="0,6,0,0"
+                                           FontSize="20"
+                                           FontWeight="Bold"
+                                           Text="{Binding ProfileEditor.ProfileCount, StringFormat={}{0} profil hazır}" />
+                                <TextBlock Margin="0,4,0,0"
+                                           Style="{StaticResource MutedText}"
+                                           Text="Uygulamaya göre otomatik profil geçişi" />
+                            </StackPanel>
+                            <Button Grid.Column="2"
+                                    Margin="0"
+                                    Padding="10,5"
+                                    VerticalAlignment="Bottom"
+                                    Command="{Binding NavigateWorkspaceCommand}"
+                                    CommandParameter="editor"
+                                    Content="Yönet" />
                         </Grid>
                     </Border>
                 </Grid>
 
-            <Expander Margin="0,16,0,0"
-                      Header="Kurulum, hotkey ve dosyalar"
-                      IsExpanded="True">
-            <Grid Margin="0,10,0,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1.35*" />
-                    <ColumnDefinition Width="1.1*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
+                <Grid Grid.Row="2" Margin="0,16,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.25*" />
+                        <ColumnDefinition Width="0.75*" />
+                    </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0">
-                    <TextBlock FontWeight="Bold" Text="İlk kurulum" />
-                    <TextBlock Margin="0,5,14,0"
-                               Style="{StaticResource MutedText}"
-                               TextWrapping="Wrap"
-                               Text="1. Mouse yazılımında makro tuşuna bu hotkey'i ata. 2. Önizle ile halkayı test et. 3. Aktif uygulamayı ilgili profile ekle." />
-                </StackPanel>
-
-                <StackPanel Grid.Column="1" Margin="12,0,14,0">
-                    <TextBlock Style="{StaticResource TinyLabel}" Text="Hotkey" />
-                    <Grid Margin="0,6,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBox Grid.Column="0"
-                                 Margin="0,0,8,0"
-                                 Text="{Binding Hotkey.HotkeyInput, UpdateSourceTrigger=PropertyChanged}" />
-                        <Button Grid.Column="1"
-                                Command="{Binding Hotkey.SaveHotkeyCommand}"
-                                Content="Kısayolu Kaydet" />
-                    </Grid>
-                    <TextBlock Margin="0,7,0,0"
-                               Style="{StaticResource MutedText}"
-                               Text="Örn: Ctrl+Alt+Shift+R, F13, F14, Ctrl+Space" />
-                    <Border Margin="0,9,0,0"
-                            Padding="10"
-                            Background="{DynamicResource DangerSurfaceBrush}"
-                            BorderBrush="{DynamicResource DangerBorderBrush}"
+                    <Border Grid.Column="0"
+                            Margin="0,0,7,0"
+                            Padding="16"
+                            Background="{DynamicResource SoftSurfaceBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}"
                             BorderThickness="1"
-                            CornerRadius="10"
-                            Visibility="{Binding Hotkey.HasHotkeyIssue, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            CornerRadius="14">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <StackPanel>
+                                <TextBlock FontSize="16" FontWeight="Bold" Text="Başlangıç kontrol listesi" />
+                                <TextBlock Margin="0,4,0,0"
+                                           Style="{StaticResource MutedText}"
+                                           Text="Action Orbit'i kullanmaya başlamak için üç kısa adım."
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                            <Grid Grid.Row="1" Margin="0,16,0,0" VerticalAlignment="Top">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <Border Grid.Column="0"
+                                        Margin="0,0,7,0"
+                                        Padding="13"
+                                        Background="{DynamicResource SurfaceBrush}"
+                                        BorderBrush="{DynamicResource BorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="12">
+                                    <StackPanel>
+                                        <TextBlock FontSize="12"
+                                                   FontWeight="Bold"
+                                                   Foreground="{DynamicResource PrimaryActionBrush}"
+                                                   Text="01 · Kısayolu bağla" />
+                                        <TextBlock Margin="0,7,0,0"
+                                                   Style="{StaticResource MutedText}"
+                                                   Text="Mouse yazılımındaki makro tuşuna ana kısayolu ata."
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Column="1"
+                                        Margin="3,0"
+                                        Padding="13"
+                                        Background="{DynamicResource SurfaceBrush}"
+                                        BorderBrush="{DynamicResource BorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="12">
+                                    <StackPanel>
+                                        <TextBlock FontSize="12"
+                                                   FontWeight="Bold"
+                                                   Foreground="{DynamicResource PrimaryActionBrush}"
+                                                   Text="02 · Halkayı dene" />
+                                        <TextBlock Margin="0,7,0,0"
+                                                   Style="{StaticResource MutedText}"
+                                                   Text="Halkayı Önizle ile yerleşimi ve aksiyonları kontrol et."
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Column="2"
+                                        Margin="7,0,0,0"
+                                        Padding="13"
+                                        Background="{DynamicResource SurfaceBrush}"
+                                        BorderBrush="{DynamicResource BorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="12">
+                                    <StackPanel>
+                                        <TextBlock FontSize="12"
+                                                   FontWeight="Bold"
+                                                   Foreground="{DynamicResource PrimaryActionBrush}"
+                                                   Text="03 · Profili eşleştir" />
+                                        <TextBlock Margin="0,7,0,0"
+                                                   Style="{StaticResource MutedText}"
+                                                   Text="Aktif uygulamayı Ring Editörü'ndeki uygun profile bağla."
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <Border Grid.Column="1"
+                            Margin="7,0,0,0"
+                            Padding="16"
+                            Background="{DynamicResource SoftSurfaceBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="14">
                         <StackPanel>
-                            <TextBlock Foreground="{DynamicResource DangerTextBrush}"
-                                       Text="{Binding Hotkey.HotkeyIssueMessage}"
+                            <TextBlock FontSize="16" FontWeight="Bold" Text="Hızlı ayarlar" />
+                            <TextBlock Margin="0,4,0,0"
+                                       Style="{StaticResource MutedText}"
+                                       Text="Ana kısayolu değiştir veya uygulama dosyalarına ulaş."
                                        TextWrapping="Wrap" />
-                            <ItemsControl Margin="0,8,0,0" ItemsSource="{Binding Hotkey.Suggestions}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <WrapPanel />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Button Margin="0,0,6,6"
-                                                Padding="9,4"
-                                                Command="{Binding DataContext.Hotkey.UseSuggestedHotkeyCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                CommandParameter="{Binding}"
-                                                Content="{Binding}" />
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                            <TextBlock Margin="0,14,0,0"
+                                       Style="{StaticResource TinyLabel}"
+                                       Text="ANA KISAYOL" />
+                            <Grid Margin="0,6,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox Margin="0,0,8,0"
+                                         AutomationProperties.Name="Ana kısayol"
+                                         Text="{Binding Hotkey.HotkeyInput, UpdateSourceTrigger=PropertyChanged}" />
+                                <Button Grid.Column="1"
+                                        Margin="0"
+                                        Command="{Binding Hotkey.SaveHotkeyCommand}"
+                                        Content="Kaydet"
+                                        Style="{StaticResource PrimaryButton}" />
+                            </Grid>
+                            <TextBlock Margin="0,6,0,0"
+                                       Style="{StaticResource MutedText}"
+                                       Text="Ctrl+Alt+Shift+R, F13 veya F14 kullanabilirsin." />
+                            <Border Margin="0,10,0,0"
+                                    Padding="10"
+                                    Background="{DynamicResource DangerSurfaceBrush}"
+                                    BorderBrush="{DynamicResource DangerBorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="9"
+                                    Visibility="{Binding Hotkey.HasHotkeyIssue, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <StackPanel>
+                                    <TextBlock Foreground="{DynamicResource DangerTextBrush}"
+                                               Text="{Binding Hotkey.HotkeyIssueMessage}"
+                                               TextWrapping="Wrap" />
+                                    <ItemsControl Margin="0,8,0,0" ItemsSource="{Binding Hotkey.Suggestions}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Margin="0,0,6,6"
+                                                        Padding="9,4"
+                                                        Command="{Binding DataContext.Hotkey.UseSuggestedHotkeyCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding}"
+                                                        Content="{Binding}" />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                            <Border Height="1"
+                                    Margin="0,14,0,12"
+                                    Background="{DynamicResource BorderBrush}" />
+                            <TextBlock Style="{StaticResource TinyLabel}" Text="DOSYALAR" />
+                            <WrapPanel Margin="0,8,0,0">
+                                <Button Command="{Binding Transfers.OpenConfigFolderCommand}" Content="Config klasörü" />
+                                <Button Command="{Binding Transfers.OpenConfigCommand}" Content="Config JSON" />
+                                <Button Margin="0" Command="{Binding Transfers.OpenLogCommand}" Content="Log" />
+                            </WrapPanel>
                         </StackPanel>
                     </Border>
-                </StackPanel>
-
-                <StackPanel Grid.Column="2"
-                            VerticalAlignment="Bottom"
-                            Orientation="Horizontal">
-                    <Button Command="{Binding Transfers.OpenConfigFolderCommand}" Content="Config Klasörü" />
-                    <Button Command="{Binding Transfers.OpenConfigCommand}" Content="JSON Aç" />
-                    <Button Command="{Binding Transfers.OpenLogCommand}" Content="Log Aç" />
-                </StackPanel>
+                </Grid>
             </Grid>
-            </Expander>
-            </StackPanel>
         </Border>
 
         <Border Grid.Row="2"
