@@ -176,6 +176,51 @@
             </Setter>
         </Style>
 
+        <Style x:Key="CenterPageButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="26" />
+            <Setter Property="Height" Value="26" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Foreground" Value="#111318" />
+            <Setter Property="Background" Value="#F2F2F2" />
+            <Setter Property="BorderBrush" Value="#30000000" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Shell"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="13">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="14"
+                                                  Opacity="0.24"
+                                                  ShadowDepth="2"
+                                                  Color="#000000" />
+                            </Border.Effect>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Shell" Property="Background" Value="{Binding DataContext.AccentBrush, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                <Setter Property="Foreground" Value="{Binding DataContext.AccentForegroundBrush, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                <Setter TargetName="Shell" Property="BorderBrush" Value="{Binding DataContext.AccentBrush, RelativeSource={RelativeSource AncestorType=Window}}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Shell" Property="Opacity" Value="0.72" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.34" />
+                                <Setter Property="Cursor" Value="Arrow" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="OverlayInfoButtonStyle" TargetType="Button">
             <Setter Property="MinHeight" Value="24" />
             <Setter Property="Padding" Value="10,3" />
@@ -390,6 +435,44 @@
                 </Button>
             </StackPanel>
         </Border>
+
+        <Button Style="{StaticResource CenterPageButtonStyle}"
+                Canvas.Left="{Binding PreviousPageButtonLeft}"
+                Canvas.Top="{Binding CenterPageButtonTop}"
+                AutomationProperties.Name="{Binding PreviousPageToolTip}"
+                Command="{Binding PreviousPageCommand}"
+                ToolTip="{Binding PreviousPageToolTip}"
+                ToolTipService.InitialShowDelay="180"
+                Visibility="{Binding HasPageNavigation, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Viewbox Width="13" Height="13">
+                <Path Data="M15,5 L8,12 L15,19 M8,12 L20,12"
+                      Fill="Transparent"
+                      Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                      StrokeEndLineCap="Round"
+                      StrokeLineJoin="Round"
+                      StrokeStartLineCap="Round"
+                      StrokeThickness="2" />
+            </Viewbox>
+        </Button>
+
+        <Button Style="{StaticResource CenterPageButtonStyle}"
+                Canvas.Left="{Binding NextPageButtonLeft}"
+                Canvas.Top="{Binding CenterPageButtonTop}"
+                AutomationProperties.Name="{Binding NextPageToolTip}"
+                Command="{Binding NextPageCommand}"
+                ToolTip="{Binding NextPageToolTip}"
+                ToolTipService.InitialShowDelay="180"
+                Visibility="{Binding HasPageNavigation, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Viewbox Width="13" Height="13">
+                <Path Data="M9,5 L16,12 L9,19 M4,12 L16,12"
+                      Fill="Transparent"
+                      Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                      StrokeEndLineCap="Round"
+                      StrokeLineJoin="Round"
+                      StrokeStartLineCap="Round"
+                      StrokeThickness="2" />
+            </Viewbox>
+        </Button>
 
         <Button Style="{StaticResource CenterButtonStyle}"
                 Canvas.Left="{Binding CenterX}"

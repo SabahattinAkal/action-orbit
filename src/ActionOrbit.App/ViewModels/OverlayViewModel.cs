@@ -11,10 +11,12 @@ namespace ActionOrbit.App.ViewModels;
 
 public sealed class OverlayViewModel : ViewModelBase
 {
-    private const int MainPageSize = 7;
-    private const int FolderPageSize = 8;
+    private const int MainPageSize = 8;
+    private const int FolderPageSize = 9;
     private const double CanvasEdgePadding = 22;
     private const double OverlayInfoGap = 12;
+    private const double CenterPageButtonSize = 26;
+    private const double CenterPageButtonOffset = 32;
     internal const double OverlayInfoReservedHeight = 184;
     internal const double OverlayInfoBottomPadding = 16;
 
@@ -25,6 +27,8 @@ public sealed class OverlayViewModel : ViewModelBase
     private readonly LogService _logService;
     private readonly IntPtr _restoreWindow;
     private readonly Action? _openShelf;
+    private readonly RelayCommand _previousPageCommand;
+    private readonly RelayCommand _nextPageCommand;
     private readonly Stack<FolderNavigationState> _folderHistory = [];
     private ProfileConfig _currentProfile;
     private OrbitAction? _expandedFolder;
@@ -68,6 +72,10 @@ public sealed class OverlayViewModel : ViewModelBase
         ToggleDefaultProfileCommand = new RelayCommand(ToggleDefaultProfile);
         CollapseFolderCommand = new RelayCommand(CollapseFolder);
         OpenShelfCommand = new RelayCommand(OpenShelf, () => _openShelf is not null);
+        _previousPageCommand = new RelayCommand(PreviousPage, () => CanGoPreviousPage);
+        _nextPageCommand = new RelayCommand(NextPage, () => CanGoNextPage);
+        PreviousPageCommand = _previousPageCommand;
+        NextPageCommand = _nextPageCommand;
 
         ButtonSize = Math.Clamp(theme.ButtonSize > 0 ? theme.ButtonSize : 60, 54, 96);
         SatelliteButtonSize = Math.Clamp(ButtonSize - 10, 42, 78);
@@ -117,6 +125,8 @@ public sealed class OverlayViewModel : ViewModelBase
     public ICommand ToggleDefaultProfileCommand { get; }
     public ICommand CollapseFolderCommand { get; }
     public ICommand OpenShelfCommand { get; }
+    public ICommand PreviousPageCommand { get; }
+    public ICommand NextPageCommand { get; }
 
     public string CenterButtonText =>
         _isShowingDefaultProfile ? "↩" : "↝";
@@ -159,6 +169,7 @@ public sealed class OverlayViewModel : ViewModelBase
             {
                 OnPropertyChanged(nameof(FolderStatusText));
                 OnPropertyChanged(nameof(CanCollapseFolder));
+                NotifyPageNavigationState();
             }
         }
     }
@@ -178,9 +189,9 @@ public sealed class OverlayViewModel : ViewModelBase
         }
     }
 
-    public bool HasFolderOverflow => FolderOverflowCount > 0;
+    public bool HasFolderOverflow => FolderPageCount > 1;
     public string FolderOverflowText => FolderPageCount > 1
-        ? $"Sayfa {FolderPageIndex + 1}/{FolderPageCount} • Sayfa düğmesi kalan aksiyonları gösterir"
+        ? $"Klasör sayfası {FolderPageIndex + 1}/{FolderPageCount} · Merkez oklarıyla değiştir"
         : "";
 
     public string FolderStatusText =>
@@ -202,9 +213,22 @@ public sealed class OverlayViewModel : ViewModelBase
             {
                 OnPropertyChanged(nameof(HasFolderOverflow));
                 OnPropertyChanged(nameof(FolderOverflowText));
+                NotifyPageNavigationState();
             }
         }
     }
+
+    public bool HasPageNavigation => CurrentPageCount > 1;
+    public bool CanGoPreviousPage => HasPageNavigation && CurrentPageIndex > 0;
+    public bool CanGoNextPage => HasPageNavigation && CurrentPageIndex < CurrentPageCount - 1;
+    public string PreviousPageToolTip => HasSatellites
+        ? $"Önceki klasör sayfası ({CurrentPageIndex + 1}/{CurrentPageCount})"
+        : $"Önceki halka sayfası ({CurrentPageIndex + 1}/{CurrentPageCount})";
+    public string NextPageToolTip => HasSatellites
+        ? $"Sonraki klasör sayfası ({CurrentPageIndex + 1}/{CurrentPageCount})"
+        : $"Sonraki halka sayfası ({CurrentPageIndex + 1}/{CurrentPageCount})";
+    private int CurrentPageIndex => HasSatellites ? FolderPageIndex : MainPageIndex;
+    private int CurrentPageCount => HasSatellites ? FolderPageCount : MainPageCount;
 
     public double SatelliteGroupLeft
     {
@@ -244,6 +268,9 @@ public sealed class OverlayViewModel : ViewModelBase
     public double OverlayInfoTop => CenterY + RadiusY + ButtonSize / 2 + OverlayInfoGap;
     public double CenterHintLeft => CenterX - 46;
     public double CenterHintTop => CenterY + 24;
+    public double CenterPageButtonTop => CenterY - CenterPageButtonSize / 2;
+    public double PreviousPageButtonLeft => CenterX - CenterPageButtonOffset - CenterPageButtonSize / 2;
+    public double NextPageButtonLeft => CenterX + CenterPageButtonOffset - CenterPageButtonSize / 2;
     public System.Windows.Media.Brush AccentBrush { get; }
     public System.Windows.Media.Brush AccentForegroundBrush { get; }
     public System.Windows.Media.Brush OverlayInfoBackground { get; }
@@ -261,6 +288,9 @@ public sealed class OverlayViewModel : ViewModelBase
         var totalCount = CurrentActions.Count;
         if (totalCount == 0)
         {
+            _mainPageIndex = 0;
+            NotifyPageNavigationState();
+            ResetKeyboardSelection();
             return;
         }
 
@@ -269,7 +299,7 @@ public sealed class OverlayViewModel : ViewModelBase
         var visibleActions = pageCount > 1
             ? CurrentActions.Skip(_mainPageIndex * MainPageSize).Take(MainPageSize).ToList()
             : CurrentActions.ToList();
-        var count = visibleActions.Count + (pageCount > 1 ? 1 : 0);
+        var count = visibleActions.Count;
 
         var step = count == 1 ? 0 : 360.0 / count;
         const double startAngle = -90.0;
@@ -294,28 +324,10 @@ public sealed class OverlayViewModel : ViewModelBase
                 shortcutNumber: index + 1));
         }
 
-        if (pageCount > 1)
-        {
-            var index = count - 1;
-            var angleDegrees = startAngle + index * step;
-            var angle = angleDegrees * Math.PI / 180.0;
-            var centerX = CenterX + Math.Cos(angle) * RadiusX;
-            var centerY = CenterY + Math.Sin(angle) * RadiusY;
-            ActionItems.Add(CreatePaginationButton(
-                title: "Sonraki sayfa",
-                centerX,
-                centerY,
-                ButtonSize,
-                iconFontSize: 22,
-                angleDegrees,
-                isSatellite: false,
-                NextMainPage,
-                shortcutNumber: count));
-        }
-
         OnPropertyChanged(nameof(MainPageIndex));
         OnPropertyChanged(nameof(MainPageCount));
         OnPropertyChanged(nameof(FolderStatusText));
+        NotifyPageNavigationState();
         ResetKeyboardSelection();
     }
 
@@ -344,7 +356,7 @@ public sealed class OverlayViewModel : ViewModelBase
         var groupCenterX = _expandedAnchorX + outwardX * SatelliteAnchorOffset;
         var groupCenterY = _expandedAnchorY + outwardY * SatelliteAnchorOffset;
 
-        FolderPageCount = _expandedFolder.Children.Count > 9
+        FolderPageCount = _expandedFolder.Children.Count > FolderPageSize
             ? (int)Math.Ceiling(_expandedFolder.Children.Count / (double)FolderPageSize)
             : 1;
         _folderPageIndex = Math.Clamp(_folderPageIndex, 0, FolderPageCount - 1);
@@ -354,43 +366,28 @@ public sealed class OverlayViewModel : ViewModelBase
         FolderOverflowCount = FolderPageCount > 1
             ? _expandedFolder.Children.Count - visibleChildren.Count
             : 0;
-        var count = visibleChildren.Count + (FolderPageCount > 1 ? 1 : 0);
+        var count = visibleChildren.Count;
         var spread = count <= 2 ? 108.0 : Math.Min(238.0, 40.0 * (count - 1));
         var firstAngle = _expandedAngleDegrees - spread / 2;
         var step = count <= 1 ? 0 : spread / (count - 1);
 
-        for (var index = 0; index < count; index++)
+        for (var index = 0; index < visibleChildren.Count; index++)
         {
             var angleDegrees = firstAngle + index * step;
             var angle = angleDegrees * Math.PI / 180.0;
             var centerX = groupCenterX + Math.Cos(angle) * SatelliteRadius;
             var centerY = groupCenterY + Math.Sin(angle) * SatelliteRadius;
 
-            if (index < visibleChildren.Count)
-            {
-                SatelliteItems.Add(CreateButton(
-                    visibleChildren[index],
-                    centerX,
-                    centerY,
-                    SatelliteButtonSize,
-                    iconFontSize: 21,
-                    angleDegrees,
-                    isSatellite: true,
-                    isActiveFolder: false,
-                    shortcutNumber: index + 1));
-                continue;
-            }
-
-            SatelliteItems.Add(CreatePaginationButton(
-                title: "Sonraki sayfa",
+            SatelliteItems.Add(CreateButton(
+                visibleChildren[index],
                 centerX,
                 centerY,
                 SatelliteButtonSize,
-                iconFontSize: 18,
+                iconFontSize: 21,
                 angleDegrees,
                 isSatellite: true,
-                NextFolderPage,
-                shortcutNumber: count));
+                isActiveFolder: false,
+                shortcutNumber: index + 1));
         }
 
         var groupRadius = SatelliteRadius + SatelliteButtonSize + 18;
@@ -401,6 +398,7 @@ public sealed class OverlayViewModel : ViewModelBase
         HasSatellites = true;
         OnPropertyChanged(nameof(FolderPageIndex));
         OnPropertyChanged(nameof(FolderOverflowText));
+        NotifyPageNavigationState();
         ResetKeyboardSelection();
     }
 
@@ -434,38 +432,6 @@ public sealed class OverlayViewModel : ViewModelBase
                     _ = RunActionAsync(item);
                 }
             })
-        };
-
-    private ActionButtonViewModel CreatePaginationButton(
-        string title,
-        double centerX,
-        double centerY,
-        double diameter,
-        double iconFontSize,
-        double angleDegrees,
-        bool isSatellite,
-        Action nextPage,
-        int shortcutNumber) =>
-        new()
-        {
-            Action = new OrbitAction
-            {
-                Id = "__overflow",
-                Title = title,
-                Icon = "arrow-right",
-                Type = "overflow"
-            },
-            X = centerX - diameter / 2,
-            Y = centerY - diameter / 2,
-            CenterX = centerX,
-            CenterY = centerY,
-            Diameter = diameter,
-            IconFontSize = iconFontSize,
-            AngleDegrees = angleDegrees,
-            IsSatellite = isSatellite,
-            IsActiveFolder = false,
-            ShortcutNumber = shortcutNumber,
-            Command = new RelayCommand(nextPage)
         };
 
     public bool TryHandleKey(Key key)
@@ -503,6 +469,20 @@ public sealed class OverlayViewModel : ViewModelBase
             case Key.Enter:
             case Key.Space:
                 return SelectKeyboardItem(_keyboardSelectionIndex, execute: true);
+            case Key.PageUp:
+                if (CanGoPreviousPage)
+                {
+                    PreviousPage();
+                }
+
+                return HasPageNavigation;
+            case Key.PageDown:
+                if (CanGoNextPage)
+                {
+                    NextPage();
+                }
+
+                return HasPageNavigation;
             case Key.Back:
                 return TryCollapseFolder();
             default:
@@ -567,33 +547,55 @@ public sealed class OverlayViewModel : ViewModelBase
     private int GetMainPageCount()
     {
         var count = CurrentActions.Count;
-        return count > 8
+        return count > MainPageSize
             ? (int)Math.Ceiling(count / (double)MainPageSize)
             : 1;
     }
 
-    private void NextMainPage()
+    private void PreviousPage() => MoveCurrentPage(-1);
+
+    private void NextPage() => MoveCurrentPage(1);
+
+    private void MoveCurrentPage(int direction)
     {
-        var pageCount = GetMainPageCount();
-        if (pageCount <= 1)
+        if (direction == 0 || !HasPageNavigation)
         {
             return;
         }
 
-        ResetOpenFolder();
-        _mainPageIndex = (_mainPageIndex + 1) % pageCount;
+        if (HasSatellites)
+        {
+            var targetPage = Math.Clamp(_folderPageIndex + Math.Sign(direction), 0, FolderPageCount - 1);
+            if (targetPage == _folderPageIndex)
+            {
+                return;
+            }
+
+            _folderPageIndex = targetPage;
+            RebuildSatellites();
+            return;
+        }
+
+        var mainPageCount = GetMainPageCount();
+        var targetMainPage = Math.Clamp(_mainPageIndex + Math.Sign(direction), 0, mainPageCount - 1);
+        if (targetMainPage == _mainPageIndex)
+        {
+            return;
+        }
+
+        _mainPageIndex = targetMainPage;
         RebuildMainRing();
     }
 
-    private void NextFolderPage()
+    private void NotifyPageNavigationState()
     {
-        if (_expandedFolder is null || FolderPageCount <= 1)
-        {
-            return;
-        }
-
-        _folderPageIndex = (_folderPageIndex + 1) % FolderPageCount;
-        RebuildSatellites();
+        OnPropertyChanged(nameof(HasPageNavigation));
+        OnPropertyChanged(nameof(CanGoPreviousPage));
+        OnPropertyChanged(nameof(CanGoNextPage));
+        OnPropertyChanged(nameof(PreviousPageToolTip));
+        OnPropertyChanged(nameof(NextPageToolTip));
+        _previousPageCommand.RaiseCanExecuteChanged();
+        _nextPageCommand.RaiseCanExecuteChanged();
     }
 
     private void ToggleDefaultProfile()

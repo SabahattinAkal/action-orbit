@@ -23,12 +23,22 @@ public sealed class OverlayPaginationTests : IDisposable
 
         Assert.Equal(8, viewModel.ActionItems.Count);
         Assert.Equal(2, viewModel.MainPageCount);
-        Assert.Equal("overflow", viewModel.ActionItems[^1].Type);
+        Assert.DoesNotContain(viewModel.ActionItems, item => item.Type == "overflow");
+        Assert.True(viewModel.HasPageNavigation);
+        Assert.False(viewModel.PreviousPageCommand.CanExecute(null));
+        Assert.True(viewModel.NextPageCommand.CanExecute(null));
 
-        viewModel.ActionItems[^1].Command.Execute(null);
+        viewModel.NextPageCommand.Execute(null);
 
-        Assert.Contains(viewModel.ActionItems, item => item.Action.Id == "action_8");
+        Assert.Contains(viewModel.ActionItems, item => item.Action.Id == "action_9");
         Assert.Contains(viewModel.ActionItems, item => item.Action.Id == "action_10");
+        Assert.True(viewModel.PreviousPageCommand.CanExecute(null));
+        Assert.False(viewModel.NextPageCommand.CanExecute(null));
+
+        viewModel.PreviousPageCommand.Execute(null);
+
+        Assert.Contains(viewModel.ActionItems, item => item.Action.Id == "action_1");
+        Assert.Equal(0, viewModel.MainPageIndex);
     }
 
     [Fact]
@@ -49,9 +59,13 @@ public sealed class OverlayPaginationTests : IDisposable
 
         Assert.Equal(9, viewModel.SatelliteItems.Count);
         Assert.Equal(2, viewModel.FolderPageCount);
-        viewModel.SatelliteItems[^1].Command.Execute(null);
-        Assert.Contains(viewModel.SatelliteItems, item => item.Action.Id == "action_9");
+        Assert.DoesNotContain(viewModel.SatelliteItems, item => item.Type == "overflow");
+        Assert.True(viewModel.HasPageNavigation);
+
+        viewModel.NextPageCommand.Execute(null);
+
         Assert.Contains(viewModel.SatelliteItems, item => item.Action.Id == "action_10");
+        Assert.Single(viewModel.SatelliteItems);
     }
 
     [Fact]
@@ -72,7 +86,7 @@ public sealed class OverlayPaginationTests : IDisposable
     }
 
     [Fact]
-    public void FolderPagination_CyclesThroughEveryChild()
+    public void FolderPagination_NavigatesThroughEveryChildAndBackToFirstPage()
     {
         var folder = new OrbitAction
         {
@@ -89,16 +103,66 @@ public sealed class OverlayPaginationTests : IDisposable
 
         for (var page = 0; page < viewModel.FolderPageCount; page++)
         {
-            foreach (var item in viewModel.SatelliteItems.Where(item => item.Type != "overflow"))
+            foreach (var item in viewModel.SatelliteItems)
             {
                 visited.Add(item.Action.Id);
             }
 
-            viewModel.SatelliteItems[^1].Command.Execute(null);
+            if (viewModel.NextPageCommand.CanExecute(null))
+            {
+                viewModel.NextPageCommand.Execute(null);
+            }
         }
 
         Assert.Equal(25, visited.Count);
+        Assert.Equal(viewModel.FolderPageCount - 1, viewModel.FolderPageIndex);
+
+        while (viewModel.PreviousPageCommand.CanExecute(null))
+        {
+            viewModel.PreviousPageCommand.Execute(null);
+        }
+
         Assert.Equal(0, viewModel.FolderPageIndex);
+    }
+
+    [Theory]
+    [InlineData(8)]
+    [InlineData(1)]
+    public void MainRing_DoesNotShowPageControlsWhenEverythingFits(int actionCount)
+    {
+        var profile = new ProfileConfig
+        {
+            Id = "default",
+            Name = "Default",
+            Actions = Enumerable.Range(1, actionCount).Select(CreateAction).ToList()
+        };
+        var viewModel = CreateViewModel(profile);
+
+        Assert.Equal(actionCount, viewModel.ActionItems.Count);
+        Assert.False(viewModel.HasPageNavigation);
+        Assert.False(viewModel.PreviousPageCommand.CanExecute(null));
+        Assert.False(viewModel.NextPageCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public void FolderRing_DoesNotShowPageControlsForNineChildren()
+    {
+        var folder = new OrbitAction
+        {
+            Id = "folder",
+            Title = "Folder",
+            Type = "folder",
+            Children = Enumerable.Range(1, 9).Select(CreateAction).ToList()
+        };
+        var profile = new ProfileConfig { Id = "default", Name = "Default", Actions = [folder] };
+        var viewModel = CreateViewModel(profile);
+
+        viewModel.ActionItems[0].Command.Execute(viewModel.ActionItems[0]);
+
+        Assert.Equal(9, viewModel.SatelliteItems.Count);
+        Assert.False(viewModel.HasPageNavigation);
+        Assert.False(viewModel.PreviousPageCommand.CanExecute(null));
+        Assert.False(viewModel.NextPageCommand.CanExecute(null));
     }
 
     [Fact]

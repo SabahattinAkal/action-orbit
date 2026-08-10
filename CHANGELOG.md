@@ -7,6 +7,7 @@ Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 
 ### Düzeltildi
 
+- Ana ve klasör halkalarında sayfa değiştiren yapay aksiyon kaldırıldı; sayfalama, yalnızca gerektiğinde merkez düğmenin iki yanında beliren geri/ileri kontrollerine taşındı.
 - Parola üreticinin koyu temadaki düşük kontrastlı çıktı ve seçenek alanları yüksek okunabilirlikli kart düzeniyle yenilendi.
 - Klasör halkası açıldığında eklenen geri kontrolü nedeniyle alt bilgi panelinin overlay penceresi tarafından kesilmesi düzeltildi.
 - Varsayılan ve önerilen ana hotkey yeniden `Ctrl+Alt+Shift+R` olarak ayarlandı.
