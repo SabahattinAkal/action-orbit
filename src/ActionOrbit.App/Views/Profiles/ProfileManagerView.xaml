@@ -4,28 +4,92 @@
              DataContext="{Binding ProfileEditor}"
              AutomationProperties.Name="Profil yönetimi">
     <UserControl.Resources>
-        <Style x:Key="ProfileListItemStyle" TargetType="ListBoxItem">
-            <Setter Property="Margin" Value="0,0,0,8" />
+        <Style x:Key="CircleIconButton" TargetType="Button">
+            <Setter Property="Width" Value="36" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="MinWidth" Value="36" />
+            <Setter Property="MinHeight" Value="36" />
+            <Setter Property="Margin" Value="0,0,7,0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Background" Value="{DynamicResource SoftSurfaceBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+            <Setter Property="FontFamily" Value="Segoe MDL2 Assets" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="Normal" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Circle"
+                                Width="{TemplateBinding Width}"
+                                Height="{TemplateBinding Height}"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="18"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Circle" Property="Background" Value="{DynamicResource HoverSurfaceBrush}" />
+                                <Setter TargetName="Circle" Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Circle" Property="Background" Value="{DynamicResource PressedSurfaceBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Circle" Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" />
+                                <Setter TargetName="Circle" Property="BorderThickness" Value="2" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="AccentCircleIconButton"
+               TargetType="Button"
+               BasedOn="{StaticResource CircleIconButton}">
+            <Setter Property="Background" Value="{DynamicResource PrimaryActionBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource OnPrimaryActionBrush}" />
+        </Style>
+
+        <Style x:Key="DangerCircleIconButton"
+               TargetType="Button"
+               BasedOn="{StaticResource CircleIconButton}">
+            <Setter Property="Background" Value="{DynamicResource DangerSurfaceBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource DangerBorderBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource DangerTextBrush}" />
+        </Style>
+
+        <Style x:Key="CompactProfileListItem" TargetType="ListBoxItem">
+            <Setter Property="Margin" Value="0" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
             <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
-            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Background" Value="Transparent" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ListBoxItem">
-                        <Border x:Name="Card"
+                        <Border x:Name="Row"
                                 Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="12"
+                                BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="0,0,0,1"
                                 SnapsToDevicePixels="True">
                             <Grid>
-                                <Border x:Name="AccentRail"
-                                        Width="4"
+                                <Border x:Name="SelectionRail"
+                                        Width="3"
                                         Margin="0,8,0,8"
                                         HorizontalAlignment="Left"
                                         Background="Transparent"
@@ -35,20 +99,14 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Card" Property="Background" Value="{DynamicResource HoverSurfaceBrush}" />
-                                <Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
+                                <Setter TargetName="Row" Property="Background" Value="{DynamicResource HoverSurfaceBrush}" />
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="Card" Property="Background" Value="{DynamicResource SelectedSurfaceBrush}" />
-                                <Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" />
-                                <Setter TargetName="AccentRail" Property="Background" Value="{DynamicResource PrimaryActionBrush}" />
+                                <Setter TargetName="Row" Property="Background" Value="{DynamicResource SelectedSurfaceBrush}" />
+                                <Setter TargetName="SelectionRail" Property="Background" Value="{DynamicResource PrimaryActionBrush}" />
                             </Trigger>
                             <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" />
-                                <Setter TargetName="Card" Property="BorderThickness" Value="2" />
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.55" />
+                                <Setter TargetName="Row" Property="Background" Value="{DynamicResource SelectedSurfaceBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -56,79 +114,59 @@
             </Setter>
         </Style>
 
-        <DataTemplate x:Key="ReadableProfileTemplate">
-            <Grid MinHeight="58" Margin="14,9,10,9">
+        <DataTemplate x:Key="CompactProfileTemplate">
+            <Grid MinHeight="58" Margin="14,6,12,6">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-
-                <Border Width="38"
-                        Height="38"
-                        Margin="0,0,11,0"
-                        VerticalAlignment="Center"
-                        Background="{DynamicResource PrimaryActionBrush}"
-                        CornerRadius="19">
-                    <TextBlock HorizontalAlignment="Center"
-                               VerticalAlignment="Center"
-                               Foreground="{DynamicResource OnPrimaryActionBrush}"
-                               FontSize="13"
-                               FontWeight="Bold"
-                               Text="P" />
-                </Border>
-
-                <StackPanel Grid.Column="1"
-                            VerticalAlignment="Center"
+                <StackPanel VerticalAlignment="Center"
                             ToolTip="{Binding Name}">
                     <TextBlock Foreground="{DynamicResource PrimaryTextBrush}"
                                FontSize="14"
                                FontWeight="SemiBold"
                                Text="{Binding Name}"
                                TextTrimming="CharacterEllipsis" />
-                    <WrapPanel Margin="0,5,0,0">
-                        <TextBlock Margin="0,0,9,0"
-                                   Foreground="{DynamicResource MutedTextBrush}"
+                    <StackPanel Margin="0,4,0,0" Orientation="Horizontal">
+                        <TextBlock Foreground="{DynamicResource MutedTextBrush}"
                                    FontFamily="Consolas"
                                    FontSize="11"
                                    Text="{Binding Id}"
                                    TextTrimming="CharacterEllipsis" />
-                        <TextBlock Margin="0,0,9,0"
+                        <TextBlock Margin="8,0"
                                    Foreground="{DynamicResource MutedTextBrush}"
                                    FontSize="11"
-                                   Text="{Binding Matches.Count, StringFormat={}{0} uygulama}" />
+                                   Text="·" />
                         <TextBlock Foreground="{DynamicResource MutedTextBrush}"
                                    FontSize="11"
-                                   Text="{Binding Actions.Count, StringFormat={}{0} aksiyon}" />
-                    </WrapPanel>
+                                   Text="{Binding Matches.Count, StringFormat={}{0} uygulama}" />
+                    </StackPanel>
                 </StackPanel>
 
-                <StackPanel Grid.Column="2"
-                            Margin="8,0,0,0"
-                            VerticalAlignment="Center">
-                    <Border Padding="7,3"
-                            HorizontalAlignment="Right"
-                            Background="{DynamicResource InfoSurfaceBrush}"
-                            BorderBrush="{DynamicResource InfoBorderBrush}"
-                            BorderThickness="1"
-                            CornerRadius="9">
-                        <Border.Visibility>
+                <StackPanel Grid.Column="1"
+                            Margin="10,0,0,0"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal">
+                    <TextBlock Margin="0,0,10,0"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource InfoTextBrush}"
+                               FontFamily="Segoe MDL2 Assets"
+                               FontSize="13"
+                               Text="&#xE735;"
+                               ToolTip="Varsayılan profil">
+                        <TextBlock.Visibility>
                             <MultiBinding Converter="{StaticResource StringEqualityToVisibilityConverter}">
                                 <Binding Path="Id" />
                                 <Binding Path="DataContext.DefaultProfileId"
                                          RelativeSource="{RelativeSource AncestorType={x:Type ListBox}}" />
                             </MultiBinding>
-                        </Border.Visibility>
-                        <TextBlock Foreground="{DynamicResource InfoTextBrush}"
-                                   FontSize="10"
-                                   FontWeight="SemiBold"
-                                   Text="Varsayılan" />
-                    </Border>
-                    <TextBlock Margin="0,4,2,0"
-                               HorizontalAlignment="Right"
+                        </TextBlock.Visibility>
+                    </TextBlock>
+                    <TextBlock VerticalAlignment="Center"
                                Foreground="{DynamicResource MutedTextBrush}"
-                               FontSize="18"
-                               Text="›" />
+                               FontFamily="Segoe MDL2 Assets"
+                               FontSize="11"
+                               Text="&#xE76C;" />
                 </StackPanel>
             </Grid>
         </DataTemplate>
@@ -146,294 +184,290 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <StackPanel>
-                    <TextBlock FontSize="18"
-                               FontWeight="Bold"
-                               Text="1. Profiller" />
-                    <TextBlock Margin="0,4,0,0"
-                               Style="{DynamicResource MutedText}"
-                               Text="Uygulamaya göre hangi halkanın açılacağını belirle." />
-                </StackPanel>
-                <Button Grid.Column="1"
-                        Margin="10,0,0,0"
-                        Padding="12,6"
-                        VerticalAlignment="Center"
+                <TextBlock VerticalAlignment="Center"
+                           FontSize="20"
+                           FontWeight="Bold"
+                           Text="Profiller" />
+                <TextBlock Grid.Column="1"
+                           Margin="10,0,12,0"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource MutedTextBrush}"
+                           FontSize="12"
+                           Text="{Binding ProfileCount}" />
+                <Button Grid.Column="2"
+                        Margin="0"
                         Command="{Binding AddProfileCommand}"
-                        Style="{DynamicResource PrimaryButton}"
-                        Content="+ Yeni profil"
-                        ToolTip="Yeni bir profil oluştur" />
+                        Style="{StaticResource AccentCircleIconButton}"
+                        Content="&#xE710;"
+                        ToolTip="Yeni profil"
+                        AutomationProperties.Name="Yeni profil" />
             </Grid>
 
             <Border Grid.Row="1"
-                    Margin="0,14,0,0"
-                    Padding="8"
+                    Margin="0,12,0,0"
                     Background="{DynamicResource SoftSurfaceBrush}"
                     BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="1"
-                    CornerRadius="12">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <Grid Margin="6,3,6,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Style="{DynamicResource TinyLabel}"
-                                   Text="PROFİL LİSTESİ" />
-                        <Border Grid.Column="1"
-                                Padding="8,2"
+                    CornerRadius="12"
+                    ClipToBounds="True">
+                <ListBox MaxHeight="220"
+                         ItemsSource="{Binding Profiles}"
+                         SelectedItem="{Binding SelectedProfile}"
+                         ItemTemplate="{StaticResource CompactProfileTemplate}"
+                         ItemContainerStyle="{StaticResource CompactProfileListItem}"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                         AutomationProperties.Name="Profiller" />
+            </Border>
+
+            <ScrollViewer Grid.Row="2"
+                          Margin="0,12,0,0"
+                          HorizontalScrollBarVisibility="Disabled"
+                          VerticalScrollBarVisibility="Auto">
+                <Border Margin="0,0,4,2"
+                        Padding="12"
+                        Background="{DynamicResource SoftSurfaceBrush}"
+                        BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border Margin="0,0,12,0"
+                                    Padding="9,2"
+                                    VerticalAlignment="Center"
+                                    Background="{DynamicResource SurfaceBrush}"
+                                    BorderBrush="{DynamicResource InputBorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="9">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox MinHeight="32"
+                                             Padding="0"
+                                             Foreground="{DynamicResource PrimaryTextBrush}"
+                                             Background="Transparent"
+                                             BorderThickness="0"
+                                             CaretBrush="{DynamicResource PrimaryTextBrush}"
+                                             FontSize="16"
+                                             FontWeight="SemiBold"
+                                             Text="{Binding SelectedProfileName, UpdateSourceTrigger=PropertyChanged}"
+                                             ToolTip="Profil adını düzenle" />
+                                    <TextBlock Grid.Column="1"
+                                               Margin="8,0,0,0"
+                                               VerticalAlignment="Center"
+                                               Foreground="{DynamicResource MutedTextBrush}"
+                                               FontFamily="Segoe MDL2 Assets"
+                                               FontSize="12"
+                                               Text="&#xE70F;"
+                                               IsHitTestVisible="False" />
+                                </Grid>
+                            </Border>
+
+                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                <Grid Width="36" Margin="0,0,7,0">
+                                    <Button Margin="0"
+                                            Command="{Binding SetDefaultProfileCommand}"
+                                            Style="{StaticResource CircleIconButton}"
+                                            Content="&#xE734;"
+                                            ToolTip="Varsayılan profil yap"
+                                            Visibility="{Binding CanSetDefaultProfile, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                            AutomationProperties.Name="Varsayılan profil yap" />
+                                    <Border Width="36"
+                                            Height="36"
+                                            Background="{DynamicResource InfoSurfaceBrush}"
+                                            BorderBrush="{DynamicResource InfoBorderBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="18"
+                                            ToolTip="Varsayılan profil"
+                                            Visibility="{Binding SelectedProfileIsDefault, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                        <TextBlock HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource InfoTextBrush}"
+                                                   FontFamily="Segoe MDL2 Assets"
+                                                   FontSize="14"
+                                                   Text="&#xE735;" />
+                                    </Border>
+                                </Grid>
+                                <Button Command="{Binding DuplicateProfileCommand}"
+                                        Style="{StaticResource CircleIconButton}"
+                                        Content="&#xE8C8;"
+                                        ToolTip="Profili çoğalt"
+                                        AutomationProperties.Name="Profili çoğalt" />
+                                <Button Margin="0"
+                                        Command="{Binding DeleteProfileCommand}"
+                                        Style="{StaticResource DangerCircleIconButton}"
+                                        Content="&#xE74D;"
+                                        ToolTip="Profili sil"
+                                        AutomationProperties.Name="Profili sil" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Border Height="1"
+                                Margin="0,12"
+                                Background="{DynamicResource BorderBrush}" />
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock VerticalAlignment="Center"
+                                       Foreground="{DynamicResource PrimaryTextBrush}"
+                                       FontSize="14"
+                                       FontWeight="SemiBold"
+                                       Text="Uygulamalar" />
+                            <TextBlock Grid.Column="1"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource MutedTextBrush}"
+                                       FontSize="11"
+                                       Text="{Binding SelectedProfileMatchChips.Count}" />
+                        </Grid>
+
+                        <Grid Margin="0,9,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ComboBox Margin="0,0,8,0"
+                                      DisplayMemberPath="DisplayName"
+                                      ItemsSource="{Binding RunningApps}"
+                                      SelectedItem="{Binding SelectedRunningApp}"
+                                      ToolTip="Çalışan uygulamalar" />
+                            <Button Grid.Column="1"
+                                    Command="{Binding RefreshRunningAppsCommand}"
+                                    Style="{StaticResource CircleIconButton}"
+                                    Content="&#xE72C;"
+                                    ToolTip="Listeyi yenile"
+                                    AutomationProperties.Name="Çalışan uygulamaları yenile" />
+                            <Button Grid.Column="2"
+                                    Margin="0"
+                                    Command="{Binding AddSelectedRunningAppToProfileCommand}"
+                                    Style="{StaticResource AccentCircleIconButton}"
+                                    Content="&#xE710;"
+                                    ToolTip="Seçili uygulamayı bağla"
+                                    AutomationProperties.Name="Seçili uygulamayı bağla" />
+                        </Grid>
+
+                        <Border Margin="0,9,0,0"
+                                Padding="9,7"
                                 Background="{DynamicResource SurfaceBrush}"
                                 BorderBrush="{DynamicResource BorderBrush}"
                                 BorderThickness="1"
                                 CornerRadius="9">
-                            <TextBlock Foreground="{DynamicResource MutedTextBrush}"
-                                       FontSize="11"
-                                       Text="{Binding ProfileCount, StringFormat={}{0} profil}" />
-                        </Border>
-                    </Grid>
-
-                    <ListBox Grid.Row="1"
-                             Margin="0,8,0,0"
-                             MaxHeight="226"
-                             ItemsSource="{Binding Profiles}"
-                             SelectedItem="{Binding SelectedProfile}"
-                             ItemTemplate="{StaticResource ReadableProfileTemplate}"
-                             ItemContainerStyle="{StaticResource ProfileListItemStyle}"
-                             ScrollViewer.VerticalScrollBarVisibility="Auto"
-                             AutomationProperties.Name="Profiller" />
-                </Grid>
-            </Border>
-
-            <ScrollViewer Grid.Row="2"
-                          Margin="0,14,0,0"
-                          HorizontalScrollBarVisibility="Disabled"
-                          VerticalScrollBarVisibility="Auto">
-                <StackPanel Margin="0,0,4,2">
-                    <Border Padding="12"
-                            Background="{DynamicResource SelectedSurfaceBrush}"
-                            BorderBrush="{DynamicResource SelectedBorderBrush}"
-                            BorderThickness="1"
-                            CornerRadius="12">
-                        <StackPanel>
                             <Grid>
                                 <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <StackPanel>
-                                    <TextBlock Style="{DynamicResource TinyLabel}"
-                                               Text="SEÇİLİ PROFİL" />
-                                    <TextBlock Margin="0,4,0,0"
-                                               Foreground="{DynamicResource PrimaryTextBrush}"
-                                               FontSize="16"
-                                               FontWeight="Bold"
-                                               Text="{Binding SelectedProfileName}"
-                                               TextTrimming="CharacterEllipsis" />
-                                </StackPanel>
-                                <Border Grid.Column="1"
-                                        Padding="8,4"
-                                        VerticalAlignment="Center"
-                                        Background="{DynamicResource InfoSurfaceBrush}"
-                                        BorderBrush="{DynamicResource InfoBorderBrush}"
-                                        BorderThickness="1"
-                                        CornerRadius="10"
-                                        Visibility="{Binding SelectedProfileIsDefault, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                    <TextBlock Foreground="{DynamicResource InfoTextBrush}"
-                                               FontSize="11"
-                                               FontWeight="SemiBold"
-                                               Text="Varsayılan profil" />
-                                </Border>
-                            </Grid>
-
-                            <WrapPanel Margin="0,10,0,0">
-                                <Button Command="{Binding DuplicateProfileCommand}"
-                                        Padding="10,5"
-                                        Content="Kopyasını oluştur"
-                                        ToolTip="Seçili profili tüm aksiyonlarıyla çoğalt" />
-                                <Button Command="{Binding SetDefaultProfileCommand}"
-                                        Padding="10,5"
-                                        IsEnabled="{Binding CanSetDefaultProfile}"
-                                        Visibility="{Binding CanSetDefaultProfile, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                        Content="Varsayılan yap" />
-                                <Button Command="{Binding DeleteProfileCommand}"
-                                        Padding="10,5"
-                                        Style="{DynamicResource DangerButton}"
-                                        Content="Profili sil" />
-                            </WrapPanel>
-                        </StackPanel>
-                    </Border>
-
-                    <Border Margin="0,12,0,0"
-                            Style="{DynamicResource SoftSurface}">
-                        <StackPanel>
-                            <TextBlock Foreground="{DynamicResource PrimaryTextBrush}"
-                                       FontSize="14"
-                                       FontWeight="SemiBold"
-                                       Text="Profil bilgileri" />
-                            <TextBlock Margin="0,3,0,0"
-                                       Style="{DynamicResource MutedText}"
-                                       Text="Bu ad, profil listesinde ve halka bilgisinde görünür." />
-                            <TextBlock Margin="0,11,0,0"
-                                       Style="{DynamicResource TinyLabel}"
-                                       Text="Görünen ad" />
-                            <TextBox Margin="0,6,0,0"
-                                     ToolTip="Profilin görünen adı"
-                                     Text="{Binding SelectedProfileName, UpdateSourceTrigger=PropertyChanged}" />
-                        </StackPanel>
-                    </Border>
-
-                    <Border Margin="0,12,0,0"
-                            Style="{DynamicResource SoftSurface}">
-                        <StackPanel>
-                            <TextBlock Foreground="{DynamicResource PrimaryTextBrush}"
-                                       FontSize="14"
-                                       FontWeight="SemiBold"
-                                       Text="Uygulama eşleştirmeleri" />
-                            <TextBlock Margin="0,3,0,0"
-                                       Style="{DynamicResource MutedText}"
-                                       Text="Bağlı uygulamalardan biri öndeyken bu profil otomatik seçilir."
-                                       TextWrapping="Wrap" />
-
-                            <TextBlock Margin="0,11,0,0"
-                                       Style="{DynamicResource TinyLabel}"
-                                       Text="Çalışan uygulamalardan seç" />
-                            <Grid Margin="0,6,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <ComboBox Grid.Column="0"
-                                          Margin="0,0,8,0"
-                                          DisplayMemberPath="DisplayName"
-                                          ItemsSource="{Binding RunningApps}"
-                                          SelectedItem="{Binding SelectedRunningApp}"
-                                          ToolTip="Açık penceresi bulunan uygulamalar" />
-                                <Button Grid.Column="1"
-                                        Margin="0"
-                                        Command="{Binding RefreshRunningAppsCommand}"
-                                        Content="Yenile"
-                                        ToolTip="Çalışan uygulama listesini yenile" />
-                            </Grid>
-
-                            <WrapPanel Margin="0,8,0,0">
-                                <Button Command="{Binding AddSelectedRunningAppToProfileCommand}"
-                                        Style="{DynamicResource PrimaryButton}"
-                                        Content="Seçili uygulamayı bağla" />
-                                <Button Command="{Binding AddActiveProcessToProfileCommand}"
-                                        Content="Aktif pencereyi bağla" />
-                            </WrapPanel>
-
-                            <Border Margin="0,10,0,0"
-                                    Padding="10,8"
-                                    Background="{DynamicResource SurfaceBrush}"
-                                    BorderBrush="{DynamicResource BorderBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="10">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Foreground="{DynamicResource MutedTextBrush}"
-                                               FontSize="11"
-                                               Text="Şu an aktif" />
-                                    <TextBlock Grid.Column="1"
-                                               Margin="9,0,0,0"
-                                               Foreground="{DynamicResource PrimaryTextBrush}"
-                                               FontFamily="Consolas"
-                                               FontSize="12"
-                                               FontWeight="SemiBold"
-                                               Text="{Binding ActiveProcessName, FallbackValue=Algılanmadı}"
-                                               TextTrimming="CharacterEllipsis" />
-                                </Grid>
-                            </Border>
-
-                            <Grid Margin="0,12,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Style="{DynamicResource TinyLabel}"
-                                           Text="BAĞLI UYGULAMALAR" />
-                                <TextBlock Grid.Column="1"
+                                <TextBlock VerticalAlignment="Center"
                                            Foreground="{DynamicResource MutedTextBrush}"
                                            FontSize="11"
-                                           Text="{Binding SelectedProfileMatchChips.Count, StringFormat={}{0} adet}" />
+                                           Text="Aktif" />
+                                <TextBlock Grid.Column="1"
+                                           Margin="9,0,8,0"
+                                           VerticalAlignment="Center"
+                                           Foreground="{DynamicResource PrimaryTextBrush}"
+                                           FontFamily="Consolas"
+                                           FontSize="12"
+                                           FontWeight="SemiBold"
+                                           Text="{Binding ActiveProcessName}"
+                                           TextTrimming="CharacterEllipsis" />
+                                <Button Grid.Column="2"
+                                        Width="32"
+                                        Height="32"
+                                        MinWidth="32"
+                                        MinHeight="32"
+                                        Margin="0"
+                                        Command="{Binding AddActiveProcessToProfileCommand}"
+                                        Style="{StaticResource CircleIconButton}"
+                                        Content="&#xE81E;"
+                                        ToolTip="Aktif pencereyi bağla"
+                                        AutomationProperties.Name="Aktif pencereyi bağla" />
                             </Grid>
+                        </Border>
 
-                            <ItemsControl Margin="0,8,0,0"
-                                          ItemsSource="{Binding SelectedProfileMatchChips}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <WrapPanel />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Margin="0,0,6,6"
-                                                Padding="8,4"
-                                                Background="{DynamicResource SurfaceBrush}"
-                                                BorderBrush="{DynamicResource InputBorderBrush}"
-                                                BorderThickness="1"
-                                                CornerRadius="10">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock VerticalAlignment="Center"
-                                                           Foreground="{DynamicResource PrimaryTextBrush}"
-                                                           FontFamily="Consolas"
-                                                           FontSize="11"
-                                                           Text="{Binding}" />
-                                                <Button MinWidth="0"
-                                                        MinHeight="0"
-                                                        Margin="6,0,0,0"
-                                                        Padding="5,0"
-                                                        Command="{Binding DataContext.ProfileEditor.RemoveProfileMatchCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                        CommandParameter="{Binding}"
-                                                        Content="×"
-                                                        FontSize="12"
-                                                        ToolTip="Bu uygulama eşleştirmesini kaldır" />
-                                            </StackPanel>
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </StackPanel>
-                    </Border>
+                        <ItemsControl Margin="0,10,0,0"
+                                      ItemsSource="{Binding SelectedProfileMatchChips}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="0,0,6,6"
+                                            Padding="9,4,5,4"
+                                            Background="{DynamicResource SelectedSurfaceBrush}"
+                                            BorderBrush="{DynamicResource SelectedBorderBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="12">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock VerticalAlignment="Center"
+                                                       Foreground="{DynamicResource PrimaryTextBrush}"
+                                                       FontFamily="Consolas"
+                                                       FontSize="11"
+                                                       Text="{Binding}" />
+                                            <Button Width="22"
+                                                    Height="22"
+                                                    MinWidth="22"
+                                                    MinHeight="22"
+                                                    Margin="5,0,0,0"
+                                                    Padding="0"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Command="{Binding DataContext.ProfileEditor.RemoveProfileMatchCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"
+                                                    Content="&#xE711;"
+                                                    FontFamily="Segoe MDL2 Assets"
+                                                    FontSize="9"
+                                                    ToolTip="Eşleşmeyi kaldır"
+                                                    AutomationProperties.Name="Uygulama eşleşmesini kaldır" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
 
-                    <Expander Margin="0,12,0,0"
-                              Header="Gelişmiş profil ayarları">
-                        <Border Margin="0,8,0,0"
-                                Style="{DynamicResource SoftSurface}">
-                            <StackPanel>
+                        <Expander Margin="0,8,0,0"
+                                  Header="Gelişmiş">
+                            <Grid Margin="0,9,0,0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
                                 <TextBlock Style="{DynamicResource TinyLabel}"
                                            Text="Profil kimliği" />
-                                <TextBox Margin="0,6,0,0"
+                                <TextBox Grid.Row="1"
+                                         Margin="0,5,0,0"
                                          FontFamily="Consolas"
-                                         ToolTip="Profilin yapılandırma dosyasındaki benzersiz kimliği"
                                          Text="{Binding SelectedProfileId, UpdateSourceTrigger=PropertyChanged}" />
-                                <TextBlock Margin="0,12,0,0"
+                                <TextBlock Grid.Row="2"
+                                           Margin="0,10,0,0"
                                            Style="{DynamicResource TinyLabel}"
-                                           Text="Eşleştirmeleri elle düzenle" />
-                                <TextBlock Margin="0,3,0,0"
-                                           Style="{DynamicResource MutedText}"
-                                           Text="Uygulama adlarını virgül veya yeni satırla ayır."
-                                           TextWrapping="Wrap" />
-                                <TextBox Margin="0,6,0,0"
-                                         MinHeight="54"
+                                           Text="Elle eşleştirme" />
+                                <TextBox Grid.Row="3"
+                                         Margin="0,5,0,0"
+                                         MinHeight="52"
                                          AcceptsReturn="True"
                                          FontFamily="Consolas"
                                          TextWrapping="Wrap"
                                          Text="{Binding SelectedProfileMatchesText, UpdateSourceTrigger=PropertyChanged}" />
-                                <TextBlock Margin="0,6,0,0"
-                                           Style="{DynamicResource MutedText}"
-                                           Text="Örn: chrome.exe, Code.exe, explorer.exe" />
-                            </StackPanel>
-                        </Border>
-                    </Expander>
-                </StackPanel>
+                            </Grid>
+                        </Expander>
+                    </StackPanel>
+                </Border>
             </ScrollViewer>
         </Grid>
     </Border>
