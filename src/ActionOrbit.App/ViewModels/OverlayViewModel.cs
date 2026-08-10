@@ -17,7 +17,7 @@ public sealed class OverlayViewModel : ViewModelBase
     private const double OverlayInfoGap = 12;
     private const double CenterPageButtonSize = 26;
     private const double CenterPageButtonOffset = 32;
-    internal const double OverlayInfoReservedHeight = 156;
+    internal const double OverlayInfoReservedHeight = 88;
     internal const double OverlayInfoBottomPadding = 16;
 
     private readonly ProfileConfig _activeProfile;
@@ -141,7 +141,7 @@ public sealed class OverlayViewModel : ViewModelBase
             ? "Varsayılan"
             : _isShowingDefaultProfile
                 ? "Varsayılan"
-                : "Uygulama";
+                : _activeProfile.Name;
 
     private bool ActiveProfileIsDefault =>
         string.Equals(_activeProfile.Id, _defaultProfile.Id, StringComparison.OrdinalIgnoreCase);

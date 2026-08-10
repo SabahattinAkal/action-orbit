@@ -20,7 +20,9 @@ public sealed class ActiveWindowService
         _logService = logService;
     }
 
-    public string GetActiveProcessName(string? ignoredProcessName = null)
+    public string GetActiveProcessName(
+        string? ignoredProcessName = null,
+        bool fallbackToLastExternal = true)
     {
         try
         {
@@ -30,7 +32,7 @@ public sealed class ActiveWindowService
                 return "";
             }
 
-            return GetProcessNameForWindow(handle, ignoredProcessName);
+            return GetProcessNameForWindow(handle, ignoredProcessName, fallbackToLastExternal);
         }
         catch (Exception ex)
         {
@@ -39,7 +41,10 @@ public sealed class ActiveWindowService
         }
     }
 
-    public string GetProcessNameForWindow(IntPtr handle, string? ignoredProcessName = null)
+    public string GetProcessNameForWindow(
+        IntPtr handle,
+        string? ignoredProcessName = null,
+        bool fallbackToLastExternal = true)
     {
         try
         {
@@ -78,10 +83,14 @@ public sealed class ActiveWindowService
                 _lastObservedProcessName = processName;
                 _lastObservedWindowHandle = handle;
 
-                if (!string.IsNullOrWhiteSpace(ignoredProcessName) &&
-                    string.Equals(processName, ignoredProcessName, StringComparison.OrdinalIgnoreCase))
+                if (!string.IsNullOrWhiteSpace(ignoredProcessName)
+                    && string.Equals(processName, ignoredProcessName, StringComparison.OrdinalIgnoreCase))
                 {
-                    return _lastExternalProcessName;
+                    return ResolveIgnoredProcess(
+                        processName,
+                        ignoredProcessName,
+                        _lastExternalProcessName,
+                        fallbackToLastExternal);
                 }
 
                 _lastExternalProcessName = processName;
@@ -107,6 +116,21 @@ public sealed class ActiveWindowService
         return handle != IntPtr.Zero && NativeMethods.IsWindow(handle)
             ? handle
             : IntPtr.Zero;
+    }
+
+    internal static string ResolveIgnoredProcess(
+        string processName,
+        string? ignoredProcessName,
+        string lastExternalProcessName,
+        bool fallbackToLastExternal)
+    {
+        if (string.IsNullOrWhiteSpace(ignoredProcessName)
+            || !string.Equals(processName, ignoredProcessName, StringComparison.OrdinalIgnoreCase))
+        {
+            return processName;
+        }
+
+        return fallbackToLastExternal ? lastExternalProcessName : "";
     }
 
     private static string ClassifyExplorerWindow(IntPtr handle)

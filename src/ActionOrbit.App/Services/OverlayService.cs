@@ -74,7 +74,8 @@ public sealed class OverlayService
         var ownProcessName = $"{Process.GetCurrentProcess().ProcessName}.exe";
         processName = _activeWindowService.GetProcessNameForWindow(
             NativeMethods.GetForegroundWindow(),
-            ownProcessName);
+            ownProcessName,
+            fallbackToLastExternal: false);
         var resolvedProcessName = processName;
         return _configService.CurrentConfig.Settings.Activation.SuppressedProcesses.Any(candidate =>
             string.Equals(candidate, resolvedProcessName, StringComparison.OrdinalIgnoreCase));
@@ -91,7 +92,10 @@ public sealed class OverlayService
         var config = _configService.CurrentConfig;
         var previousForegroundWindow = NativeMethods.GetForegroundWindow();
         var ownProcessName = $"{Process.GetCurrentProcess().ProcessName}.exe";
-        var processName = _activeWindowService.GetProcessNameForWindow(previousForegroundWindow, ownProcessName);
+        var processName = _activeWindowService.GetProcessNameForWindow(
+            previousForegroundWindow,
+            ownProcessName,
+            fallbackToLastExternal: false);
         var actionTargetWindow = _activeWindowService.GetLastExternalWindowHandle();
         var profile = _profileService.ResolveProfile(config, processName);
         var defaultProfile = _profileService.GetDefaultProfile(config);

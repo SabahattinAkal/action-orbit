@@ -218,7 +218,39 @@ public sealed class OverlayPaginationTests : IDisposable
     }
 
     [Fact]
-    public void OverlayWindow_ReservesEnoughBottomSpaceForExpandedFolderInfoPanel()
+    public void CenterButtonHint_UsesTheActualApplicationProfileName()
+    {
+        var defaultProfile = new ProfileConfig
+        {
+            Id = "default",
+            Name = "Varsayılan",
+            Actions = [CreateAction(1)]
+        };
+        var activeProfile = new ProfileConfig
+        {
+            Id = "explorer",
+            Name = "Gezgin",
+            Actions = [CreateAction(2)]
+        };
+        var log = new LogService(_tempDirectory);
+        var executor = new ActionExecutionService(log, []);
+        var viewModel = new OverlayViewModel(
+            activeProfile,
+            defaultProfile,
+            new ThemeConfig(),
+            executor,
+            log,
+            IntPtr.Zero);
+
+        Assert.Equal("Gezgin", viewModel.CenterButtonHint);
+
+        viewModel.ToggleDefaultProfileCommand.Execute(null);
+
+        Assert.Equal("Varsayılan", viewModel.CenterButtonHint);
+    }
+
+    [Fact]
+    public void OverlayWindow_ReservesEnoughBottomSpaceForCompactInfoPanel()
     {
         var profile = new ProfileConfig
         {
