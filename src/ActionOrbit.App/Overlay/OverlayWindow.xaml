@@ -398,14 +398,6 @@
                            TextAlignment="Center"
                            TextTrimming="CharacterEllipsis"
                            Visibility="{Binding HasFolderOverflow, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                <Button Margin="0,7,0,0"
-                        HorizontalAlignment="Center"
-                        Background="{Binding AccentBrush}"
-                        Foreground="{Binding AccentForegroundBrush}"
-                        Command="{Binding CollapseFolderCommand}"
-                        Content="Geri"
-                        Style="{StaticResource OverlayInfoButtonStyle}"
-                        Visibility="{Binding CanCollapseFolder, Converter={StaticResource BooleanToVisibilityConverter}}" />
                 <Border Height="1"
                         Margin="24,8,24,0"
                         Background="{Binding OverlayInfoMutedForeground}"

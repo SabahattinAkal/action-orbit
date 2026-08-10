@@ -7,6 +7,7 @@ Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 
 ### Düzeltildi
 
+- Açık klasör zaten aynı klasöre yeniden tıklanarak kapatılabildiği için overlay bilgi kartındaki tekrarlı `Geri` düğmesi kaldırıldı ve panel yüksekliği sıkılaştırıldı; klavye ile geri gezinme korunuyor.
 - Ring Editörü, Aksiyon Kütüphanesi ve Ayarlar çalışma alanları opak ve kırpılmış yüzeylere dönüştürüldü; Ana Sayfa içeriğinin aktif ekranın arkasından görünmesi engellendi.
 - Orbit Shelf ana navigasyondan kaldırıldı; yüzen rafa üst hızlı erişim, overlay ve bildirim alanı menüsünden ulaşılmaya devam edilirken Ayarlar kısayolu `Ctrl+4` oldu.
 - Ana ve klasör halkalarında sayfa değiştiren yapay aksiyon kaldırıldı; sayfalama, yalnızca gerektiğinde merkez düğmenin iki yanında beliren geri/ileri kontrollerine taşındı.

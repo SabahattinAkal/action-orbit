@@ -17,7 +17,7 @@ public sealed class OverlayViewModel : ViewModelBase
     private const double OverlayInfoGap = 12;
     private const double CenterPageButtonSize = 26;
     private const double CenterPageButtonOffset = 32;
-    internal const double OverlayInfoReservedHeight = 184;
+    internal const double OverlayInfoReservedHeight = 156;
     internal const double OverlayInfoBottomPadding = 16;
 
     private readonly ProfileConfig _activeProfile;
@@ -70,7 +70,6 @@ public sealed class OverlayViewModel : ViewModelBase
         _restoreWindow = restoreWindow;
         _openShelf = openShelf;
         ToggleDefaultProfileCommand = new RelayCommand(ToggleDefaultProfile);
-        CollapseFolderCommand = new RelayCommand(CollapseFolder);
         OpenShelfCommand = new RelayCommand(OpenShelf, () => _openShelf is not null);
         _previousPageCommand = new RelayCommand(PreviousPage, () => CanGoPreviousPage);
         _nextPageCommand = new RelayCommand(NextPage, () => CanGoNextPage);
@@ -123,7 +122,6 @@ public sealed class OverlayViewModel : ViewModelBase
         _currentRings.Count == 0 ? _currentProfile.Actions : _currentRings[_ringIndex].Actions;
 
     public ICommand ToggleDefaultProfileCommand { get; }
-    public ICommand CollapseFolderCommand { get; }
     public ICommand OpenShelfCommand { get; }
     public ICommand PreviousPageCommand { get; }
     public ICommand NextPageCommand { get; }
@@ -168,13 +166,10 @@ public sealed class OverlayViewModel : ViewModelBase
             if (SetProperty(ref _hasSatellites, value))
             {
                 OnPropertyChanged(nameof(FolderStatusText));
-                OnPropertyChanged(nameof(CanCollapseFolder));
                 NotifyPageNavigationState();
             }
         }
     }
-
-    public bool CanCollapseFolder => HasSatellites;
 
     public int FolderOverflowCount
     {

@@ -270,6 +270,29 @@ public sealed class OverlayPaginationTests : IDisposable
         Assert.False(viewModel.TryCollapseFolder());
     }
 
+    [Fact]
+    public void ExpandedFolder_ClickingSameMainFolderClosesIt()
+    {
+        var folder = new OrbitAction
+        {
+            Id = "folder",
+            Title = "Klasör",
+            Type = "folder",
+            Children = [CreateAction(1)]
+        };
+        var profile = new ProfileConfig { Id = "default", Name = "Default", Actions = [folder] };
+        var viewModel = CreateViewModel(profile);
+
+        viewModel.ActionItems[0].Command.Execute(viewModel.ActionItems[0]);
+        Assert.True(viewModel.HasSatellites);
+
+        viewModel.ActionItems[0].Command.Execute(viewModel.ActionItems[0]);
+
+        Assert.False(viewModel.HasSatellites);
+        Assert.Empty(viewModel.SatelliteItems);
+        Assert.Equal(string.Empty, viewModel.SelectedFolderTitle);
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_tempDirectory))
