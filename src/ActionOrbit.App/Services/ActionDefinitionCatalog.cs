@@ -22,6 +22,7 @@ public sealed record ActionPresetOption(
     public string? ImagePath => IconCatalog.GetImagePath(Icon);
     public bool HasImage => ImagePath is not null;
     public bool HasPaths => !HasImage && IconPaths.Count > 0;
+    public string TypeLabel => ActionDefinitionCatalog.GetTypeOption(Type).Label;
 }
 
 public static class ActionDefinitionCatalog

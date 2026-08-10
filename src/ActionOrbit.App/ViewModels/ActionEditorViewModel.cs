@@ -11,6 +11,8 @@ namespace ActionOrbit.App.ViewModels;
 
 public sealed class ActionEditorViewModel : ViewModelBase
 {
+    private const int RingPreviewPageSize = 8;
+
     private readonly ConfigService _configService;
     private readonly ActionExecutionService _actionExecutionService;
     private readonly LogService _logService;
@@ -20,9 +22,12 @@ public sealed class ActionEditorViewModel : ViewModelBase
     private readonly Action<string> _setStatus;
     private readonly Action<string, Action> _registerUndo;
     private readonly Action _showOverlay;
+    private readonly RelayCommand _previousRingPreviewPageCommand;
+    private readonly RelayCommand _nextRingPreviewPageCommand;
     private ActionEditorRowViewModel? _selectedAction;
     private ActionPresetOption? _selectedPreset;
     private bool _isTestingAction;
+    private int _ringPreviewPageIndex;
 
     public ActionEditorViewModel(
         ConfigService configService,
@@ -81,6 +86,14 @@ public sealed class ActionEditorViewModel : ViewModelBase
         MoveActionOutOfFolderCommand = new RelayCommand(MoveSelectedActionOutOfFolder);
         SelectRingPreviewSlotCommand = new RelayCommand(parameter =>
             SelectRingPreviewSlot(parameter as RingPreviewSlotViewModel));
+        _previousRingPreviewPageCommand = new RelayCommand(
+            () => ChangeRingPreviewPage(-1),
+            () => _ringPreviewPageIndex > 0);
+        _nextRingPreviewPageCommand = new RelayCommand(
+            () => ChangeRingPreviewPage(1),
+            () => _ringPreviewPageIndex + 1 < RingPreviewPageCount);
+        PreviousRingPreviewPageCommand = _previousRingPreviewPageCommand;
+        NextRingPreviewPageCommand = _nextRingPreviewPageCommand;
 
         SelectedPreset = ActionPresets.FirstOrDefault();
     }
@@ -130,15 +143,27 @@ public sealed class ActionEditorViewModel : ViewModelBase
     {
         get
         {
-            var count = _getSelectedActions()?.Count ?? 0;
+            var count = RootActionCount;
             return count switch
             {
                 0 => "Halka boş · aksiyon ekleyebilirsin",
-                > 8 => "İlk sayfa · diğer aksiyonlar devam düğmesinde",
-                _ => "Ana halka düzeni"
+                > RingPreviewPageSize => $"{count} aksiyon · {_ringPreviewPageIndex + 1}. sayfa",
+                _ => $"{count} aksiyon · tek sayfa"
             };
         }
     }
+
+    public int RingPreviewPageIndex => _ringPreviewPageIndex;
+    public int RingPreviewPageCount => Math.Max(
+        1,
+        (int)Math.Ceiling(RootActionCount / (double)RingPreviewPageSize));
+    public bool HasRingPreviewPages => RingPreviewPageCount > 1;
+    public string RingPreviewPageText => $"{_ringPreviewPageIndex + 1} / {RingPreviewPageCount}";
+    public string RingPreviewSelectedTitle => SelectedAction?.Title ?? "Aksiyon seçilmedi";
+    public string RingPreviewSelectedDetails =>
+        SelectedAction?.RowSubtitle ?? "Düzenlemek için halkadan veya listeden bir aksiyon seç.";
+
+    private int RootActionCount => ActionRows.Count(row => row.Depth == 0);
 
     public bool HasSelectedAction => SelectedAction is not null;
     public bool HasNoSelectedAction => SelectedAction is null;
@@ -188,6 +213,8 @@ public sealed class ActionEditorViewModel : ViewModelBase
     public ICommand MoveActionDownCommand { get; }
     public ICommand MoveActionOutOfFolderCommand { get; }
     public ICommand SelectRingPreviewSlotCommand { get; }
+    public ICommand PreviousRingPreviewPageCommand { get; }
+    public ICommand NextRingPreviewPageCommand { get; }
 
     public void ReloadForSelectedProfile() => RebuildActionRows();
 
@@ -365,17 +392,22 @@ public sealed class ActionEditorViewModel : ViewModelBase
     {
         RingPreviewSlots.Clear();
         var rootRows = ActionRows.Where(row => row.Depth == 0).ToList();
-        var visibleCount = rootRows.Count > 8 ? 7 : Math.Min(rootRows.Count, 8);
-        var slotCount = visibleCount + (rootRows.Count > 8 ? 1 : 0);
+        var pageCount = Math.Max(1, (int)Math.Ceiling(rootRows.Count / (double)RingPreviewPageSize));
+        _ringPreviewPageIndex = Math.Clamp(_ringPreviewPageIndex, 0, pageCount - 1);
+        var visibleRows = rootRows
+            .Skip(_ringPreviewPageIndex * RingPreviewPageSize)
+            .Take(RingPreviewPageSize)
+            .ToList();
+        var selectedRoot = GetSelectedRootAction();
 
         const double center = 116;
         const double radius = 78;
         const double halfSlot = 29;
 
-        for (var index = 0; index < visibleCount; index++)
+        for (var index = 0; index < visibleRows.Count; index++)
         {
-            var row = rootRows[index];
-            var angle = (-90 + (360d * index / Math.Max(slotCount, 1))) * Math.PI / 180d;
+            var row = visibleRows[index];
+            var angle = (-90 + (360d * index / Math.Max(visibleRows.Count, 1))) * Math.PI / 180d;
             RingPreviewSlots.Add(new RingPreviewSlotViewModel(
                 row,
                 row.Title,
@@ -383,32 +415,68 @@ public sealed class ActionEditorViewModel : ViewModelBase
                 center + Math.Cos(angle) * radius - halfSlot,
                 center + Math.Sin(angle) * radius - halfSlot)
             {
-                IsSelected = ReferenceEquals(row, SelectedAction)
+                IsSelected = ReferenceEquals(row, selectedRoot)
             });
         }
 
-        if (rootRows.Count > 8)
-        {
-            var index = slotCount - 1;
-            var angle = (-90 + (360d * index / slotCount)) * Math.PI / 180d;
-            RingPreviewSlots.Add(new RingPreviewSlotViewModel(
-                null,
-                "Devam",
-                "rotate",
-                center + Math.Cos(angle) * radius - halfSlot,
-                center + Math.Sin(angle) * radius - halfSlot,
-                isOverflow: true));
-        }
-
         OnPropertyChanged(nameof(RingPreviewSummary));
+        OnPropertyChanged(nameof(RingPreviewPageIndex));
+        OnPropertyChanged(nameof(RingPreviewPageCount));
+        OnPropertyChanged(nameof(HasRingPreviewPages));
+        OnPropertyChanged(nameof(RingPreviewPageText));
+        _previousRingPreviewPageCommand.RaiseCanExecuteChanged();
+        _nextRingPreviewPageCommand.RaiseCanExecuteChanged();
     }
 
     private void RefreshRingPreviewSelection()
     {
+        var selectedRoot = GetSelectedRootAction();
+        if (selectedRoot is not null)
+        {
+            var rootRows = ActionRows.Where(row => row.Depth == 0).ToList();
+            var selectedIndex = rootRows.IndexOf(selectedRoot);
+            if (selectedIndex >= 0)
+            {
+                var selectedPageIndex = selectedIndex / RingPreviewPageSize;
+                if (selectedPageIndex != _ringPreviewPageIndex)
+                {
+                    _ringPreviewPageIndex = selectedPageIndex;
+                    RebuildRingPreview();
+                    return;
+                }
+            }
+        }
+
         foreach (var slot in RingPreviewSlots)
         {
-            slot.IsSelected = slot.ActionRow is not null && ReferenceEquals(slot.ActionRow, SelectedAction);
+            slot.IsSelected = slot.ActionRow is not null && ReferenceEquals(slot.ActionRow, selectedRoot);
         }
+    }
+
+    private ActionEditorRowViewModel? GetSelectedRootAction()
+    {
+        var row = SelectedAction;
+        while (row?.Parent is not null)
+        {
+            row = row.Parent;
+        }
+
+        return row;
+    }
+
+    private void ChangeRingPreviewPage(int direction)
+    {
+        var targetIndex = Math.Clamp(
+            _ringPreviewPageIndex + direction,
+            0,
+            RingPreviewPageCount - 1);
+        if (targetIndex == _ringPreviewPageIndex)
+        {
+            return;
+        }
+
+        _ringPreviewPageIndex = targetIndex;
+        RebuildRingPreview();
     }
 
     private void AddRows(
@@ -902,6 +970,8 @@ public sealed class ActionEditorViewModel : ViewModelBase
         OnPropertyChanged(nameof(CanBrowseSelectedAction));
         OnPropertyChanged(nameof(SelectedActionValidationMessage));
         OnPropertyChanged(nameof(HasSelectedActionValidation));
+        OnPropertyChanged(nameof(RingPreviewSelectedTitle));
+        OnPropertyChanged(nameof(RingPreviewSelectedDetails));
     }
 
     private void RefreshActionList() =>

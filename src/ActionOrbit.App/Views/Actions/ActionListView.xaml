@@ -65,18 +65,13 @@
                                Text="Halkadaki düğmeleri ekle, seç ve sırala."
                                TextWrapping="Wrap" />
                 </StackPanel>
-                <Border Grid.Column="1"
-                        Padding="9,5"
-                        VerticalAlignment="Top"
-                        Background="{DynamicResource SoftSurfaceBrush}"
-                        BorderBrush="{DynamicResource BorderBrush}"
-                        BorderThickness="1"
-                        CornerRadius="999">
-                    <TextBlock FontSize="11"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource MutedTextBrush}"
-                               Text="{Binding ActionRows.Count, StringFormat={}{0} aksiyon}" />
-                </Border>
+                <TextBlock Grid.Column="1"
+                           Margin="12,2,0,0"
+                           VerticalAlignment="Top"
+                           FontSize="11"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource MutedTextBrush}"
+                           Text="{Binding ActionRows.Count, StringFormat={}{0} aksiyon}" />
             </Grid>
 
             <Border Grid.Row="1"

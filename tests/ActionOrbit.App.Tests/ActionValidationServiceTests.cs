@@ -103,6 +103,18 @@ public sealed class ActionValidationServiceTests
         Assert.Contains("klasör", result.Message, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Theory]
+    [InlineData("caffeine", true)]
+    [InlineData("password_generator", true)]
+    [InlineData("unknown_tool", false)]
+    [InlineData("", false)]
+    public void MiniTool_RequiresAKnownCatalogTarget(string target, bool expected)
+    {
+        var result = ActionValidationService.Validate(Create("mini_tool", target));
+
+        Assert.Equal(expected, result.IsValid);
+    }
+
     private static OrbitAction Create(string type, string target) =>
         new()
         {

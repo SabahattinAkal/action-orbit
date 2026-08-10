@@ -23,21 +23,21 @@
                                Text="Davranışı, hedefi ve görünümü tek yerden düzenle."
                                TextWrapping="Wrap" />
                 </StackPanel>
-                <Border Grid.Column="1"
-                        MaxWidth="180"
-                        Padding="10,5"
-                        VerticalAlignment="Top"
-                        Background="{DynamicResource SelectedSurfaceBrush}"
-                        BorderBrush="{DynamicResource SelectedBorderBrush}"
-                        BorderThickness="1"
-                        CornerRadius="999"
-                        Visibility="{Binding HasSelectedAction, Converter={StaticResource BooleanToVisibilityConverter}}">
-                    <TextBlock FontSize="11"
+                <StackPanel Grid.Column="1"
+                            MaxWidth="180"
+                            Margin="12,0,0,0"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Top"
+                            Visibility="{Binding HasSelectedAction, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <TextBlock HorizontalAlignment="Right"
+                               Style="{DynamicResource TinyLabel}"
+                               Text="SEÇİLİ" />
+                    <TextBlock Margin="0,3,0,0"
+                               HorizontalAlignment="Right"
                                FontWeight="SemiBold"
-                               Foreground="{DynamicResource PrimaryTextBrush}"
                                Text="{Binding SelectedAction.Title}"
                                TextTrimming="CharacterEllipsis" />
-                </Border>
+                </StackPanel>
             </Grid>
 
             <Border Grid.Row="1"

@@ -4,21 +4,67 @@
              AutomationProperties.Name="Canlı halka önizlemesi">
     <Expander Header="Canlı halka önizlemesi"
               IsExpanded="False"
-              ToolTip="Halkadaki sıralamayı görsel olarak düzenle">
-        <Border Margin="0,8,0,0" Style="{DynamicResource SoftSurface}">
-            <StackPanel>
-                <TextBlock Margin="0,0,0,6"
-                           HorizontalAlignment="Center"
-                           Style="{DynamicResource MutedText}"
-                           Text="{Binding RingPreviewSummary}" />
-                <Canvas Width="232"
+              ToolTip="Halkanın tüm sayfalarını gör ve aksiyonları görsel olarak düzenle">
+        <Border Margin="0,8,0,0"
+                Padding="12"
+                Background="{DynamicResource SoftSurfaceBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="1"
+                CornerRadius="12">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock FontWeight="SemiBold"
+                                   Text="{Binding RingPreviewSummary}" />
+                        <TextBlock Margin="0,3,12,0"
+                                   Style="{DynamicResource MutedText}"
+                                   Text="Düğmeye tıklayarak seç; sürükleyerek sırala."
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1"
+                                HorizontalAlignment="Right"
+                                Visibility="{Binding HasRingPreviewPages, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock HorizontalAlignment="Right"
+                                   Style="{DynamicResource TinyLabel}"
+                                   Text="SAYFA" />
+                        <TextBlock Margin="0,3,0,0"
+                                   HorizontalAlignment="Right"
+                                   FontWeight="SemiBold"
+                                   Text="{Binding RingPreviewPageText}" />
+                    </StackPanel>
+                </Grid>
+
+                <Canvas Grid.Row="1"
+                        Width="232"
                         Height="232"
+                        Margin="0,8,0,0"
                         HorizontalAlignment="Center">
+                    <Ellipse Canvas.Left="38"
+                             Canvas.Top="38"
+                             Width="156"
+                             Height="156"
+                             Stroke="{DynamicResource BorderBrush}"
+                             StrokeDashArray="2,4"
+                             StrokeThickness="1" />
+
                     <Border Canvas.Left="87"
                             Canvas.Top="87"
                             Width="58"
                             Height="58"
                             Background="{DynamicResource PrimaryActionBrush}"
+                            BorderBrush="{DynamicResource PrimaryActionBrush}"
+                            BorderThickness="1"
                             CornerRadius="29">
                         <StackPanel VerticalAlignment="Center">
                             <TextBlock HorizontalAlignment="Center"
@@ -29,7 +75,7 @@
                             <TextBlock HorizontalAlignment="Center"
                                        FontSize="8"
                                        Foreground="{DynamicResource OnPrimaryActionBrush}"
-                                       Opacity="0.74"
+                                       Opacity="0.78"
                                        Text="MERKEZ" />
                         </StackPanel>
                     </Border>
@@ -52,11 +98,11 @@
                             <DataTemplate>
                                 <Button Width="58"
                                         Height="58"
-                                        Padding="0"
                                         Margin="0"
+                                        Padding="0"
                                         AllowDrop="True"
                                         AutomationProperties.Name="{Binding Title}"
-                                        AutomationProperties.HelpText="Sıralamak için sürükle veya Alt+Sol/Sağ kullan."
+                                        AutomationProperties.HelpText="Seçmek için tıkla; sıralamak için sürükle."
                                         Command="{Binding DataContext.ActionEditor.SelectRingPreviewSlotCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                         CommandParameter="{Binding}"
                                         PreviewMouseLeftButtonDown="RingSlot_PreviewMouseLeftButtonDown"
@@ -104,9 +150,6 @@
                                                                     </Setter.Value>
                                                                 </Setter>
                                                             </Trigger>
-                                                            <Trigger Property="IsKeyboardFocused" Value="True">
-                                                                <Setter TargetName="RingShell" Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" />
-                                                            </Trigger>
                                                         </ControlTemplate.Triggers>
                                                     </ControlTemplate>
                                                 </Setter.Value>
@@ -123,43 +166,58 @@
                                     <Button.ToolTip>
                                         <StackPanel>
                                             <TextBlock FontWeight="SemiBold" Text="{Binding Title}" />
-                                            <TextBlock Margin="0,3,0,0" Text="Sürükleyerek sırala · Alt+←/→" />
+                                            <TextBlock Margin="0,3,0,0" Text="Tıkla: seç · Sürükle: sırala" />
                                         </StackPanel>
                                     </Button.ToolTip>
-                                    <Grid>
-                                        <Image Width="22"
-                                               Height="22"
-                                               Source="{Binding ImagePath}"
-                                               Stretch="Uniform"
-                                               Visibility="{Binding HasImage, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                                        <Viewbox Width="22"
-                                                 Height="22"
-                                                 Visibility="{Binding HasPaths, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                            <Grid Width="24" Height="24">
-                                                <ItemsControl ItemsSource="{Binding IconPaths}">
-                                                    <ItemsControl.ItemsPanel>
-                                                        <ItemsPanelTemplate><Grid /></ItemsPanelTemplate>
-                                                    </ItemsControl.ItemsPanel>
-                                                    <ItemsControl.ItemTemplate>
-                                                        <DataTemplate>
-                                                            <Path Data="{Binding}"
-                                                                  Fill="Transparent"
-                                                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                                                  StrokeEndLineCap="Round"
-                                                                  StrokeLineJoin="Round"
-                                                                  StrokeStartLineCap="Round"
-                                                                  StrokeThickness="2" />
-                                                        </DataTemplate>
-                                                    </ItemsControl.ItemTemplate>
-                                                </ItemsControl>
-                                            </Grid>
-                                        </Viewbox>
-                                        <TextBlock HorizontalAlignment="Center"
+                                    <Grid Width="46" Height="45">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="25" />
+                                            <RowDefinition Height="*" />
+                                        </Grid.RowDefinitions>
+                                        <Grid Grid.Row="0">
+                                            <Image Width="19"
+                                                   Height="19"
+                                                   Source="{Binding ImagePath}"
+                                                   Stretch="Uniform"
+                                                   Visibility="{Binding HasImage, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                            <Viewbox Width="19"
+                                                     Height="19"
+                                                     Visibility="{Binding HasPaths, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                <Grid Width="24" Height="24">
+                                                    <ItemsControl ItemsSource="{Binding IconPaths}">
+                                                        <ItemsControl.ItemsPanel>
+                                                            <ItemsPanelTemplate><Grid /></ItemsPanelTemplate>
+                                                        </ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Path Data="{Binding}"
+                                                                      Fill="Transparent"
+                                                                      Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                                      StrokeEndLineCap="Round"
+                                                                      StrokeLineJoin="Round"
+                                                                      StrokeStartLineCap="Round"
+                                                                      StrokeThickness="2" />
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </Grid>
+                                            </Viewbox>
+                                            <TextBlock HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       FontWeight="Bold"
+                                                       Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                       Text="{Binding FallbackText}"
+                                                       Visibility="{Binding HasFallback, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        </Grid>
+                                        <TextBlock Grid.Row="1"
+                                                   MaxWidth="44"
+                                                   HorizontalAlignment="Center"
                                                    VerticalAlignment="Center"
-                                                   FontWeight="Bold"
+                                                   FontSize="8"
                                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                                   Text="{Binding FallbackText}"
-                                                   Visibility="{Binding HasFallback, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                   Text="{Binding Title}"
+                                                   TextAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis" />
                                     </Grid>
                                 </Button>
                             </DataTemplate>
@@ -167,26 +225,50 @@
                     </ItemsControl>
                 </Canvas>
 
-                <StackPanel Margin="0,10,0,0"
-                            HorizontalAlignment="Center"
-                            Orientation="Horizontal">
-                    <Button MinHeight="30"
+                <Grid Grid.Row="2" Margin="0,8,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Button MinWidth="84"
+                            MinHeight="32"
                             Padding="10,5"
-                            Command="{Binding MoveActionUpCommand}"
+                            Command="{Binding PreviousRingPreviewPageCommand}"
                             Content="← Önceki"
-                            ToolTip="Seçili aksiyonu halkada önceki konuma taşı" />
-                    <Button MinHeight="30"
+                            Visibility="{Binding HasRingPreviewPages, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                    <StackPanel Grid.Column="1"
+                                Margin="12,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center">
+                        <TextBlock HorizontalAlignment="Center"
+                                   FontWeight="SemiBold"
+                                   Text="{Binding RingPreviewSelectedTitle}"
+                                   TextTrimming="CharacterEllipsis" />
+                        <TextBlock Margin="0,2,0,0"
+                                   HorizontalAlignment="Center"
+                                   Style="{DynamicResource MutedText}"
+                                   Text="{Binding RingPreviewSelectedDetails}"
+                                   TextAlignment="Center"
+                                   TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                    <Button Grid.Column="2"
+                            MinWidth="84"
+                            MinHeight="32"
                             Margin="0"
                             Padding="10,5"
-                            Command="{Binding MoveActionDownCommand}"
+                            Command="{Binding NextRingPreviewPageCommand}"
                             Content="Sonraki →"
-                            ToolTip="Seçili aksiyonu halkada sonraki konuma taşı" />
-                </StackPanel>
-                <TextBlock Margin="0,6,0,0"
+                            Visibility="{Binding HasRingPreviewPages, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                </Grid>
+
+                <TextBlock Grid.Row="3"
+                           Margin="0,8,0,0"
                            HorizontalAlignment="Center"
                            Style="{DynamicResource MutedText}"
-                           Text="Sürükle veya Alt+←/→ ile de sıralayabilirsin." />
-            </StackPanel>
+                           Text="Alt+←/→ seçili aksiyonu sıralar."
+                           TextAlignment="Center" />
+            </Grid>
         </Border>
     </Expander>
 </UserControl>

@@ -925,18 +925,20 @@
             <actionViews:EditorWorkspaceView Margin="0,12,0,16" />
         </Border>
 
-        <DockPanel Grid.Row="3">
+        <DockPanel Grid.Row="3" LastChildFill="False">
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                 <Button Command="{Binding UndoCommand}"
                         Content="{Binding UndoButtonText}"
                         IsEnabled="{Binding CanUndo}" />
                 <Button Command="{Binding Transfers.ReloadConfigCommand}" Content="Yenile" />
             </StackPanel>
-            <Border Margin="0,0,12,0"
+            <Border DockPanel.Dock="Left"
+                    MaxWidth="720"
+                    Margin="0,0,12,0"
                     Padding="10,6"
                     VerticalAlignment="Center"
                     Background="{Binding Status.Background}"
-                    CornerRadius="10">
+                    CornerRadius="8">
                 <StackPanel Orientation="Horizontal">
                     <Ellipse Width="7"
                              Height="7"

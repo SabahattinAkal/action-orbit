@@ -1,4 +1,5 @@
 using ActionOrbit.App.Models;
+using ActionOrbit.App.Services.MiniTools;
 using ActionOrbit.App.Services.Windows;
 
 namespace ActionOrbit.App.Services;
@@ -44,6 +45,7 @@ public static class ActionValidationService
             "open_file" => ValidateFile(target, expandedTarget),
             "open_folder" => ValidateFolder(target, expandedTarget),
             "open_url" => ValidateUrl(target),
+            "mini_tool" => ValidateMiniTool(target),
             "send_hotkey" => ValidateHotkey(target),
             "type_text" => string.IsNullOrEmpty(action.Target)
                 ? ActionValidationResult.Failure("Yazılacak metin boş olamaz.")
@@ -115,6 +117,18 @@ public static class ActionValidationService
         return HotkeyParser.TryParseDisplay(hotkey, out _, out var errorMessage)
             ? ActionValidationResult.Success
             : ActionValidationResult.Failure(errorMessage);
+    }
+
+    private static ActionValidationResult ValidateMiniTool(string target)
+    {
+        if (string.IsNullOrWhiteSpace(target))
+        {
+            return ActionValidationResult.Failure("Mini araç seçilmedi.");
+        }
+
+        return MiniToolCatalog.TryGet(target, out _)
+            ? ActionValidationResult.Success
+            : ActionValidationResult.Failure($"Bilinmeyen mini araç: {target}");
     }
 
     private static ActionValidationResult ValidateCommand(string target, string? arguments)

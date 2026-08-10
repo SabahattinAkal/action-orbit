@@ -109,6 +109,32 @@ public sealed class ActionEditorPersistenceTests : IDisposable
         Assert.Same(child, Assert.Single(folder.Children));
     }
 
+    [Fact]
+    public void RingPreview_PaginatesEveryRootActionAndFollowsSelection()
+    {
+        var (configService, viewModel) = CreateViewModel();
+        configService.CurrentConfig.Profiles[0].Actions = Enumerable.Range(1, 18)
+            .Select(index => CreateAction($"action_{index}", $"Aksiyon {index}"))
+            .ToList();
+
+        viewModel.ReloadForSelectedProfile();
+
+        Assert.Equal(3, viewModel.RingPreviewPageCount);
+        Assert.Equal(8, viewModel.RingPreviewSlots.Count);
+        Assert.Equal("1 / 3", viewModel.RingPreviewPageText);
+
+        viewModel.NextRingPreviewPageCommand.Execute(null);
+
+        Assert.Equal(1, viewModel.RingPreviewPageIndex);
+        Assert.Equal("Aksiyon 9", viewModel.RingPreviewSlots[0].Title);
+
+        viewModel.SelectedAction = viewModel.ActionRows.Single(row => row.Action.Id == "action_18");
+
+        Assert.Equal(2, viewModel.RingPreviewPageIndex);
+        Assert.Equal(2, viewModel.RingPreviewSlots.Count);
+        Assert.Contains(viewModel.RingPreviewSlots, slot => slot.Title == "Aksiyon 18" && slot.IsSelected);
+    }
+
     private (ConfigService ConfigService, ActionEditorViewModel ViewModel) CreateViewModel()
     {
         var configService = CreateConfigService();
