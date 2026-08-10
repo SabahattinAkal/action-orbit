@@ -24,6 +24,11 @@ public partial class EditorWorkspaceView : System.Windows.Controls.UserControl
         }
 
         _layoutMode = mode;
+        WorkspaceScroll.VerticalScrollBarVisibility =
+            EditorLayoutPolicy.ShouldScrollWorkspace(mode)
+                ? ScrollBarVisibility.Auto
+                : ScrollBarVisibility.Disabled;
+
         if (mode == EditorLayoutMode.Compact)
         {
             ApplyCompactLayout();
@@ -35,8 +40,7 @@ public partial class EditorWorkspaceView : System.Windows.Controls.UserControl
 
     private void ApplyWideLayout()
     {
-        WorkspaceScroll.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
-        LayoutGrid.MinHeight = EditorLayoutPolicy.WideContentMinHeight;
+        LayoutGrid.MinHeight = 0;
 
         ProfileColumn.Width = new GridLength(0.95, GridUnitType.Star);
         ProfileColumn.MinWidth = 250;
@@ -56,7 +60,6 @@ public partial class EditorWorkspaceView : System.Windows.Controls.UserControl
 
     private void ApplyCompactLayout()
     {
-        WorkspaceScroll.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
         LayoutGrid.MinHeight = 0;
 
         ProfileColumn.Width = new GridLength(1, GridUnitType.Star);

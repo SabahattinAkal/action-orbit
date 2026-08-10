@@ -6,6 +6,7 @@
              AutomationProperties.Name="Profil ve aksiyon editörü">
     <ScrollViewer x:Name="WorkspaceScroll"
                   HorizontalScrollBarVisibility="Disabled"
+                  VerticalContentAlignment="Stretch"
                   VerticalScrollBarVisibility="Disabled">
         <Grid x:Name="LayoutGrid">
             <Grid.ColumnDefinitions>

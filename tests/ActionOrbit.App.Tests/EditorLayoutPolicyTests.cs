@@ -5,9 +5,10 @@ namespace ActionOrbit.App.Tests;
 public sealed class EditorLayoutPolicyTests
 {
     [Fact]
-    public void WideLayout_ReservesEnoughHeightForRingAndEditors()
+    public void WorkspaceScroll_IsReservedForCompactStackedLayout()
     {
-        Assert.True(EditorLayoutPolicy.WideContentMinHeight >= 900);
+        Assert.False(EditorLayoutPolicy.ShouldScrollWorkspace(EditorLayoutMode.Wide));
+        Assert.True(EditorLayoutPolicy.ShouldScrollWorkspace(EditorLayoutMode.Compact));
     }
 
     [Theory]
