@@ -10,5 +10,6 @@ public sealed class ShelfItem
     public string TextContent { get; set; } = "";
     public long SizeBytes { get; set; }
     public bool IsTemporary { get; set; }
+    public string TransferId { get; set; } = "";
     public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;
 }

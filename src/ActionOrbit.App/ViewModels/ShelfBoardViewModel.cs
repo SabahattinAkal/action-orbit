@@ -48,6 +48,17 @@ public sealed class ShelfBoardViewModel : ViewModelBase
         }
     }
 
+    public bool IsShared
+    {
+        get => Board.IsShared;
+        set
+        {
+            if (Board.IsShared == value) return;
+            Board.IsShared = value;
+            OnPropertyChanged();
+        }
+    }
+
     public string DisplayName => IsPinned ? $"📌 {Name}" : Name;
     public int ItemCount => Items.Count;
     public long TotalBytes => Items.Sum(item => item.Item.SizeBytes);

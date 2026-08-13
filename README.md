@@ -46,6 +46,19 @@ Orbit Shelf, uygulamalar arasında taşımak istediğin geçici içerikler için
 
 Bir internet adresinden görsel alındığında yalnızca kullanıcının bıraktığı adres istenir. Yerel, özel ve link-local ağ adresleri güvenlik nedeniyle kabul edilmez.
 
+### Orbit Link ve Ortak Raf
+
+Orbit Link, iki bilgisayardaki Action Orbit arasında Shelf öğesi taşır. RDP oturumundaki bir görseli önce uzak bilgisayarın Shelf'ine bırakıp ana bilgisayara gönderebilir veya rafı **Ortak Raf** yaparak yeni bırakılan öğeleri eşleşen cihazlara otomatik iletebilirsin.
+
+1. İki bilgisayarda da **Ayarlar > Orbit Link** bölümünü açıp özelliği etkinleştir.
+2. Alıcı bilgisayarda **Eşleştirme Kodu Oluştur** düğmesine bas.
+3. Gösterilen yerel adresi ve kodu diğer bilgisayardaki bağlantı alanlarına gir.
+4. Yüzen Shelf'te hedef cihazı seçip öğedeki **Gönder** düğmesini kullan. Otomatik aktarım için ilgili rafı **Ortak Raf** yap.
+
+Bağlantı bulut sunucusu kullanmaz. Bilgisayarların aynı yerel ağda olması veya birbirine ulaşabildiği bir VPN kullanması gerekir. Windows Güvenlik Duvarı ilk etkinleştirmede izin isteyebilir. İlk sürüm metin, bağlantı, görsel ve tekil dosya aktarır; klasörler ve 25 MB üzeri dosyalar kabul edilmez.
+
+Kurumsal güvenlik duvarı bilgisayarlardan birine gelen bağlantıyı engelliyorsa Orbit Link, o bilgisayarın diğer cihaza kurabildiği dışarı yönlü bağlantıyı otomatik olarak güvenli dönüş kanalı şeklinde kullanır. Örneğin ofis bilgisayarı ev bilgisayarına erişebiliyor fakat ev bilgisayarı ofise doğrudan bağlanamıyorsa iki yönde de aktarım yapılabilir. Bunun için iki bilgisayarda da aynı sürüm açık olmalı; Shelf hedefinde `çift yönlü` durumu göründükten sonra gönderim yapılmalıdır.
+
 ### Mini araçlar
 
 Halkadan açılan küçük araçlar ayrı pencerelerde çalışır ve istenirse üstte tutulabilir:
@@ -119,9 +132,12 @@ config.json
 logs\actionorbit.log
 shelves.json
 shelf-cache\
+orbit-link.json
 ```
 
 Bu dosyalarda kişisel klasör yolları, açtığın bağlantılar veya rafa eklediğin içerikler bulunabilir. Hata bildirirken config ve log dosyalarını doğrudan yükleme; yalnızca gerekli bölümü paylaş ve kişisel bilgileri temizle.
+
+`orbit-link.json`, eşleşen cihaz adlarını ve yerel ağ adreslerini içerir. Cihaz anahtarları Windows'un geçerli kullanıcı hesabına bağlı veri korumasıyla şifrelenir; dosyayı başka bir bilgisayara kopyalamak anahtarları kullanılabilir hale getirmez. Bu dosyayı da hata bildirimlerine ekleme.
 
 `run_command` aksiyonları varsayılan olarak kapalıdır. Etkinleştirildiklerinde bile her çalıştırmadan önce komutun tamamı gösterilir ve kullanıcı onayı istenir. İnternetten aldığın profil veya config dosyasını içe aktarmadan önce çalıştırılabilir aksiyonları incele.
 
@@ -169,6 +185,7 @@ scripts/                      Yayın ve imzalama araçları
 - Normal yetkiyle çalışan uygulama, yönetici yetkili pencerelere input göndermeyebilir.
 - Çoklu monitör ve farklı DPI oranları desteklenir; sıra dışı ekran düzenlerinde konum davranışı değişebilir.
 - Uygulama Windows'a ve WPF'e bağlıdır; macOS veya Linux sürümü yoktur.
+- Orbit Link internet üzerinden aracı sunucu kullanmaz. İki bilgisayarın aynı yerel ağda veya VPN'de bulunması ve cihazlardan en az birinin diğerine erişebilmesi gerekir.
 
 ## Katkı ve lisans
 

@@ -162,13 +162,20 @@ public partial class MainWindow : Window
 
     private void ExitFromTray()
     {
-        _allowClose = true;
-        Close();
-
-        if (IsLoaded)
+        // ContextMenuStrip tıklama olayı sürerken NotifyIcon'u dispose etmek,
+        // Windows'un açılır menüyü ekranda hayalet olarak bırakmasına neden
+        // olabiliyor. Önce menüyü kapat, WPF kapanışını sonraki UI turunda yap.
+        _trayIcon.ContextMenuStrip?.Close(Forms.ToolStripDropDownCloseReason.ItemClicked);
+        Dispatcher.BeginInvoke(new Action(() =>
         {
-            _allowClose = false;
-        }
+            _allowClose = true;
+            Close();
+
+            if (IsLoaded)
+            {
+                _allowClose = false;
+            }
+        }));
     }
 
 }

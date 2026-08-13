@@ -11,6 +11,10 @@ Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 
 ### Düzeltildi
 
+- Bildirim alanındaki `Çıkış` komutunun açık tray menüsünü dispose ederek ekranda bırakması ve Orbit Link ağ görevlerini UI iş parçacığında bekleyerek menüyü dondurması düzeltildi; menü önce kapatılıyor, dinleyici anında durdurulurken kalan temizlik arka planda tamamlanıyor.
+- Tailscale IPv4 adreslerinin çift-mod ağ dinleyicisinde `::ffff:100.x.x.x` biçiminde kaydedilip sonraki Shelf gönderiminde Windows soketi tarafından reddedilmesi düzeltildi; mevcut eşleşmeler açılışta otomatik normalleştiriliyor.
+- Orbit Link ayarlarındaki ana düğme stilinin ayrı WPF görünümünde çözülememesi nedeniyle uygulamanın pencere ve tray ikonu oluşturmadan arka planda kalması düzeltildi; başlangıç UI hataları artık görünür hata verip uygulamayı kapatıyor.
+- Çalışan eski bir Action Orbit örneği pencereyi geri getirme isteğine yanıt vermediğinde yeni sürümün sessizce kapanması engellendi.
 - Açık klasör zaten aynı klasöre yeniden tıklanarak kapatılabildiği için overlay bilgi kartındaki tekrarlı `Geri` düğmesi kaldırıldı ve panel yüksekliği sıkılaştırıldı; klavye ile geri gezinme korunuyor.
 - Ring Editörü, Aksiyon Kütüphanesi ve Ayarlar çalışma alanları opak ve kırpılmış yüzeylere dönüştürüldü; Ana Sayfa içeriğinin aktif ekranın arkasından görünmesi engellendi.
 - Orbit Shelf ana navigasyondan kaldırıldı; yüzen rafa üst hızlı erişim, overlay ve bildirim alanı menüsünden ulaşılmaya devam edilirken Ayarlar kısayolu `Ctrl+4` oldu.
@@ -24,6 +28,9 @@ Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 
 ### Eklendi
 
+- Orbit Link ile iki Action Orbit kurulumu arasında tek kullanımlık kodla cihaz eşleştirme, öğe başına şifreli Shelf aktarımı ve yeni içerikleri eşleşen cihazlara ileten Ortak Raf modu eklendi.
+- Kurumsal güvenlik duvarı nedeniyle yalnızca tek yönde TCP bağlantısı kurulabilen cihazlar için kimlik doğrulamalı ters bağlantı ve güvenli aktarım sırası eklendi.
+- Orbit Link hedef seçimi yüzen Shelf'e; cihaz adı, bağlantı adresi, eşleştirme kodu ve eşleşen cihaz yönetimi Ayarlar'a eklendi.
 - Action Orbit'in halka ve hızlı aksiyon fikrini taşıyan yeni uygulama logosu; EXE, görev çubuğu, bildirim alanı ve yardımcı pencerelere uygulandı.
 - Overlay bilgi kartına, halkayı kapatıp yüzen Orbit Shelf'i açan sabit hızlı erişim düğmesi eklendi.
 - Sürüklenebilir ve isteğe bağlı üstte sabitlenebilir ortak mini araç penceresi eklendi.
@@ -33,6 +40,8 @@ Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 
 ### Güvenlik
 
+- Orbit Link yalnızca yerel ağ, localhost ve VPN adreslerinden bağlantı kabul eder; içerikler AES-GCM ile şifrelenir, eşleşme anahtarları Windows kullanıcı hesabıyla korunur ve gelen dosyalar çalıştırılmadan Shelf önbelleğine yazılır.
+- Eşleştirme kodları beş dakika ve tek kullanım için geçerlidir; aktarım bütünlüğü SHA-256 ile doğrulanır, tekrar paketleri reddedilir ve ilk sürümde dosya boyutu 25 MB ile sınırlandırılır.
 - `.gitignore`, katkı rehberi, güvenlik politikası ve yayın kontrol listesi; yerel kullanıcı verisi, imzalama materyali ve secret sızıntılarına karşı daha açık kontrollerle güncellendi.
 - `mini_tool` aksiyonu yalnızca uygulama içindeki on izinli araç kimliğini çalıştırabiliyor.
 - Mini hesap makinesi shell, betik veya dinamik kod çalıştırmadan yerel ifade ayrıştırıcısı kullanıyor.

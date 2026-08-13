@@ -26,6 +26,8 @@ Action Orbit yerel program ve komut çalıştırabildiği için güvenmediğin k
 
 Hata bildirirken `%AppData%\ActionOrbitPro` altındaki config, log ve raf dosyalarını doğrudan paylaşma. Gerekli bölümü kopyala ve kişisel yolları, bağlantıları ve içerikleri temizle.
 
+Orbit Link yalnızca güvendiğin bilgisayarlarla ve güvendiğin yerel ağ veya VPN üzerinde kullanılmalıdır. Eşleştirme kodunu yalnızca hedef bilgisayara aktar; ekran görüntüsünde veya hata bildiriminde paylaşma. Artık kullanmadığın cihazı Ayarlar'daki eşleşen cihazlar listesinden kaldır. `orbit-link.json` dosyası cihaz adları ve yerel ağ adresleri içerdiği için hata raporlarına eklenmemelidir.
+
 ## Yayın bütünlüğü
 
 Release paketleri `SHA256SUMS.txt`, SPDX SBOM ve desteklenen sürümlerde GitHub build provenance attestation ile yayımlanır. Authenticode imzası yalnızca kod imzalama sertifikası Release iş akışında yapılandırılmışsa bulunur.

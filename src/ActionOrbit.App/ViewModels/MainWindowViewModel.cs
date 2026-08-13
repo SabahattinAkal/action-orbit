@@ -25,6 +25,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     private readonly DispatcherTimer _activeProcessTimer;
     private readonly ActivationCoordinator _activationCoordinator;
     private readonly ShelfWindowService _shelfWindowService;
+    private readonly OrbitLinkService _orbitLinkService;
     private bool _isReloadingEditor;
     private string _selectedWorkspace = "home";
     private string _actionLibrarySearchText = "";
@@ -50,10 +51,14 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         _startupService = startupService;
         _logService = logService;
         Status = new StatusCenterViewModel();
+        _orbitLinkService = new OrbitLinkService(_configService.AppDirectory, _logService);
+        var orbitLinkStart = _orbitLinkService.StartIfEnabled();
+        OrbitLink = new OrbitLinkViewModel(_orbitLinkService, message => Status.SetMessage(message));
         Shelf = new ShelfViewModel(
             _configService,
             _logService,
-            message => Status.SetMessage(message));
+            message => Status.SetMessage(message),
+            _orbitLinkService);
         _shelfWindowService = new ShelfWindowService(Shelf);
         Shelf.SetFloatingShelfOpener(_shelfWindowService.Show);
         _overlayService.SetShelfOpener(_shelfWindowService.Show);
@@ -158,6 +163,10 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         _activeProcessTimer.Start();
         Autosave.Start();
         Status.SetMessage("Hazır. Pencere açılınca global kısayol kaydedilecek.");
+        if (!orbitLinkStart.Succeeded)
+        {
+            Status.SetMessage(orbitLinkStart.Message);
+        }
     }
 
     public ObservableCollection<ProfileConfig> Profiles => ProfileEditor.Profiles;
@@ -172,6 +181,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     public RingSetEditorViewModel RingSets { get; }
     public ActionEditorViewModel ActionEditor { get; }
     public ShelfViewModel Shelf { get; }
+    public OrbitLinkViewModel OrbitLink { get; }
     public IReadOnlyList<ActionTypeOption> ActionLibraryCategories { get; }
     public ICollectionView FilteredActionPresets { get; }
 
@@ -475,6 +485,8 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         _hotkeyService.ActionShortcutPressed -= OnActionShortcutPressed;
         _shelfWindowService.Dispose();
         Shelf.Dispose();
+        OrbitLink.Dispose();
+        _orbitLinkService.Dispose();
         _activeProcessTimer.Stop();
         _actionExecutionService.ActionExecuted -= OnActionExecuted;
     }

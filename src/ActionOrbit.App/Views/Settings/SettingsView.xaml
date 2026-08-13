@@ -363,6 +363,189 @@
             </Expander>
 
             <Expander Margin="0,10,0,0"
+                      Header="Orbit Link · bilgisayarlar arası Ortak Raf"
+                      IsExpanded="True">
+                <Border Margin="0,8,0,0" Style="{StaticResource SettingsCard}">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="0.85*" />
+                                <ColumnDefinition Width="1.15*" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Margin="0,0,18,0">
+                                <TextBlock Style="{StaticResource SettingsSectionTitle}" Text="Bu bilgisayar" />
+                                <TextBlock Style="{StaticResource SettingsCaption}"
+                                           Text="RDP'deki veya aynı ağdaki Action Orbit ile şifreli ve çift yönlü aktarım yap."
+                                           TextWrapping="Wrap" />
+                                <CheckBox Margin="0,12,0,0"
+                                          Content="Orbit Link'i etkinleştir"
+                                          IsChecked="{Binding OrbitLink.Enabled}" />
+                                <TextBlock Margin="0,10,0,5"
+                                           Style="{DynamicResource TinyLabel}"
+                                           Text="CİHAZ ADI" />
+                                <TextBox Text="{Binding OrbitLink.DeviceName, UpdateSourceTrigger=LostFocus}" />
+                                <TextBlock Margin="0,7,0,0"
+                                           Style="{StaticResource SettingsCaption}"
+                                           Text="{Binding OrbitLink.ConnectionStatus}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" IsEnabled="{Binding OrbitLink.Enabled}">
+                                <TextBlock Style="{StaticResource SettingsSectionTitle}" Text="Bu cihaza eşleştir" />
+                                <TextBlock Style="{StaticResource SettingsCaption}"
+                                           Text="Kodu bu bilgisayarda üret, RDP oturumundaki Action Orbit'e adresle birlikte gir. Kod beş dakika ve tek kullanım için geçerlidir."
+                                           TextWrapping="Wrap" />
+                                <WrapPanel Margin="0,11,0,0">
+                                    <Button Command="{Binding OrbitLink.BeginPairingCommand}"
+                                            Content="Eşleştirme Kodu Oluştur"
+                                            Style="{DynamicResource PrimaryButton}" />
+                                    <Button Command="{Binding OrbitLink.CopyPairingDetailsCommand}"
+                                            Content="Bilgileri Kopyala" />
+                                </WrapPanel>
+                                <Border Margin="0,10,0,0"
+                                        Padding="12"
+                                        Background="{DynamicResource InfoSurfaceBrush}"
+                                        BorderBrush="{DynamicResource InfoBorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="10"
+                                        Visibility="{Binding OrbitLink.HasPairingOffer, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <TextBlock Foreground="{DynamicResource InfoTextBrush}"
+                                                       FontWeight="SemiBold"
+                                                       Text="{Binding OrbitLink.PairingAddress}"
+                                                       TextWrapping="Wrap" />
+                                            <TextBlock Margin="0,4,0,0"
+                                                       Foreground="{DynamicResource InfoTextBrush}"
+                                                       FontFamily="Consolas"
+                                                       FontSize="15"
+                                                       FontWeight="Bold"
+                                                       Text="{Binding OrbitLink.PairingCode}" />
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1"
+                                                   Margin="12,0,0,0"
+                                                   VerticalAlignment="Center"
+                                                   Style="{StaticResource SettingsCaption}"
+                                                   Text="{Binding OrbitLink.PairingExpiry}" />
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+
+                        <Border Height="1" Margin="0,16,0,14" Background="{DynamicResource BorderBrush}" />
+
+                        <Grid IsEnabled="{Binding OrbitLink.Enabled}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1.1*" />
+                                <ColumnDefinition Width="0.9*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Margin="0,0,18,0">
+                                <TextBlock Style="{StaticResource SettingsSectionTitle}" Text="Başka cihaza bağlan" />
+                                <TextBlock Style="{StaticResource SettingsCaption}"
+                                           Text="Diğer Action Orbit'in gösterdiği tek bir adresi ve kodu gir."
+                                           TextWrapping="Wrap" />
+                                <Grid Margin="0,10,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1.1*" />
+                                        <ColumnDefinition Width="1*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Margin="0,0,7,0"
+                                             AutomationProperties.Name="Orbit Link cihaz adresi"
+                                             ToolTip="Örn. 192.168.1.20:48731"
+                                             Text="{Binding OrbitLink.PairAddress, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBox Grid.Column="1"
+                                             Margin="0,0,7,0"
+                                             AutomationProperties.Name="Orbit Link eşleştirme kodu"
+                                             ToolTip="Eşleştirme kodu"
+                                             Text="{Binding OrbitLink.PairCodeInput, UpdateSourceTrigger=PropertyChanged}" />
+                                    <Button Grid.Column="2"
+                                            Margin="0"
+                                            Command="{Binding OrbitLink.PairDeviceCommand}"
+                                            Content="Cihazı Ekle"
+                                            Style="{DynamicResource PrimaryButton}" />
+                                </Grid>
+                                <TextBlock Margin="0,7,0,0"
+                                           Style="{StaticResource SettingsCaption}"
+                                           Text="Yalnızca yerel ağ, kurumsal VPN veya localhost adresleri kabul edilir." />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Style="{StaticResource SettingsSectionTitle}" Text="Eşleşen cihazlar" />
+                                <TextBlock Margin="0,5,0,8"
+                                           Style="{StaticResource SettingsCaption}"
+                                           Text="Shelf'te hedef seçerek tek öğe gönderebilir veya rafı Ortak Raf yapabilirsin." />
+                                <ItemsControl ItemsSource="{Binding OrbitLink.Peers}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Margin="0,0,0,7"
+                                                    Padding="10,8"
+                                                    Background="{DynamicResource SoftSurfaceBrush}"
+                                                    BorderBrush="{DynamicResource BorderBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="9">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel>
+                                                        <TextBlock FontWeight="SemiBold" Text="{Binding Name}" />
+                                                        <TextBlock Margin="0,2,0,0"
+                                                                   Style="{StaticResource SettingsCaption}"
+                                                                   Text="{Binding Endpoint}" />
+                                                        <TextBlock Margin="0,2,0,0"
+                                                                   Foreground="{DynamicResource InfoTextBrush}"
+                                                                   FontSize="11"
+                                                                   FontWeight="SemiBold"
+                                                                   Text="{Binding ConnectionLabel}" />
+                                                    </StackPanel>
+                                                    <Button Grid.Column="1"
+                                                            Margin="8,0,0,0"
+                                                            Padding="9,4"
+                                                            Command="{Binding DataContext.OrbitLink.RemovePeerCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            Content="Kaldır" />
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock Text="Henüz eşleşen cihaz yok.">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource SettingsCaption}">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding OrbitLink.HasPeers}" Value="True">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+                        </Grid>
+
+                        <Border Margin="0,12,0,0"
+                                Padding="10"
+                                Background="{DynamicResource WarningSurfaceBrush}"
+                                BorderBrush="{DynamicResource WarningBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="9">
+                            <TextBlock Foreground="{DynamicResource WarningTextBrush}"
+                                       Text="Gelen dosyalar çalıştırılmaz; alıcının geçici Shelf önbelleğine yazılır. Klasör ve 25 MB üzeri dosya aktarımı kapalıdır. Bir cihaz gelen bağlantıları kabul edemiyorsa Action Orbit, o cihazın dışarı yönlü güvenli bağlantısını otomatik olarak dönüş kanalı şeklinde kullanır; iki uygulama da açık kalmalıdır."
+                                       TextWrapping="Wrap" />
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </Expander>
+
+            <Expander Margin="0,10,0,0"
                       Header="Yedekleme ve tanılama"
                       IsExpanded="False">
                 <Border Margin="0,8,0,0" Style="{StaticResource SettingsCard}">

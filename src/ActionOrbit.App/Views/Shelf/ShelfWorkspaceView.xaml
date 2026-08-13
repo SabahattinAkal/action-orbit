@@ -15,6 +15,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
@@ -58,14 +59,40 @@
                     <WrapPanel Grid.Column="2">
                         <Button Padding="9,5" Command="{Binding NewShelfCommand}" Content="+ Yeni" />
                         <Button Padding="9,5" Command="{Binding TogglePinCommand}" Content="{Binding SelectedShelfPinButtonText}" />
+                        <Button Padding="9,5" Command="{Binding ToggleSharedShelfCommand}" Content="{Binding SelectedShelfSharedButtonText}" />
                         <Button Padding="9,5" Command="{Binding ClearShelfCommand}" Content="Temizle" />
                         <Button Padding="9,5" Command="{Binding DeleteShelfCommand}" Content="Rafı Sil" />
                     </WrapPanel>
                 </Grid>
             </Border>
 
+            <Border Grid.Row="2"
+                    Margin="0,12,0,0"
+                    Padding="10"
+                    Background="{DynamicResource SoftSurfaceBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="12">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock FontWeight="SemiBold" Text="Orbit Link" />
+                        <TextBlock Margin="0,3,0,0" Style="{DynamicResource MutedText}" Text="{Binding OrbitLinkSummary}" />
+                    </StackPanel>
+                    <ComboBox Grid.Column="1"
+                              MinWidth="180"
+                              DisplayMemberPath="DisplayName"
+                              IsEnabled="{Binding HasOrbitLinkPeers}"
+                              ItemsSource="{Binding OrbitLinkPeers}"
+                              SelectedItem="{Binding SelectedPeer}" />
+                </Grid>
+            </Border>
+
             <Border x:Name="DropZone"
-                    Grid.Row="2"
+                    Grid.Row="3"
                     Margin="0,12,0,0"
                     Padding="20"
                     Background="{DynamicResource InfoSurfaceBrush}"
@@ -89,7 +116,7 @@
                 </StackPanel>
             </Border>
 
-            <Grid Grid.Row="3" Margin="0,12,0,0">
+            <Grid Grid.Row="4" Margin="0,12,0,0">
                 <TextBlock HorizontalAlignment="Center"
                            VerticalAlignment="Center"
                            Text="Raf boş. Bir içeriği yukarıdaki alana sürükle.">
@@ -168,6 +195,11 @@
                                                 Command="{Binding DataContext.SaveItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                 CommandParameter="{Binding}"
                                                 Content="Kaydet" />
+                                        <Button Padding="8,5"
+                                                Command="{Binding DataContext.SendItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                Content="Gönder"
+                                                IsEnabled="{Binding DataContext.HasOrbitLinkPeers, RelativeSource={RelativeSource AncestorType=UserControl}}" />
                                         <Button Padding="8,5"
                                                 Command="{Binding DataContext.ResizeImageCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                 CommandParameter="{Binding}"

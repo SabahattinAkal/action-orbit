@@ -24,7 +24,16 @@ public partial class App : System.Windows.Application
         _singleInstanceService = new SingleInstanceService();
         if (!_singleInstanceService.IsPrimaryInstance)
         {
-            _singleInstanceService.SignalPrimaryInstance();
+            if (!_singleInstanceService.SignalPrimaryInstance())
+            {
+                System.Windows.MessageBox.Show(
+                    "Action Orbit zaten çalışıyor ancak mevcut pencere yanıt vermedi.\n\n" +
+                    "Bildirim alanındaki Action Orbit simgesinden Çıkış'ı seç veya Görev Yöneticisi'nde " +
+                    "ActionOrbit.App.exe işlemini sonlandır; ardından bu sürümü yeniden aç.",
+                    "Action Orbit zaten çalışıyor",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
             Shutdown();
             return;
         }
@@ -118,6 +127,20 @@ public partial class App : System.Windows.Application
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         _logService?.Error("Unhandled UI exception.", e.Exception);
+        if (MainWindow is null || !MainWindow.IsLoaded)
+        {
+            var logPath = _logService?.LogPath ?? "%AppData%\\ActionOrbitPro\\logs\\actionorbit.log";
+            System.Windows.MessageBox.Show(
+                "Action Orbit başlatılırken bir arayüz hatası oluştu ve uygulama güvenli biçimde kapatılacak.\n\n" +
+                $"Hata: {e.Exception.GetBaseException().Message}\n\nLog: {logPath}",
+                "Action Orbit başlatılamadı",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            e.Handled = true;
+            Shutdown(1);
+            return;
+        }
+
         _mainWindowViewModel?.Status.ReportUnexpectedError();
         e.Handled = true;
     }

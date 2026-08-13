@@ -21,11 +21,17 @@ public sealed class ShelfViewModel : ViewModelBase, IDisposable
     private readonly ShelfDropService _dropService;
     private readonly ShelfPersistenceService _persistence;
     private readonly ImageProcessingService _imageProcessing;
+    private readonly OrbitLinkService? _orbitLinkService;
     private ShelfBoardViewModel? _selectedShelf;
+    private OrbitLinkPeerViewModel? _selectedPeer;
     private Action? _showFloatingShelf;
     private bool _isImporting;
 
-    public ShelfViewModel(ConfigService configService, LogService logService, Action<string> setStatus)
+    public ShelfViewModel(
+        ConfigService configService,
+        LogService logService,
+        Action<string> setStatus,
+        OrbitLinkService? orbitLinkService = null)
     {
         _configService = configService;
         _logService = logService;
@@ -35,6 +41,7 @@ public sealed class ShelfViewModel : ViewModelBase, IDisposable
         _dropService = new ShelfDropService(_remoteImages, _cacheDirectory);
         _persistence = new ShelfPersistenceService(configService.AppDirectory, logService);
         _imageProcessing = new ImageProcessingService(_cacheDirectory);
+        _orbitLinkService = orbitLinkService;
 
         NewShelfCommand = new RelayCommand(NewShelf);
         DeleteShelfCommand = new RelayCommand(DeleteShelf);
@@ -46,6 +53,15 @@ public sealed class ShelfViewModel : ViewModelBase, IDisposable
         ConvertToPngCommand = new RelayCommand(parameter => ProcessImage(parameter as ShelfItemViewModel, resize: false));
         ResizeImageCommand = new RelayCommand(parameter => ProcessImage(parameter as ShelfItemViewModel, resize: true));
         OpenFloatingShelfCommand = new RelayCommand(() => _showFloatingShelf?.Invoke());
+        SendItemCommand = new RelayCommand(parameter => SendItem(parameter as ShelfItemViewModel));
+        ToggleSharedShelfCommand = new RelayCommand(ToggleSharedShelf);
+
+        if (_orbitLinkService is not null)
+        {
+            _orbitLinkService.StateChanged += OrbitLink_StateChanged;
+            _orbitLinkService.ItemReceived += OrbitLink_ItemReceived;
+            RefreshPeers();
+        }
 
         Directory.CreateDirectory(_cacheDirectory);
         foreach (var board in _persistence.Load(Settings))
@@ -64,6 +80,7 @@ public sealed class ShelfViewModel : ViewModelBase, IDisposable
     }
 
     public ObservableCollection<ShelfBoardViewModel> Shelves { get; } = [];
+    public ObservableCollection<OrbitLinkPeerViewModel> OrbitLinkPeers { get; } = [];
     public ICommand NewShelfCommand { get; }
     public ICommand DeleteShelfCommand { get; }
     public ICommand TogglePinCommand { get; }
@@ -74,6 +91,8 @@ public sealed class ShelfViewModel : ViewModelBase, IDisposable
     public ICommand ConvertToPngCommand { get; }
     public ICommand ResizeImageCommand { get; }
     public ICommand OpenFloatingShelfCommand { get; }
+    public ICommand SendItemCommand { get; }
+    public ICommand ToggleSharedShelfCommand { get; }
     public ShelfSettings Settings => _configService.CurrentConfig.Settings.Shelf;
 
     public ShelfBoardViewModel? SelectedShelf
@@ -87,8 +106,15 @@ public sealed class ShelfViewModel : ViewModelBase, IDisposable
                 OnPropertyChanged(nameof(HasSelectedShelf));
                 OnPropertyChanged(nameof(SelectedShelfSummary));
                 OnPropertyChanged(nameof(SelectedShelfPinButtonText));
+                OnPropertyChanged(nameof(SelectedShelfSharedButtonText));
             }
         }
+    }
+
+    public OrbitLinkPeerViewModel? SelectedPeer
+    {
+        get => _selectedPeer;
+        set => SetProperty(ref _selectedPeer, value);
     }
 
     public bool HasSelectedShelf => SelectedShelf is not null;
@@ -103,6 +129,13 @@ public sealed class ShelfViewModel : ViewModelBase, IDisposable
     public string SelectedShelfPinButtonText => SelectedShelf?.IsPinned == true
         ? "Sabitlemeyi Kaldır"
         : "Sabitle";
+    public string SelectedShelfSharedButtonText => SelectedShelf?.IsShared == true
+        ? "Ortak Raf Açık"
+        : "Ortak Raf";
+    public bool HasOrbitLinkPeers => _orbitLinkService?.Enabled == true && OrbitLinkPeers.Count > 0;
+    public string OrbitLinkSummary => HasOrbitLinkPeers
+        ? $"{OrbitLinkPeers.Count} eşleşen cihaz"
+        : "Cihaz eşleştirmek için Ayarlar › Orbit Link";
 
     public void SetFloatingShelfOpener(Action showFloatingShelf) => _showFloatingShelf = showFloatingShelf;
 
@@ -152,6 +185,10 @@ public sealed class ShelfViewModel : ViewModelBase, IDisposable
 
             Persist();
             OnPropertyChanged(nameof(SelectedShelfSummary));
+            if (SelectedShelf.IsShared && _orbitLinkService is not null && OrbitLinkPeers.Count > 0)
+            {
+                await ShareItemsAsync(result.Items);
+            }
             var skipped = result.SkippedCount > 0 ? $" {result.SkippedCount} öğe sınırlar nedeniyle atlandı." : "";
             _setStatus($"Orbit Shelf'e {result.Items.Count} öğe eklendi.{skipped}");
         }
@@ -244,6 +281,134 @@ public sealed class ShelfViewModel : ViewModelBase, IDisposable
 
         SelectedShelf.IsPinned = !SelectedShelf.IsPinned;
         _setStatus(SelectedShelf.IsPinned ? "Raf sabitlendi ve yerel olarak korunacak." : "Raf sabitlemesi kaldırıldı.");
+    }
+
+    private void ToggleSharedShelf()
+    {
+        if (SelectedShelf is null) return;
+        SelectedShelf.IsShared = !SelectedShelf.IsShared;
+        if (SelectedShelf.IsShared) SelectedShelf.IsPinned = true;
+        Persist();
+        OnPropertyChanged(nameof(SelectedShelfSharedButtonText));
+        OnPropertyChanged(nameof(SelectedShelfPinButtonText));
+        _setStatus(SelectedShelf.IsShared
+            ? "Bu raf Ortak Raf oldu; yeni bırakılan öğeler eşleşen cihazlara gönderilecek."
+            : "Ortak Raf paylaşımı kapatıldı.");
+    }
+
+    private async void SendItem(ShelfItemViewModel? item)
+    {
+        if (item is null || _orbitLinkService is null)
+        {
+            return;
+        }
+        if (SelectedPeer is null)
+        {
+            _setStatus("Önce Orbit Link hedef cihazını seç.");
+            return;
+        }
+        _setStatus($"{item.DisplayName} gönderiliyor…");
+        var result = await _orbitLinkService.SendItemAsync(SelectedPeer.Id, item.Item);
+        _setStatus(result.Message);
+    }
+
+    private async Task ShareItemsAsync(IReadOnlyList<ShelfItem> items)
+    {
+        if (_orbitLinkService is null) return;
+        var peers = OrbitLinkPeers.ToList();
+        var failures = 0;
+        foreach (var item in items)
+        {
+            foreach (var peer in peers)
+            {
+                var result = await _orbitLinkService.SendItemAsync(peer.Id, item);
+                if (!result.Succeeded) failures++;
+            }
+        }
+        if (failures > 0)
+        {
+            _setStatus($"Ortak Raf aktarımında {failures} gönderim tamamlanamadı.");
+        }
+    }
+
+    private void OrbitLink_StateChanged(object? sender, EventArgs e) => RunOnUiThread(RefreshPeers);
+
+    private void RefreshPeers()
+    {
+        var selectedId = SelectedPeer?.Id;
+        OrbitLinkPeers.Clear();
+        if (_orbitLinkService is not null)
+        {
+            foreach (var peer in _orbitLinkService.Peers)
+            {
+                OrbitLinkPeers.Add(new OrbitLinkPeerViewModel(
+                    peer,
+                    _orbitLinkService.HasReverseRoute(peer.Id)));
+            }
+        }
+        SelectedPeer = OrbitLinkPeers.FirstOrDefault(peer => peer.Id == selectedId) ?? OrbitLinkPeers.FirstOrDefault();
+        OnPropertyChanged(nameof(HasOrbitLinkPeers));
+        OnPropertyChanged(nameof(OrbitLinkSummary));
+    }
+
+    private void OrbitLink_ItemReceived(object? sender, OrbitLinkItemReceivedEventArgs e) =>
+        RunOnUiThreadSync(() => AddReceivedItem(e));
+
+    private void AddReceivedItem(OrbitLinkItemReceivedEventArgs args)
+    {
+        if (!Settings.Enabled
+            || Shelves.SelectMany(shelf => shelf.Items).Any(item =>
+                string.Equals(item.Item.TransferId, args.Item.TransferId, StringComparison.OrdinalIgnoreCase)))
+        {
+            args.Reject(Settings.Enabled
+                ? "Bu aktarım daha önce alınmış."
+                : "Orbit Shelf alıcı bilgisayarda kapalı.");
+            return;
+        }
+
+        var sharedShelf = Shelves.FirstOrDefault(shelf => shelf.IsShared)
+            ?? Shelves.FirstOrDefault(shelf => string.Equals(shelf.Name, "Ortak Raf", StringComparison.OrdinalIgnoreCase));
+        if (sharedShelf is null)
+        {
+            sharedShelf = CreateShelf(new ShelfBoard { Name = "Ortak Raf", IsPinned = true, IsShared = true });
+            Shelves.Add(sharedShelf);
+        }
+        if (sharedShelf.ItemCount >= Settings.MaxItemsPerShelf
+            || sharedShelf.TotalBytes + args.Item.SizeBytes > Settings.MaxTotalBytes
+            || args.Item.SizeBytes > Settings.MaxItemBytes)
+        {
+            args.Reject("Alıcı Ortak Raf sınırına ulaştı.");
+            _setStatus($"{args.Peer.Name} cihazından gelen öğe raf sınırını aştı.");
+            return;
+        }
+
+        sharedShelf.Add(args.Item);
+        SelectedShelf = sharedShelf;
+        Persist();
+        OnPropertyChanged(nameof(SelectedShelfSummary));
+        _setStatus($"{args.Peer.Name} cihazından Ortak Raf'a eklendi: {args.Item.DisplayName}");
+    }
+
+    private static void RunOnUiThread(Action action)
+    {
+        var dispatcher = System.Windows.Application.Current?.Dispatcher;
+        if (dispatcher is not null && !dispatcher.CheckAccess())
+        {
+            dispatcher.BeginInvoke(action);
+            return;
+        }
+        action();
+    }
+
+    private static void RunOnUiThreadSync(Action action)
+    {
+        var dispatcher = System.Windows.Application.Current?.Dispatcher;
+        if (dispatcher is not null && !dispatcher.CheckAccess())
+        {
+            dispatcher.Invoke(action);
+            return;
+        }
+        action();
     }
 
     private void ClearShelf()
@@ -388,7 +553,9 @@ public sealed class ShelfViewModel : ViewModelBase, IDisposable
 
     private void Shelf_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is not (nameof(ShelfBoardViewModel.Name) or nameof(ShelfBoardViewModel.IsPinned)))
+        if (e.PropertyName is not (nameof(ShelfBoardViewModel.Name)
+            or nameof(ShelfBoardViewModel.IsPinned)
+            or nameof(ShelfBoardViewModel.IsShared)))
         {
             return;
         }
@@ -396,6 +563,7 @@ public sealed class ShelfViewModel : ViewModelBase, IDisposable
         Persist();
         OnPropertyChanged(nameof(SelectedShelfSummary));
         OnPropertyChanged(nameof(SelectedShelfPinButtonText));
+        OnPropertyChanged(nameof(SelectedShelfSharedButtonText));
     }
 
     private void Persist()
@@ -463,5 +631,10 @@ public sealed class ShelfViewModel : ViewModelBase, IDisposable
             shelf.PropertyChanged -= Shelf_PropertyChanged;
         }
         _remoteImages.Dispose();
+        if (_orbitLinkService is not null)
+        {
+            _orbitLinkService.StateChanged -= OrbitLink_StateChanged;
+            _orbitLinkService.ItemReceived -= OrbitLink_ItemReceived;
+        }
     }
 }

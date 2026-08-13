@@ -4,15 +4,27 @@ public sealed class SingleInstanceService : IDisposable
 {
     private const string MutexName = "Local\\ActionOrbitPro.SingleInstance";
     private const string ActivationEventName = "Local\\ActionOrbitPro.ActivateExisting";
+    private const string ActivationAcknowledgedEventName = "Local\\ActionOrbitPro.ActivateExistingAck";
 
     private readonly Mutex _mutex;
     private readonly EventWaitHandle? _activationEvent;
+    private readonly EventWaitHandle? _activationAcknowledgedEvent;
+    private readonly string _activationEventName;
+    private readonly string _activationAcknowledgedEventName;
     private RegisteredWaitHandle? _activationRegistration;
     private bool _disposed;
 
     public SingleInstanceService()
+        : this("")
     {
-        _mutex = new Mutex(initiallyOwned: true, MutexName, out var createdNew);
+    }
+
+    internal SingleInstanceService(string instanceSuffix)
+    {
+        var suffix = string.IsNullOrWhiteSpace(instanceSuffix) ? "" : $".{instanceSuffix}";
+        _activationEventName = $"{ActivationEventName}{suffix}";
+        _activationAcknowledgedEventName = $"{ActivationAcknowledgedEventName}{suffix}";
+        _mutex = new Mutex(initiallyOwned: true, $"{MutexName}{suffix}", out var createdNew);
         IsPrimaryInstance = createdNew;
 
         if (IsPrimaryInstance)
@@ -20,7 +32,11 @@ public sealed class SingleInstanceService : IDisposable
             _activationEvent = new EventWaitHandle(
                 initialState: false,
                 EventResetMode.AutoReset,
-                ActivationEventName);
+                _activationEventName);
+            _activationAcknowledgedEvent = new EventWaitHandle(
+                initialState: false,
+                EventResetMode.AutoReset,
+                _activationAcknowledgedEventName);
         }
     }
 
@@ -41,7 +57,14 @@ public sealed class SingleInstanceService : IDisposable
             {
                 if (!timedOut && !_disposed)
                 {
-                    activationRequested();
+                    try
+                    {
+                        activationRequested();
+                    }
+                    finally
+                    {
+                        _activationAcknowledgedEvent?.Set();
+                    }
                 }
             },
             state: null,
@@ -49,7 +72,7 @@ public sealed class SingleInstanceService : IDisposable
             executeOnlyOnce: false);
     }
 
-    public bool SignalPrimaryInstance()
+    public bool SignalPrimaryInstance(TimeSpan? acknowledgementTimeout = null)
     {
         if (IsPrimaryInstance || _disposed)
         {
@@ -60,8 +83,14 @@ public sealed class SingleInstanceService : IDisposable
         {
             try
             {
-                using var activationEvent = EventWaitHandle.OpenExisting(ActivationEventName);
-                return activationEvent.Set();
+                using var activationEvent = EventWaitHandle.OpenExisting(_activationEventName);
+                using var acknowledgedEvent = EventWaitHandle.OpenExisting(_activationAcknowledgedEventName);
+                acknowledgedEvent.Reset();
+                if (!activationEvent.Set())
+                {
+                    return false;
+                }
+                return acknowledgedEvent.WaitOne(acknowledgementTimeout ?? TimeSpan.FromSeconds(2));
             }
             catch (WaitHandleCannotBeOpenedException)
             {
@@ -82,6 +111,7 @@ public sealed class SingleInstanceService : IDisposable
         _disposed = true;
         _activationRegistration?.Unregister(null);
         _activationEvent?.Dispose();
+        _activationAcknowledgedEvent?.Dispose();
 
         if (IsPrimaryInstance)
         {
