@@ -11,5 +11,10 @@ public sealed class ShelfItem
     public long SizeBytes { get; set; }
     public bool IsTemporary { get; set; }
     public string TransferId { get; set; } = "";
+    public string LastTransferPeerId { get; set; } = "";
+    public string LastTransferPeerName { get; set; } = "";
+    public string LastTransferState { get; set; } = "";
+    public string LastTransferMessage { get; set; } = "";
+    public DateTime? LastTransferUpdatedUtc { get; set; }
     public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;
 }

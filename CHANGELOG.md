@@ -28,6 +28,7 @@ Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 
 ### Eklendi
 
+- Orbit Link'e uygulama yeniden başlatıldığında devam eden, iki öğe ve 24 saatle sınırlı şifreli aktarım kuyruğu; artan yeniden deneme aralığı, teslimat durumu, yeniden dene ve iptal kontrolleri eklendi.
 - Orbit Link ile iki Action Orbit kurulumu arasında tek kullanımlık kodla cihaz eşleştirme, öğe başına şifreli Shelf aktarımı ve yeni içerikleri eşleşen cihazlara ileten Ortak Raf modu eklendi.
 - Kurumsal güvenlik duvarı nedeniyle yalnızca tek yönde TCP bağlantısı kurulabilen cihazlar için kimlik doğrulamalı ters bağlantı ve güvenli aktarım sırası eklendi.
 - Orbit Link hedef seçimi yüzen Shelf'e; cihaz adı, bağlantı adresi, eşleştirme kodu ve eşleşen cihaz yönetimi Ayarlar'a eklendi.
@@ -40,6 +41,7 @@ Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 
 ### Güvenlik
 
+- Bekleyen Orbit Link içerikleri yalnızca eşleşen cihaz anahtarıyla şifrelenmiş olarak diske yazılıyor; kuyrukta açık içerik, eşleştirme kodu veya anahtar tutulmuyor ve hata mesajları kişisel dosya adı içermiyor.
 - Orbit Link yalnızca yerel ağ, localhost ve VPN adreslerinden bağlantı kabul eder; içerikler AES-GCM ile şifrelenir, eşleşme anahtarları Windows kullanıcı hesabıyla korunur ve gelen dosyalar çalıştırılmadan Shelf önbelleğine yazılır.
 - Eşleştirme kodları beş dakika ve tek kullanım için geçerlidir; aktarım bütünlüğü SHA-256 ile doğrulanır, tekrar paketleri reddedilir ve ilk sürümde dosya boyutu 25 MB ile sınırlandırılır.
 - `.gitignore`, katkı rehberi, güvenlik politikası ve yayın kontrol listesi; yerel kullanıcı verisi, imzalama materyali ve secret sızıntılarına karşı daha açık kontrollerle güncellendi.

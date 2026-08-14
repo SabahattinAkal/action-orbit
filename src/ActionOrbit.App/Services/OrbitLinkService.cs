@@ -15,7 +15,6 @@ public sealed class OrbitLinkService : IDisposable
     public const long MaxTransferBytes = 25L * 1024 * 1024;
     private const int MaxWireBytes = 48 * 1024 * 1024;
     private const int MaxPairAttempts = 6;
-    private const int MaxQueuedReverseTransfersPerPeer = 2;
     private static readonly TimeSpan PairingLifetime = TimeSpan.FromMinutes(5);
     private static readonly TimeSpan ReverseRouteLifetime = TimeSpan.FromSeconds(12);
     private static readonly TimeSpan ReversePollInterval = TimeSpan.FromSeconds(2);
@@ -27,12 +26,14 @@ public sealed class OrbitLinkService : IDisposable
     };
     private readonly object _gate = new();
     private readonly OrbitLinkStore _store;
+    private readonly OrbitLinkQueueStore _queueStore;
     private readonly LogService _logService;
     private readonly string _cacheDirectory;
     private readonly HashSet<string> _recentTransfers = new(StringComparer.OrdinalIgnoreCase);
     private readonly Queue<string> _recentTransferOrder = new();
     private readonly SemaphoreSlim _clientSlots = new(4, 4);
-    private readonly Dictionary<string, Queue<OrbitLinkEncryptedTransfer>> _reverseQueues = new(StringComparer.OrdinalIgnoreCase);
+    private readonly SemaphoreSlim _deliveryGate = new(1, 1);
+    private readonly Dictionary<string, Queue<OrbitLinkQueuedTransfer>> _transferQueues = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, DateTime> _reverseRouteSeenUtc = new(StringComparer.OrdinalIgnoreCase);
     private OrbitLinkState _state;
     private TcpListener? _listener;
@@ -45,14 +46,26 @@ public sealed class OrbitLinkService : IDisposable
     public OrbitLinkService(string appDirectory, LogService logService)
     {
         _store = new OrbitLinkStore(appDirectory, logService);
+        _queueStore = new OrbitLinkQueueStore(appDirectory, logService);
         _logService = logService;
         _cacheDirectory = Path.Combine(appDirectory, "shelf-cache");
         Directory.CreateDirectory(_cacheDirectory);
         _state = _store.Load();
+        var peerIds = _state.Peers.Select(peer => peer.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var queued in _queueStore.Load(peerIds))
+        {
+            if (!_transferQueues.TryGetValue(queued.PeerId, out var queue))
+            {
+                queue = new Queue<OrbitLinkQueuedTransfer>();
+                _transferQueues[queued.PeerId] = queue;
+            }
+            queue.Enqueue(queued);
+        }
     }
 
     public event EventHandler? StateChanged;
     public event EventHandler<OrbitLinkItemReceivedEventArgs>? ItemReceived;
+    public event EventHandler<OrbitLinkTransferStatusChangedEventArgs>? TransferStatusChanged;
 
     public string DeviceId => _state.DeviceId;
     public string DeviceName => _state.DeviceName;
@@ -76,6 +89,23 @@ public sealed class OrbitLinkService : IDisposable
             lock (_gate)
             {
                 return _state.Peers.Select(ClonePeer).ToList();
+            }
+        }
+    }
+
+    public IReadOnlyList<OrbitLinkTransferStatus> PendingTransfers
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _transferQueues.Values
+                    .SelectMany(queue => queue)
+                    .Select(item => CreateTransferStatus(
+                        item,
+                        OrbitLinkTransferState.Queued,
+                        "Bağlantı kurulduğunda otomatik gönderilecek."))
+                    .ToList();
             }
         }
     }
@@ -271,57 +301,37 @@ public sealed class OrbitLinkService : IDisposable
 
             var payload = payloadResult.Payload;
             var transfer = EncryptTransferPayload(payload, key);
+            var queued = new OrbitLinkQueuedTransfer
+            {
+                PeerId = peer.Id,
+                ShelfItemId = item.Id,
+                Transfer = transfer,
+                CreatedUtc = DateTime.UtcNow,
+                NextAttemptUtc = DateTime.UtcNow
+            };
+            var queueResult = QueueTransfer(peer, queued);
+            if (!queueResult.Succeeded)
+            {
+                return queueResult;
+            }
+
             if (HasReverseRoute(peer.Id))
             {
-                return QueueReverseTransfer(peer, transfer, item.DisplayName);
+                return OrbitLinkOperationResult.Success(
+                    $"{item.DisplayName}, {peer.Name} için güvenli aktarım sırasına alındı.",
+                    transfer.TransferId,
+                    OrbitLinkTransferState.Queued);
             }
-
-            var request = new OrbitLinkWireRequest { Type = "transfer", Transfer = transfer };
-            var parsed = await ResolvePeerAddressAsync(peer, cancellationToken);
-            if (parsed is null)
-            {
-                return OrbitLinkOperationResult.Failure("Cihaz adresi yerel ağda doğrulanamadı.");
-            }
-
-            var response = await SendRequestAsync(
-                parsed,
-                peer.Port,
-                request,
-                cancellationToken,
-                TimeSpan.FromSeconds(6));
-            if (!ValidateTransferResponse(response, key, payload.TransferId))
-            {
-                return OrbitLinkOperationResult.Failure("Cihaz yanıtı güvenlik doğrulamasından geçemedi.");
-            }
-
-            if (!response.Success)
-            {
-                return OrbitLinkOperationResult.Failure(response.Message);
-            }
-
-            peer.LastSeenUtc = DateTime.UtcNow;
-            UpsertPeer(peer);
-            return OrbitLinkOperationResult.Success($"{item.DisplayName}, {peer.Name} cihazına gönderildi.");
+            return await TryDeliverQueuedTransferAsync(peer, queued, cancellationToken);
         }
         catch (OperationCanceledException)
         {
-            return OrbitLinkOperationResult.Failure("Aktarım iptal edildi.");
+            return OrbitLinkOperationResult.Failure("Aktarım hazırlanırken iptal edildi.");
         }
         catch (Exception ex)
         {
-            _logService.Error("Orbit Link transfer failed.", ex);
-            if (HasReverseRoute(peer.Id))
-            {
-                var payloadResult = await BuildPayloadAsync(item, cancellationToken);
-                if (payloadResult.Payload is not null)
-                {
-                    return QueueReverseTransfer(
-                        peer,
-                        EncryptTransferPayload(payloadResult.Payload, key),
-                        item.DisplayName);
-                }
-            }
-            return OrbitLinkOperationResult.Failure($"Aktarım tamamlanamadı: {ex.Message}");
+            _logService.Error("Orbit Link transfer preparation failed.", ex);
+            return OrbitLinkOperationResult.Failure("Aktarım güvenli kuyruğa hazırlanamadı.");
         }
         finally
         {
@@ -329,13 +339,86 @@ public sealed class OrbitLinkService : IDisposable
         }
     }
 
+    public async Task<OrbitLinkOperationResult> RetryTransferAsync(
+        string transferId,
+        CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+        OrbitLinkQueuedTransfer? queued;
+        lock (_gate)
+        {
+            queued = FindQueuedTransferLocked(transferId);
+            if (queued is not null)
+            {
+                queued.AttemptCount = 0;
+                queued.NextAttemptUtc = DateTime.UtcNow;
+                SaveQueueLocked();
+            }
+        }
+        if (queued is null)
+        {
+            return OrbitLinkOperationResult.Failure("Bekleyen aktarım bulunamadı.");
+        }
+
+        var peer = FindPeer(queued.PeerId);
+        if (peer is null)
+        {
+            return OrbitLinkOperationResult.Failure("Aktarımın hedef cihazı artık eşleşmiş değil.");
+        }
+        if (HasReverseRoute(peer.Id))
+        {
+            var status = CreateTransferStatus(
+                queued,
+                OrbitLinkTransferState.Queued,
+                "Yeniden deneme sırasına alındı.");
+            RaiseTransferStatus(status);
+            return OrbitLinkOperationResult.Success(status.Message, transferId, status.State);
+        }
+        return await TryDeliverQueuedTransferAsync(peer, queued, cancellationToken);
+    }
+
+    public OrbitLinkOperationResult CancelTransfer(string transferId)
+    {
+        ThrowIfDisposed();
+        OrbitLinkQueuedTransfer? removed;
+        lock (_gate)
+        {
+            removed = RemoveQueuedTransferLocked(transferId);
+            if (removed is not null) SaveQueueLocked();
+        }
+        if (removed is null)
+        {
+            return OrbitLinkOperationResult.Failure("Bekleyen aktarım bulunamadı.");
+        }
+
+        var status = CreateTransferStatus(
+            removed,
+            OrbitLinkTransferState.Canceled,
+            "Aktarım iptal edildi.");
+        RaiseTransferStatus(status);
+        return OrbitLinkOperationResult.Success(status.Message, transferId, status.State);
+    }
+
     public void RemovePeer(string peerId)
     {
         ThrowIfDisposed();
+        List<OrbitLinkQueuedTransfer> canceled = [];
         lock (_gate)
         {
             _state.Peers.RemoveAll(peer => string.Equals(peer.Id, peerId, StringComparison.OrdinalIgnoreCase));
+            if (_transferQueues.Remove(peerId, out var removedQueue))
+            {
+                canceled = removedQueue.ToList();
+                SaveQueueLocked();
+            }
             _store.Save(_state);
+        }
+        foreach (var item in canceled)
+        {
+            RaiseTransferStatus(CreateTransferStatus(
+                item,
+                OrbitLinkTransferState.Canceled,
+                "Hedef cihaz kaldırıldığı için aktarım iptal edildi."));
         }
         RaiseStateChanged();
     }
@@ -645,7 +728,11 @@ public sealed class OrbitLinkService : IDisposable
             if (!receivedArgs.Accepted)
             {
                 DeleteImportedTemporaryItem(imported.Item);
-                return SignTransferResponse(key, transfer.TransferId, false, receivedArgs.RejectionMessage);
+                return SignTransferResponse(
+                    key,
+                    transfer.TransferId,
+                    receivedArgs.IsDuplicate,
+                    receivedArgs.RejectionMessage);
             }
 
             RememberTransfer(payload.TransferId);
@@ -675,46 +762,66 @@ public sealed class OrbitLinkService : IDisposable
                 return new OrbitLinkWireResponse { Message = "Ters bağlantı isteği doğrulanamadı." };
             }
 
-            OrbitLinkEncryptedTransfer? pending = null;
+            OrbitLinkQueuedTransfer? pending = null;
+            OrbitLinkQueuedTransfer? acknowledgedTransfer = null;
+            var acknowledgedSuccess = false;
             var routeBecameReady = false;
             lock (_gate)
             {
                 routeBecameReady = !_reverseRouteSeenUtc.TryGetValue(peer.Id, out var previousSeen)
                     || previousSeen < DateTime.UtcNow.Subtract(ReverseRouteLifetime);
                 _reverseRouteSeenUtc[peer.Id] = DateTime.UtcNow;
-                if (_reverseQueues.TryGetValue(peer.Id, out var queue))
+                if (_transferQueues.TryGetValue(peer.Id, out var queue))
                 {
                     if (!string.IsNullOrWhiteSpace(request.AcknowledgedTransferId)
                         && queue.TryPeek(out var acknowledged)
                         && string.Equals(
-                            acknowledged.TransferId,
+                            acknowledged.Transfer.TransferId,
                             request.AcknowledgedTransferId,
                             StringComparison.OrdinalIgnoreCase))
                     {
-                        queue.Dequeue();
+                        acknowledgedTransfer = queue.Dequeue();
+                        acknowledgedSuccess = request.AcknowledgedSuccess;
                         if (!request.AcknowledgedSuccess)
                         {
                             _logService.Warn(
                                 $"Reverse transfer rejected by peer {LogService.SafeValue(peer.Id)}: " +
                                 LogService.SafeValue(request.AcknowledgedMessage));
                         }
+                        SaveQueueLocked();
                     }
 
                     queue.TryPeek(out pending);
                     if (queue.Count == 0)
                     {
-                        _reverseQueues.Remove(peer.Id);
+                        _transferQueues.Remove(peer.Id);
                     }
                 }
             }
 
+            if (acknowledgedTransfer is not null)
+            {
+                RaiseTransferStatus(CreateTransferStatus(
+                    acknowledgedTransfer,
+                    acknowledgedSuccess ? OrbitLinkTransferState.Delivered : OrbitLinkTransferState.Failed,
+                    acknowledgedSuccess
+                        ? $"{peer.Name} cihazına teslim edildi."
+                        : "Hedef cihaz aktarımı kabul etmedi."));
+            }
+            if (pending is not null)
+            {
+                RaiseTransferStatus(CreateTransferStatus(
+                    pending,
+                    OrbitLinkTransferState.Sending,
+                    $"{peer.Name} cihazına gönderiliyor…"));
+            }
             if (routeBecameReady) RaiseStateChanged();
-            var transferId = pending?.TransferId ?? "";
+            var transferId = pending?.Transfer.TransferId ?? "";
             return new OrbitLinkWireResponse
             {
                 Success = true,
                 Message = pending is null ? "Ters bağlantı hazır." : "Bekleyen öğe gönderiliyor.",
-                Transfer = pending,
+                Transfer = pending?.Transfer,
                 TransferId = transferId,
                 Proof = CreateHmac(key, PullResponseCanonical(request.Nonce, transferId))
             };
@@ -737,7 +844,11 @@ public sealed class OrbitLinkService : IDisposable
             foreach (var peer in Peers)
             {
                 if (cancellationToken.IsCancellationRequested) break;
-                try { await PollPeerAsync(peer, cancellationToken); }
+                try
+                {
+                    await PollPeerAsync(peer, cancellationToken);
+                    await FlushDueTransferAsync(peer, cancellationToken);
+                }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { return; }
                 catch
                 {
@@ -823,33 +934,278 @@ public sealed class OrbitLinkService : IDisposable
         }
     }
 
-    private OrbitLinkOperationResult QueueReverseTransfer(
+    private OrbitLinkOperationResult QueueTransfer(OrbitLinkPeer peer, OrbitLinkQueuedTransfer transfer)
+    {
+        try
+        {
+            lock (_gate)
+            {
+                RemoveExpiredTransfersLocked();
+                if (_transferQueues.Values.Sum(queue => queue.Count) >= OrbitLinkQueueStore.MaxQueuedTransfers)
+                {
+                    return OrbitLinkOperationResult.Failure(
+                        "Güvenli aktarım kuyruğu dolu; bekleyen bir öğeyi teslim et veya iptal et.");
+                }
+
+                if (!_transferQueues.TryGetValue(peer.Id, out var queue))
+                {
+                    queue = new Queue<OrbitLinkQueuedTransfer>();
+                    _transferQueues[peer.Id] = queue;
+                }
+                queue.Enqueue(transfer);
+                SaveQueueLocked();
+            }
+        }
+        catch
+        {
+            lock (_gate)
+            {
+                RemoveQueuedTransferLocked(transfer.Transfer.TransferId);
+            }
+            return OrbitLinkOperationResult.Failure("Aktarım güvenli kuyruğa kaydedilemedi.");
+        }
+
+        var status = CreateTransferStatus(
+            transfer,
+            OrbitLinkTransferState.Queued,
+            $"{peer.Name} için güvenli sıraya alındı.");
+        RaiseTransferStatus(status);
+        return OrbitLinkOperationResult.Success(status.Message, status.TransferId, status.State);
+    }
+
+    private async Task FlushDueTransferAsync(OrbitLinkPeer peer, CancellationToken cancellationToken)
+    {
+        if (HasReverseRoute(peer.Id)) return;
+        OrbitLinkQueuedTransfer? queued;
+        lock (_gate)
+        {
+            queued = _transferQueues.TryGetValue(peer.Id, out var queue)
+                && queue.TryPeek(out var candidate)
+                && candidate.NextAttemptUtc <= DateTime.UtcNow
+                    ? candidate
+                    : null;
+        }
+        if (queued is not null)
+        {
+            await TryDeliverQueuedTransferAsync(peer, queued, cancellationToken);
+        }
+    }
+
+    private async Task<OrbitLinkOperationResult> TryDeliverQueuedTransferAsync(
         OrbitLinkPeer peer,
-        OrbitLinkEncryptedTransfer transfer,
-        string displayName)
+        OrbitLinkQueuedTransfer queued,
+        CancellationToken cancellationToken)
+    {
+        await _deliveryGate.WaitAsync(cancellationToken);
+        try
+        {
+            lock (_gate)
+            {
+                if (FindQueuedTransferLocked(queued.Transfer.TransferId) is null)
+                {
+                    return OrbitLinkOperationResult.Failure("Aktarım artık kuyrukta değil.");
+                }
+            }
+            if (HasReverseRoute(peer.Id))
+            {
+                var queuedStatus = CreateTransferStatus(
+                    queued,
+                    OrbitLinkTransferState.Queued,
+                    $"{peer.Name} dönüş kanalından teslim alacak.");
+                RaiseTransferStatus(queuedStatus);
+                return OrbitLinkOperationResult.Success(
+                    queuedStatus.Message,
+                    queuedStatus.TransferId,
+                    queuedStatus.State);
+            }
+
+            RaiseTransferStatus(CreateTransferStatus(
+                queued,
+                OrbitLinkTransferState.Sending,
+                $"{peer.Name} cihazına gönderiliyor…"));
+
+            if (!OrbitLinkStore.TryUnprotectKey(peer.ProtectedKey, out var key))
+            {
+                return FailQueuedTransfer(queued, "Hedef cihazın güvenlik anahtarı açılamadı.");
+            }
+
+            try
+            {
+                var address = await ResolvePeerAddressAsync(peer, cancellationToken);
+                if (address is null)
+                {
+                    return DeferQueuedTransfer(queued, peer);
+                }
+
+                var response = await SendRequestAsync(
+                    address,
+                    peer.Port,
+                    new OrbitLinkWireRequest { Type = "transfer", Transfer = queued.Transfer },
+                    cancellationToken,
+                    TimeSpan.FromSeconds(6));
+                if (!ValidateTransferResponse(response, key, queued.Transfer.TransferId))
+                {
+                    return FailQueuedTransfer(queued, "Cihaz yanıtı güvenlik doğrulamasından geçemedi.");
+                }
+                if (!response.Success)
+                {
+                    return FailQueuedTransfer(queued, "Hedef cihaz aktarımı kabul etmedi.");
+                }
+
+                lock (_gate)
+                {
+                    RemoveQueuedTransferLocked(queued.Transfer.TransferId);
+                    SaveQueueLocked();
+                }
+                peer.LastSeenUtc = DateTime.UtcNow;
+                UpsertPeer(peer);
+                var status = CreateTransferStatus(
+                    queued,
+                    OrbitLinkTransferState.Delivered,
+                    $"{peer.Name} cihazına teslim edildi.");
+                RaiseTransferStatus(status);
+                return OrbitLinkOperationResult.Success(status.Message, status.TransferId, status.State);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                return DeferQueuedTransfer(queued, peer);
+            }
+            catch (Exception ex)
+            {
+                _logService.Warn(
+                    $"Orbit Link queued delivery deferred for peer {LogService.SafeValue(peer.Id)}: " +
+                    LogService.SafeValue(ex.GetType().Name));
+                return DeferQueuedTransfer(queued, peer);
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(key);
+            }
+        }
+        finally
+        {
+            _deliveryGate.Release();
+        }
+    }
+
+    private OrbitLinkOperationResult DeferQueuedTransfer(
+        OrbitLinkQueuedTransfer queued,
+        OrbitLinkPeer peer)
     {
         lock (_gate)
         {
-            if (!_reverseRouteSeenUtc.TryGetValue(peer.Id, out var seenUtc)
-                || seenUtc < DateTime.UtcNow.Subtract(ReverseRouteLifetime))
+            var current = FindQueuedTransferLocked(queued.Transfer.TransferId);
+            if (current is null)
             {
-                return OrbitLinkOperationResult.Failure("Cihazın ters bağlantısı artık hazır değil.");
+                return OrbitLinkOperationResult.Failure("Aktarım iptal edildi.");
             }
-
-            if (!_reverseQueues.TryGetValue(peer.Id, out var queue))
-            {
-                queue = new Queue<OrbitLinkEncryptedTransfer>();
-                _reverseQueues[peer.Id] = queue;
-            }
-            if (queue.Count >= MaxQueuedReverseTransfersPerPeer)
-            {
-                return OrbitLinkOperationResult.Failure("Ters bağlantı aktarım sırası dolu; önce bekleyen öğelerin tamamlanmasını bekle.");
-            }
-            queue.Enqueue(transfer);
+            current.AttemptCount = Math.Min(current.AttemptCount + 1, 16);
+            var seconds = Math.Min(300, Math.Pow(2, Math.Min(current.AttemptCount, 8)));
+            current.NextAttemptUtc = DateTime.UtcNow.AddSeconds(seconds);
+            SaveQueueLocked();
         }
 
-        return OrbitLinkOperationResult.Success(
-            $"{displayName}, {peer.Name} için güvenli aktarım sırasına alındı.");
+        var status = CreateTransferStatus(
+            queued,
+            OrbitLinkTransferState.Queued,
+            $"{peer.Name} çevrimdışı; bağlantı kurulunca otomatik denenecek.");
+        RaiseTransferStatus(status);
+        return OrbitLinkOperationResult.Success(status.Message, status.TransferId, status.State);
+    }
+
+    private OrbitLinkOperationResult FailQueuedTransfer(
+        OrbitLinkQueuedTransfer queued,
+        string message)
+    {
+        lock (_gate)
+        {
+            RemoveQueuedTransferLocked(queued.Transfer.TransferId);
+            SaveQueueLocked();
+        }
+        var status = CreateTransferStatus(queued, OrbitLinkTransferState.Failed, message);
+        RaiseTransferStatus(status);
+        return OrbitLinkOperationResult.Failure(message, status.TransferId, status.State);
+    }
+
+    private OrbitLinkQueuedTransfer? FindQueuedTransferLocked(string transferId) =>
+        _transferQueues.Values
+            .SelectMany(queue => queue)
+            .FirstOrDefault(item => string.Equals(
+                item.Transfer.TransferId,
+                transferId,
+                StringComparison.OrdinalIgnoreCase));
+
+    private OrbitLinkQueuedTransfer? RemoveQueuedTransferLocked(string transferId)
+    {
+        foreach (var pair in _transferQueues.ToList())
+        {
+            var retained = pair.Value
+                .Where(item => !string.Equals(
+                    item.Transfer.TransferId,
+                    transferId,
+                    StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            if (retained.Count == pair.Value.Count) continue;
+
+            var removed = pair.Value.First(item => string.Equals(
+                item.Transfer.TransferId,
+                transferId,
+                StringComparison.OrdinalIgnoreCase));
+            if (retained.Count == 0) _transferQueues.Remove(pair.Key);
+            else _transferQueues[pair.Key] = new Queue<OrbitLinkQueuedTransfer>(retained);
+            return removed;
+        }
+        return null;
+    }
+
+    private void RemoveExpiredTransfersLocked()
+    {
+        var expiry = DateTime.UtcNow.Subtract(OrbitLinkQueueStore.TransferLifetime);
+        foreach (var pair in _transferQueues.ToList())
+        {
+            var retained = pair.Value.Where(item => item.CreatedUtc >= expiry).ToList();
+            if (retained.Count == 0) _transferQueues.Remove(pair.Key);
+            else if (retained.Count != pair.Value.Count)
+            {
+                _transferQueues[pair.Key] = new Queue<OrbitLinkQueuedTransfer>(retained);
+            }
+        }
+    }
+
+    private void SaveQueueLocked() =>
+        _queueStore.Save(_transferQueues.Values.SelectMany(queue => queue));
+
+    private OrbitLinkTransferStatus CreateTransferStatus(
+        OrbitLinkQueuedTransfer transfer,
+        OrbitLinkTransferState state,
+        string message)
+    {
+        var peer = _state.Peers.FirstOrDefault(item => string.Equals(
+            item.Id,
+            transfer.PeerId,
+            StringComparison.OrdinalIgnoreCase));
+        return new OrbitLinkTransferStatus(
+            transfer.ShelfItemId,
+            transfer.Transfer.TransferId,
+            transfer.PeerId,
+            peer?.Name ?? "Eşleşen cihaz",
+            state,
+            message,
+            DateTime.UtcNow);
+    }
+
+    private void RaiseTransferStatus(OrbitLinkTransferStatus status)
+    {
+        try
+        {
+            TransferStatusChanged?.Invoke(
+                this,
+                new OrbitLinkTransferStatusChangedEventArgs(status));
+        }
+        catch (Exception ex)
+        {
+            _logService.Error("Orbit Link transfer status callback failed.", ex);
+        }
     }
 
     private OrbitLinkEncryptedTransfer EncryptTransferPayload(OrbitLinkTransferPayload payload, byte[] key)

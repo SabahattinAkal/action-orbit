@@ -185,6 +185,12 @@
                                                    FontSize="10"
                                                    Style="{DynamicResource MutedText}"
                                                    Text="Dışarı sürükleyebilir veya Kopyala ile hedef uygulamada Ctrl+V kullanabilirsin." />
+                                        <TextBlock Margin="0,5,0,0"
+                                                   FontSize="10"
+                                                   Foreground="{DynamicResource PrimaryTextBrush}"
+                                                   Text="{Binding TransferStatusText}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Visibility="{Binding HasTransferStatus, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                     </StackPanel>
                                     <WrapPanel Grid.Column="2" VerticalAlignment="Center">
                                         <Button Padding="8,5"
@@ -200,6 +206,16 @@
                                                 CommandParameter="{Binding}"
                                                 Content="Gönder"
                                                 IsEnabled="{Binding DataContext.HasOrbitLinkPeers, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                                        <Button Padding="8,5"
+                                                Command="{Binding DataContext.RetryTransferCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                Content="Yeniden dene"
+                                                Visibility="{Binding CanRetryTransfer, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        <Button Padding="8,5"
+                                                Command="{Binding DataContext.CancelTransferCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                Content="İptal"
+                                                Visibility="{Binding IsTransferPending, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                         <Button Padding="8,5"
                                                 Command="{Binding DataContext.ResizeImageCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                 CommandParameter="{Binding}"

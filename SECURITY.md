@@ -26,7 +26,7 @@ Action Orbit yerel program ve komut çalıştırabildiği için güvenmediğin k
 
 Hata bildirirken `%AppData%\ActionOrbitPro` altındaki config, log ve raf dosyalarını doğrudan paylaşma. Gerekli bölümü kopyala ve kişisel yolları, bağlantıları ve içerikleri temizle.
 
-Orbit Link yalnızca güvendiğin bilgisayarlarla ve güvendiğin yerel ağ veya VPN üzerinde kullanılmalıdır. Eşleştirme kodunu yalnızca hedef bilgisayara aktar; ekran görüntüsünde veya hata bildiriminde paylaşma. Artık kullanmadığın cihazı Ayarlar'daki eşleşen cihazlar listesinden kaldır. `orbit-link.json` dosyası cihaz adları ve yerel ağ adresleri içerdiği için hata raporlarına eklenmemelidir.
+Orbit Link yalnızca güvendiğin bilgisayarlarla ve güvendiğin yerel ağ veya VPN üzerinde kullanılmalıdır. Eşleştirme kodunu yalnızca hedef bilgisayara aktar; ekran görüntüsünde veya hata bildiriminde paylaşma. Artık kullanmadığın cihazı Ayarlar'daki eşleşen cihazlar listesinden kaldır. `orbit-link.json` cihaz adları ve yerel ağ adresleri içerir; `orbit-link-queue.json` ise en fazla iki bekleyen aktarımın AES-GCM şifreli verisini 24 saate kadar tutabilir. Aktarım anahtarı Windows kullanıcı hesabına bağlı korunduğu için kuyruk başka hesaba taşındığında açılamaz. Bu dosyaları hata raporlarına ekleme.
 
 ## Yayın bütünlüğü
 

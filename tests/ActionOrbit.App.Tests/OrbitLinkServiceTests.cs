@@ -151,6 +151,110 @@ public sealed class OrbitLinkServiceTests
     }
 
     [Fact]
+    public async Task OfflineTransfer_PersistsEncryptedAndResumesAfterRestart()
+    {
+        using var senderDirectory = new TemporaryDirectory();
+        using var receiverDirectory = new TemporaryDirectory();
+        var ports = ReservePorts(2);
+        var senderId = Guid.NewGuid().ToString("N");
+        var receiverId = Guid.NewGuid().ToString("N");
+        var key = RandomNumberGenerator.GetBytes(32);
+        WriteState(senderDirectory.Path, ports[0], "Gönderen", enabled: true,
+        [
+            CreatePeer(receiverId, "Alıcı", ports[1], key)
+        ], senderId);
+        WriteState(receiverDirectory.Path, ports[1], "Alıcı", enabled: true,
+        [
+            CreatePeer(senderId, "Gönderen", ports[0], key)
+        ], receiverId);
+
+        const string privateText = "yeniden başlatmada korunacak özel içerik";
+        string transferId;
+        using (var firstSender = new OrbitLinkService(
+                   senderDirectory.Path,
+                   new LogService(senderDirectory.Path)))
+        {
+            var result = await firstSender.SendItemAsync(receiverId, new ShelfItem
+            {
+                Kind = "text",
+                DisplayName = "Bekleyen not",
+                TextContent = privateText
+            }, TestContext.Current.CancellationToken);
+            Assert.True(result.Succeeded, result.Message);
+            Assert.Equal(OrbitLinkTransferState.Queued, result.TransferState);
+            transferId = result.TransferId;
+            Assert.Single(firstSender.PendingTransfers);
+        }
+
+        var queuePath = Path.Combine(senderDirectory.Path, "orbit-link-queue.json");
+        var queueJson = await File.ReadAllTextAsync(queuePath, TestContext.Current.CancellationToken);
+        Assert.DoesNotContain(privateText, queueJson, StringComparison.Ordinal);
+        Assert.DoesNotContain(Convert.ToBase64String(key), queueJson, StringComparison.Ordinal);
+
+        using var receiver = new OrbitLinkService(receiverDirectory.Path, new LogService(receiverDirectory.Path));
+        var received = new TaskCompletionSource<OrbitLinkItemReceivedEventArgs>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        receiver.ItemReceived += (_, args) => received.TrySetResult(args);
+        Assert.True(receiver.StartIfEnabled().Succeeded);
+
+        using var restartedSender = new OrbitLinkService(senderDirectory.Path, new LogService(senderDirectory.Path));
+        Assert.Equal(transferId, Assert.Single(restartedSender.PendingTransfers).TransferId);
+        Assert.True(restartedSender.StartIfEnabled().Succeeded);
+
+        var delivered = await received.Task.WaitAsync(
+            TimeSpan.FromSeconds(12),
+            TestContext.Current.CancellationToken);
+        Assert.Equal(privateText, delivered.Item.TextContent);
+        Assert.True(await WaitUntilAsync(
+            () => restartedSender.PendingTransfers.Count == 0,
+            TimeSpan.FromSeconds(8),
+            TestContext.Current.CancellationToken));
+        Assert.False(File.Exists(queuePath));
+    }
+
+    [Fact]
+    public async Task OfflineTransferQueue_IsBoundedAndCanBeCanceled()
+    {
+        using var directory = new TemporaryDirectory();
+        var peerId = Guid.NewGuid().ToString("N");
+        var key = RandomNumberGenerator.GetBytes(32);
+        WriteState(directory.Path, ReservePort(), "Gönderen", enabled: true,
+        [
+            CreatePeer(peerId, "Kapalı cihaz", ReservePort(), key)
+        ]);
+        using var service = new OrbitLinkService(directory.Path, new LogService(directory.Path));
+
+        var first = await service.SendItemAsync(peerId, new ShelfItem
+        {
+            Kind = "text",
+            DisplayName = "Bir",
+            TextContent = "bir"
+        }, TestContext.Current.CancellationToken);
+        var second = await service.SendItemAsync(peerId, new ShelfItem
+        {
+            Kind = "text",
+            DisplayName = "İki",
+            TextContent = "iki"
+        }, TestContext.Current.CancellationToken);
+        var third = await service.SendItemAsync(peerId, new ShelfItem
+        {
+            Kind = "text",
+            DisplayName = "Üç",
+            TextContent = "üç"
+        }, TestContext.Current.CancellationToken);
+
+        Assert.True(first.Succeeded);
+        Assert.True(second.Succeeded);
+        Assert.False(third.Succeeded);
+        Assert.Equal(OrbitLinkQueueStore.MaxQueuedTransfers, service.PendingTransfers.Count);
+        Assert.Equal(OrbitLinkTransferState.Canceled, service.CancelTransfer(first.TransferId).TransferState);
+        Assert.Single(service.PendingTransfers);
+        Assert.Equal(OrbitLinkTransferState.Canceled, service.CancelTransfer(second.TransferId).TransferState);
+        Assert.Empty(service.PendingTransfers);
+        Assert.False(File.Exists(Path.Combine(directory.Path, "orbit-link-queue.json")));
+    }
+
+    [Fact]
     public async Task Dispose_DoesNotBlockWhileReversePollWaitsForPeerResponse()
     {
         using var directory = new TemporaryDirectory();
@@ -308,11 +412,12 @@ public sealed class OrbitLinkServiceTests
         int port,
         string deviceName,
         bool enabled = false,
-        List<OrbitLinkPeer>? peers = null)
+        List<OrbitLinkPeer>? peers = null,
+        string? deviceId = null)
     {
         var state = new OrbitLinkState
         {
-            DeviceId = Guid.NewGuid().ToString("N"),
+            DeviceId = deviceId ?? Guid.NewGuid().ToString("N"),
             DeviceName = deviceName,
             ListenPort = port,
             Enabled = enabled,
@@ -325,6 +430,20 @@ public sealed class OrbitLinkServiceTests
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             }));
     }
+
+    private static OrbitLinkPeer CreatePeer(
+        string id,
+        string name,
+        int port,
+        byte[] key) => new()
+    {
+        Id = id,
+        Name = name,
+        Host = "127.0.0.1",
+        Port = port,
+        ProtectedKey = OrbitLinkStore.ProtectKey(key),
+        PairedUtc = DateTime.UtcNow
+    };
 
     private static int ReservePort(int excluded = 0)
     {

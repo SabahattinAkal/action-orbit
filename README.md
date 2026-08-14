@@ -57,7 +57,9 @@ Orbit Link, iki bilgisayardaki Action Orbit arasında Shelf öğesi taşır. RDP
 
 Bağlantı bulut sunucusu kullanmaz. Bilgisayarların aynı yerel ağda olması veya birbirine ulaşabildiği bir VPN kullanması gerekir. Windows Güvenlik Duvarı ilk etkinleştirmede izin isteyebilir. İlk sürüm metin, bağlantı, görsel ve tekil dosya aktarır; klasörler ve 25 MB üzeri dosyalar kabul edilmez.
 
-Kurumsal güvenlik duvarı bilgisayarlardan birine gelen bağlantıyı engelliyorsa Orbit Link, o bilgisayarın diğer cihaza kurabildiği dışarı yönlü bağlantıyı otomatik olarak güvenli dönüş kanalı şeklinde kullanır. Örneğin ofis bilgisayarı ev bilgisayarına erişebiliyor fakat ev bilgisayarı ofise doğrudan bağlanamıyorsa iki yönde de aktarım yapılabilir. Bunun için iki bilgisayarda da aynı sürüm açık olmalı; Shelf hedefinde `çift yönlü` durumu göründükten sonra gönderim yapılmalıdır.
+Kurumsal güvenlik duvarı bilgisayarlardan birine gelen bağlantıyı engelliyorsa Orbit Link, o bilgisayarın diğer cihaza kurabildiği dışarı yönlü bağlantıyı otomatik olarak güvenli dönüş kanalı şeklinde kullanır. Örneğin ofis bilgisayarı ev bilgisayarına erişebiliyor fakat ev bilgisayarı ofise doğrudan bağlanamıyorsa iki yönde de aktarım yapılabilir.
+
+Hedef çevrimdışıysa aktarım kaybolmaz: en fazla iki öğe, 24 saat boyunca şifreli yerel kuyrukta bekler ve bağlantı kurulduğunda artan aralıklarla yeniden denenir. Shelf kartı sırada, gönderiliyor, teslim edildi veya başarısız durumunu gösterir; bekleyen aktarım karttan yeniden denenebilir ya da iptal edilebilir. Aynı aktarım kimliği yeniden gönderilse bile alıcıda ikinci kopya oluşturulmaz.
 
 ### Mini araçlar
 
@@ -133,11 +135,12 @@ logs\actionorbit.log
 shelves.json
 shelf-cache\
 orbit-link.json
+orbit-link-queue.json
 ```
 
 Bu dosyalarda kişisel klasör yolları, açtığın bağlantılar veya rafa eklediğin içerikler bulunabilir. Hata bildirirken config ve log dosyalarını doğrudan yükleme; yalnızca gerekli bölümü paylaş ve kişisel bilgileri temizle.
 
-`orbit-link.json`, eşleşen cihaz adlarını ve yerel ağ adreslerini içerir. Cihaz anahtarları Windows'un geçerli kullanıcı hesabına bağlı veri korumasıyla şifrelenir; dosyayı başka bir bilgisayara kopyalamak anahtarları kullanılabilir hale getirmez. Bu dosyayı da hata bildirimlerine ekleme.
+`orbit-link.json`, eşleşen cihaz adlarını ve yerel ağ adreslerini içerir. Cihaz anahtarları Windows'un geçerli kullanıcı hesabına bağlı veri korumasıyla şifrelenir; dosyayı başka bir bilgisayara kopyalamak anahtarları kullanılabilir hale getirmez. `orbit-link-queue.json` ise henüz teslim edilmemiş, eşleşme anahtarıyla AES-GCM şifrelenmiş içerikleri tutabilir. Bu iki dosyayı da hata bildirimlerine ekleme.
 
 `run_command` aksiyonları varsayılan olarak kapalıdır. Etkinleştirildiklerinde bile her çalıştırmadan önce komutun tamamı gösterilir ve kullanıcı onayı istenir. İnternetten aldığın profil veya config dosyasını içe aktarmadan önce çalıştırılabilir aksiyonları incele.
 

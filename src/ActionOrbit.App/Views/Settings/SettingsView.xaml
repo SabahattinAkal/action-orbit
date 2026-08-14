@@ -504,6 +504,9 @@
                                                                    FontSize="11"
                                                                    FontWeight="SemiBold"
                                                                    Text="{Binding ConnectionLabel}" />
+                                                        <TextBlock Margin="0,2,0,0"
+                                                                   Style="{StaticResource SettingsCaption}"
+                                                                   Text="{Binding LastSeenLabel}" />
                                                     </StackPanel>
                                                     <Button Grid.Column="1"
                                                             Margin="8,0,0,0"
@@ -538,7 +541,7 @@
                                 BorderThickness="1"
                                 CornerRadius="9">
                             <TextBlock Foreground="{DynamicResource WarningTextBrush}"
-                                       Text="Gelen dosyalar çalıştırılmaz; alıcının geçici Shelf önbelleğine yazılır. Klasör ve 25 MB üzeri dosya aktarımı kapalıdır. Bir cihaz gelen bağlantıları kabul edemiyorsa Action Orbit, o cihazın dışarı yönlü güvenli bağlantısını otomatik olarak dönüş kanalı şeklinde kullanır; iki uygulama da açık kalmalıdır."
+                                       Text="Gelen dosyalar çalıştırılmaz; alıcının geçici Shelf önbelleğine yazılır. Klasör ve 25 MB üzeri dosya aktarımı kapalıdır. Çevrimdışı hedefler için en fazla iki aktarım 24 saat şifreli kuyrukta tutulur. Bir cihaz gelen bağlantıları kabul edemiyorsa Action Orbit, o cihazın dışarı yönlü güvenli bağlantısını otomatik olarak dönüş kanalı şeklinde kullanır."
                                        TextWrapping="Wrap" />
                         </Border>
                     </StackPanel>

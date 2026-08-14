@@ -75,10 +75,46 @@ public sealed record OrbitLinkPairingOffer(
     string Address,
     DateTime ExpiresUtc);
 
-public sealed record OrbitLinkOperationResult(bool Succeeded, string Message)
+public enum OrbitLinkTransferState
 {
-    public static OrbitLinkOperationResult Success(string message) => new(true, message);
-    public static OrbitLinkOperationResult Failure(string message) => new(false, message);
+    Queued,
+    Sending,
+    Delivered,
+    Failed,
+    Canceled
+}
+
+public sealed record OrbitLinkTransferStatus(
+    string ShelfItemId,
+    string TransferId,
+    string PeerId,
+    string PeerName,
+    OrbitLinkTransferState State,
+    string Message,
+    DateTime UpdatedUtc);
+
+public sealed class OrbitLinkTransferStatusChangedEventArgs(OrbitLinkTransferStatus status) : EventArgs
+{
+    public OrbitLinkTransferStatus Status { get; } = status;
+}
+
+public sealed record OrbitLinkOperationResult(
+    bool Succeeded,
+    string Message,
+    string TransferId = "",
+    OrbitLinkTransferState? TransferState = null)
+{
+    public static OrbitLinkOperationResult Success(
+        string message,
+        string transferId = "",
+        OrbitLinkTransferState? transferState = null) =>
+        new(true, message, transferId, transferState);
+
+    public static OrbitLinkOperationResult Failure(
+        string message,
+        string transferId = "",
+        OrbitLinkTransferState? transferState = null) =>
+        new(false, message, transferId, transferState);
 }
 
 public sealed class OrbitLinkItemReceivedEventArgs(OrbitLinkPeer peer, ShelfItem item) : EventArgs
@@ -86,11 +122,13 @@ public sealed class OrbitLinkItemReceivedEventArgs(OrbitLinkPeer peer, ShelfItem
     public OrbitLinkPeer Peer { get; } = peer;
     public ShelfItem Item { get; } = item;
     public bool Accepted { get; private set; } = true;
+    public bool IsDuplicate { get; private set; }
     public string RejectionMessage { get; private set; } = "";
 
-    public void Reject(string message)
+    public void Reject(string message, bool isDuplicate = false)
     {
         Accepted = false;
+        IsDuplicate = isDuplicate;
         RejectionMessage = string.IsNullOrWhiteSpace(message) ? "Alıcı öğeyi kabul etmedi." : message;
     }
 }

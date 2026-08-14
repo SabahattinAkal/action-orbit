@@ -54,12 +54,15 @@ public sealed class ShelfViewModel : ViewModelBase, IDisposable
         ResizeImageCommand = new RelayCommand(parameter => ProcessImage(parameter as ShelfItemViewModel, resize: true));
         OpenFloatingShelfCommand = new RelayCommand(() => _showFloatingShelf?.Invoke());
         SendItemCommand = new RelayCommand(parameter => SendItem(parameter as ShelfItemViewModel));
+        RetryTransferCommand = new RelayCommand(parameter => RetryTransfer(parameter as ShelfItemViewModel));
+        CancelTransferCommand = new RelayCommand(parameter => CancelTransfer(parameter as ShelfItemViewModel));
         ToggleSharedShelfCommand = new RelayCommand(ToggleSharedShelf);
 
         if (_orbitLinkService is not null)
         {
             _orbitLinkService.StateChanged += OrbitLink_StateChanged;
             _orbitLinkService.ItemReceived += OrbitLink_ItemReceived;
+            _orbitLinkService.TransferStatusChanged += OrbitLink_TransferStatusChanged;
             RefreshPeers();
         }
 
@@ -68,6 +71,8 @@ public sealed class ShelfViewModel : ViewModelBase, IDisposable
         {
             Shelves.Add(CreateShelf(board));
         }
+
+        ReconcilePendingTransfers();
 
         CleanupExpiredCache();
 
@@ -92,6 +97,8 @@ public sealed class ShelfViewModel : ViewModelBase, IDisposable
     public ICommand ResizeImageCommand { get; }
     public ICommand OpenFloatingShelfCommand { get; }
     public ICommand SendItemCommand { get; }
+    public ICommand RetryTransferCommand { get; }
+    public ICommand CancelTransferCommand { get; }
     public ICommand ToggleSharedShelfCommand { get; }
     public ShelfSettings Settings => _configService.CurrentConfig.Settings.Shelf;
 
@@ -312,6 +319,38 @@ public sealed class ShelfViewModel : ViewModelBase, IDisposable
         _setStatus(result.Message);
     }
 
+    private async void RetryTransfer(ShelfItemViewModel? item)
+    {
+        if (item is null || _orbitLinkService is null || string.IsNullOrWhiteSpace(item.Item.TransferId)) return;
+        _setStatus($"{item.DisplayName} yeniden deneniyor…");
+        OrbitLinkOperationResult result;
+        if (_orbitLinkService.PendingTransfers.Any(status => string.Equals(
+                status.TransferId,
+                item.Item.TransferId,
+                StringComparison.OrdinalIgnoreCase)))
+        {
+            result = await _orbitLinkService.RetryTransferAsync(item.Item.TransferId);
+        }
+        else
+        {
+            var peerId = item.Item.LastTransferPeerId;
+            if (!_orbitLinkService.Peers.Any(peer => string.Equals(peer.Id, peerId, StringComparison.OrdinalIgnoreCase)))
+            {
+                _setStatus("Yeniden denemek için hedef cihaz artık eşleşmiş değil.");
+                return;
+            }
+            result = await _orbitLinkService.SendItemAsync(peerId, item.Item);
+        }
+        _setStatus(result.Message);
+    }
+
+    private void CancelTransfer(ShelfItemViewModel? item)
+    {
+        if (item is null || _orbitLinkService is null || string.IsNullOrWhiteSpace(item.Item.TransferId)) return;
+        var result = _orbitLinkService.CancelTransfer(item.Item.TransferId);
+        _setStatus(result.Message);
+    }
+
     private async Task ShareItemsAsync(IReadOnlyList<ShelfItem> items)
     {
         if (_orbitLinkService is null) return;
@@ -354,15 +393,38 @@ public sealed class ShelfViewModel : ViewModelBase, IDisposable
     private void OrbitLink_ItemReceived(object? sender, OrbitLinkItemReceivedEventArgs e) =>
         RunOnUiThreadSync(() => AddReceivedItem(e));
 
+    private void OrbitLink_TransferStatusChanged(object? sender, OrbitLinkTransferStatusChangedEventArgs e) =>
+        RunOnUiThread(() => ApplyTransferStatus(e.Status));
+
+    private void ReconcilePendingTransfers()
+    {
+        if (_orbitLinkService is null) return;
+        foreach (var status in _orbitLinkService.PendingTransfers)
+        {
+            ApplyTransferStatus(status, persist: false);
+        }
+    }
+
+    private void ApplyTransferStatus(OrbitLinkTransferStatus status, bool persist = true)
+    {
+        var item = Shelves
+            .SelectMany(shelf => shelf.Items)
+            .FirstOrDefault(candidate => string.Equals(candidate.Id, status.ShelfItemId, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(candidate.Item.TransferId, status.TransferId, StringComparison.OrdinalIgnoreCase));
+        if (item is null) return;
+        item.ApplyTransferStatus(status);
+        if (persist) Persist();
+    }
+
     private void AddReceivedItem(OrbitLinkItemReceivedEventArgs args)
     {
         if (!Settings.Enabled
             || Shelves.SelectMany(shelf => shelf.Items).Any(item =>
                 string.Equals(item.Item.TransferId, args.Item.TransferId, StringComparison.OrdinalIgnoreCase)))
         {
-            args.Reject(Settings.Enabled
-                ? "Bu aktarım daha önce alınmış."
-                : "Orbit Shelf alıcı bilgisayarda kapalı.");
+            args.Reject(
+                Settings.Enabled ? "Bu aktarım daha önce alınmış." : "Orbit Shelf alıcı bilgisayarda kapalı.",
+                isDuplicate: Settings.Enabled);
             return;
         }
 
@@ -635,6 +697,7 @@ public sealed class ShelfViewModel : ViewModelBase, IDisposable
         {
             _orbitLinkService.StateChanged -= OrbitLink_StateChanged;
             _orbitLinkService.ItemReceived -= OrbitLink_ItemReceived;
+            _orbitLinkService.TransferStatusChanged -= OrbitLink_TransferStatusChanged;
         }
     }
 }

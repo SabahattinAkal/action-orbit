@@ -467,6 +467,12 @@
                                                    Foreground="{DynamicResource MutedTextBrush}"
                                                    Text="Dışarı sürükleyebilirsin"
                                                    TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Margin="0,4,0,0"
+                                                   FontSize="10"
+                                                   Foreground="{DynamicResource PrimaryTextBrush}"
+                                                   Text="{Binding TransferStatusText}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Visibility="{Binding HasTransferStatus, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                     </StackPanel>
                                     <Button Grid.Column="2"
                                             Command="{Binding DataContext.CopyItemCommand, RelativeSource={RelativeSource AncestorType=Window}}"
@@ -497,6 +503,16 @@
                                                 Content="Gönder"
                                                 IsEnabled="{Binding DataContext.HasOrbitLinkPeers, RelativeSource={RelativeSource AncestorType=Window}}"
                                                 Style="{StaticResource ShelfPrimaryButton}" />
+                                        <Button Command="{Binding DataContext.RetryTransferCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding}"
+                                                Content="Yeniden dene"
+                                                Style="{StaticResource ShelfButton}"
+                                                Visibility="{Binding CanRetryTransfer, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        <Button Command="{Binding DataContext.CancelTransferCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding}"
+                                                Content="İptal"
+                                                Style="{StaticResource ShelfButton}"
+                                                Visibility="{Binding IsTransferPending, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                         <Button Command="{Binding DataContext.RemoveItemCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                 CommandParameter="{Binding}"
                                                 Content="Sil"
