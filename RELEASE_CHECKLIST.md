@@ -35,6 +35,8 @@ dotnet list tests\ActionOrbit.App.Tests\ActionOrbit.App.Tests.csproj package --v
 - [ ] Tüm testler geçti
 - [ ] NuGet güvenlik taraması açık bulmadan tamamlandı
 - [ ] `win-x64` self-contained paket üretildi
+- [ ] Tam paket ve DLL hotfix aynı committen üretildi
+- [ ] `Test-ReleasePackage.ps1` temiz kurulum, yükseltme, XAML/tray ve gizlilik kontrollerini geçti
 
 ## Temel kullanım
 
@@ -76,7 +78,8 @@ dotnet list tests\ActionOrbit.App.Tests\ActionOrbit.App.Tests.csproj package --v
 
 ## Dağıtım
 
-- [ ] Temiz bir Windows kullanıcı hesabında paket ilk kez çalıştırıldı
+- [ ] Otomatik temiz kurulum ve yükseltme smoke raporu release varlıklarında bulunuyor
+- [ ] Fiziksel temiz Windows kullanıcı hesabı kontrolü sürüm adayı için tamamlandı
 - [ ] EXE zararlı yazılım taramasından geçti
 - [ ] Runtime sürümü beklenen değerle aynı
 - [ ] `SHA256SUMS.txt` paket özetiyle eşleşiyor

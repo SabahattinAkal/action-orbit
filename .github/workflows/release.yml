@@ -72,7 +72,7 @@ jobs:
             Remove-Item -LiteralPath $pfx -Force -ErrorAction SilentlyContinue
           }
 
-      - name: Generate SBOM and release package
+      - name: Generate SBOM and release packages
         env:
           DOTNET_ROLL_FORWARD: Major
         shell: pwsh
@@ -81,7 +81,9 @@ jobs:
           $publish = Resolve-Path 'src/ActionOrbit.App/bin/publish/win-x64'
           $release = Join-Path $PWD 'release'
           $stage = Join-Path $release "ActionOrbitPro-v$version-win-x64"
+          $hotfixStage = Join-Path $release "ActionOrbitPro-v$version-DLL-hotfix"
           New-Item -ItemType Directory -Path $stage -Force | Out-Null
+          New-Item -ItemType Directory -Path $hotfixStage -Force | Out-Null
 
           dotnet tool install `
             --tool-path (Join-Path $env:RUNNER_TEMP 'sbom-tool') `
@@ -104,15 +106,41 @@ jobs:
           if ($null -eq $sbom) { throw 'SPDX SBOM bulunamadı.' }
           Copy-Item $sbom.FullName (Join-Path $release "ActionOrbitPro-v$version.spdx.json")
 
-          Copy-Item (Join-Path $publish 'ActionOrbit.App.exe') $stage
+          Copy-Item (Join-Path $publish '*') $stage -Recurse
           Copy-Item README.md, LICENSE, CHANGELOG.md, SECURITY.md $stage
           Copy-Item (Join-Path $release "ActionOrbitPro-v$version.spdx.json") $stage
 
+          Copy-Item (Join-Path $publish 'ActionOrbit.App.dll') $hotfixStage
+          @"
+          Action Orbit Pro v$version DLL hotfix
+
+          Bu dosya yalnızca aynı sürümün gevşek dosyalı win-x64 tam paketinde kullanılır.
+          Action Orbit'i bildirim alanından kapat, ActionOrbit.App.dll dosyasını değiştir ve uygulamayı yeniden aç.
+          Farklı bir sürüm, tek dosyalı eski paket veya emin olmadığın kurulum için tam ZIP paketini kullan.
+
+          Commit: ${{ github.sha }}
+          "@ | Set-Content (Join-Path $hotfixStage 'HOTFIX_README.txt') -Encoding utf8
+
           $zip = Join-Path $release "ActionOrbitPro-v$version-win-x64.zip"
+          $hotfixZip = Join-Path $release "ActionOrbitPro-v$version-DLL-hotfix.zip"
           Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zip -CompressionLevel Optimal
-          $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$hash  $(Split-Path $zip -Leaf)" |
-            Set-Content (Join-Path $release 'SHA256SUMS.txt') -Encoding ascii
+          Compress-Archive -Path (Join-Path $hotfixStage '*') -DestinationPath $hotfixZip -CompressionLevel Optimal
+          @($zip, $hotfixZip, (Join-Path $release "ActionOrbitPro-v$version.spdx.json")) |
+            ForEach-Object {
+              $hash = (Get-FileHash $_ -Algorithm SHA256).Hash.ToLowerInvariant()
+              "$hash  $(Split-Path $_ -Leaf)"
+            } | Set-Content (Join-Path $release 'SHA256SUMS.txt') -Encoding ascii
+
+      - name: Clean install, upgrade and privacy smoke
+        shell: pwsh
+        run: |
+          $version = '${{ github.ref_name }}'.TrimStart('v')
+          ./scripts/Test-ReleasePackage.ps1 `
+            -PackagePath "release/ActionOrbitPro-v$version-win-x64.zip" `
+            -HotfixPath "release/ActionOrbitPro-v$version-DLL-hotfix.zip" `
+            -ExpectedCommit '${{ github.sha }}' `
+            -Sha256SumsPath 'release/SHA256SUMS.txt' `
+            -ReportPath 'release/release-smoke-report.json'
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -146,9 +174,10 @@ jobs:
           - Basılı-tut, çift-bas ve uygulama devre dışı listesi
           - Tarayıcı seçimi ve aksiyon bazlı global hotkey
           - Self-contained .NET runtime 10.0.10
+          - Temiz kurulum/yükseltme smoke raporu ve aynı sürüme özel DLL hotfix
           - SPDX SBOM ve GitHub build provenance attestation
 
-          Paket bütünlüğü `SHA256SUMS.txt` ile doğrulanabilir. Authenticode sertifikası yapılandırılmadıysa Windows SmartScreen bilinmeyen yayıncı uyarısı gösterebilir.
+          Tam paketin içindeki dosyalar birlikte tutulmalıdır. DLL hotfix yalnızca aynı sürümün gevşek dosyalı tam paketi içindir. Paket bütünlüğü `SHA256SUMS.txt` ile doğrulanabilir. Authenticode sertifikası yapılandırılmadıysa Windows SmartScreen bilinmeyen yayıncı uyarısı gösterebilir.
           "@
           $notesPath = Join-Path $env:RUNNER_TEMP 'release-notes.md'
           $notes | Set-Content $notesPath -Encoding utf8
@@ -159,7 +188,7 @@ jobs:
               } |
               Select-Object -ExpandProperty FullName
           )
-          if ($assets.Count -lt 3) { throw 'Release assetları eksik.' }
+          if ($assets.Count -lt 5) { throw 'Release assetları eksik.' }
           gh release create '${{ github.ref_name }}' `
             @assets `
             --verify-tag `

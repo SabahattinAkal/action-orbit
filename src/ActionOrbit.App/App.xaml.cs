@@ -1,5 +1,7 @@
 using System.Windows;
 using System.Windows.Threading;
+using System.Diagnostics;
+using System.Text.Json;
 using Microsoft.Win32;
 using ActionOrbit.App.Services;
 using ActionOrbit.App.Services.Actions;
@@ -21,27 +23,41 @@ public partial class App : System.Windows.Application
     {
         base.OnStartup(e);
 
-        _singleInstanceService = new SingleInstanceService();
-        if (!_singleInstanceService.IsPrimaryInstance)
+        ReleaseSmokeOptions? releaseSmoke;
+        try
         {
-            if (!_singleInstanceService.SignalPrimaryInstance())
-            {
-                System.Windows.MessageBox.Show(
-                    "Action Orbit zaten çalışıyor ancak mevcut pencere yanıt vermedi.\n\n" +
-                    "Bildirim alanındaki Action Orbit simgesinden Çıkış'ı seç veya Görev Yöneticisi'nde " +
-                    "ActionOrbit.App.exe işlemini sonlandır; ardından bu sürümü yeniden aç.",
-                    "Action Orbit zaten çalışıyor",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
-            }
-            Shutdown();
+            releaseSmoke = ReleaseSmokeOptions.Parse(e.Args);
+        }
+        catch
+        {
+            Shutdown(2);
             return;
         }
 
-        _logService = new LogService();
+        if (releaseSmoke is null)
+        {
+            _singleInstanceService = new SingleInstanceService();
+            if (!_singleInstanceService.IsPrimaryInstance)
+            {
+                if (!_singleInstanceService.SignalPrimaryInstance())
+                {
+                    System.Windows.MessageBox.Show(
+                        "Action Orbit zaten çalışıyor ancak mevcut pencere yanıt vermedi.\n\n" +
+                        "Bildirim alanındaki Action Orbit simgesinden Çıkış'ı seç veya Görev Yöneticisi'nde " +
+                        "ActionOrbit.App.exe işlemini sonlandır; ardından bu sürümü yeniden aç.",
+                        "Action Orbit zaten çalışıyor",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                }
+                Shutdown();
+                return;
+            }
+        }
+
+        _logService = new LogService(releaseSmoke?.AppDirectory);
         DispatcherUnhandledException += OnDispatcherUnhandledException;
 
-        _configService = new ConfigService(_logService);
+        _configService = new ConfigService(_logService, releaseSmoke?.AppDirectory);
         _configService.Load();
         ThemeService.ApplyApplicationTheme(
             _configService.CurrentConfig.Theme.Mode,
@@ -51,7 +67,7 @@ public partial class App : System.Windows.Application
         var activeWindowService = new ActiveWindowService(_logService);
         var profileService = new ProfileService(_logService);
         var startupService = new StartupService(_logService);
-        var startupSyncIssue = SyncStartupRegistration(startupService);
+        var startupSyncIssue = releaseSmoke is null ? SyncStartupRegistration(startupService) : null;
         var inputService = new InputSimulationService(_logService);
         var confirmationService = new MessageBoxConfirmationService();
         _miniToolWindowService = new MiniToolWindowService();
@@ -101,16 +117,80 @@ public partial class App : System.Windows.Application
 
         var mainWindow = new MainWindow(viewModel, _hotkeyService);
         MainWindow = mainWindow;
+        if (releaseSmoke is not null)
+        {
+            mainWindow.ShowActivated = false;
+            mainWindow.ShowInTaskbar = false;
+            mainWindow.Opacity = 0;
+            mainWindow.WindowStartupLocation = WindowStartupLocation.Manual;
+            mainWindow.Left = -32000;
+            mainWindow.Top = -32000;
+            mainWindow.ContentRendered += (_, _) => RunReleaseSmoke(mainWindow, releaseSmoke);
+        }
         mainWindow.Show();
         if (!string.IsNullOrWhiteSpace(startupSyncIssue))
         {
             viewModel.Status.ReportFailure(startupSyncIssue);
         }
 
-        _singleInstanceService.StartListening(() =>
+        _singleInstanceService?.StartListening(() =>
             Dispatcher.BeginInvoke(mainWindow.RestoreFromExternalRequest));
 
         _logService.Info("Action Orbit started.");
+    }
+
+    private async void RunReleaseSmoke(MainWindow mainWindow, ReleaseSmokeOptions options)
+    {
+        await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
+        var checks = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+        string? error = null;
+        try
+        {
+            foreach (var check in mainWindow.RunReleaseSmokeChecks())
+            {
+                checks[check.Key] = check.Value;
+            }
+        }
+        catch (Exception ex)
+        {
+            error = ex.GetBaseException().GetType().Name;
+            _logService?.Error("Release smoke check failed.", ex);
+        }
+
+        var succeeded = error is null && checks.Count >= 4 && checks.Values.All(value => value);
+        try
+        {
+            var report = new ReleaseSmokeReport
+            {
+                Succeeded = succeeded,
+                ProductVersion = GetProductVersion(),
+                Checks = checks,
+                Error = error ?? ""
+            };
+            var reportDirectory = Path.GetDirectoryName(options.ReportPath)!;
+            Directory.CreateDirectory(reportDirectory);
+            var temporaryPath = $"{options.ReportPath}.{Guid.NewGuid():N}.tmp";
+            File.WriteAllText(
+                temporaryPath,
+                JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true }));
+            File.Move(temporaryPath, options.ReportPath, overwrite: true);
+        }
+        catch (Exception ex)
+        {
+            succeeded = false;
+            _logService?.Error("Release smoke report could not be written.", ex);
+        }
+
+        Environment.ExitCode = succeeded ? 0 : 1;
+        mainWindow.ExitFromTrayForReleaseSmoke();
+    }
+
+    private static string GetProductVersion()
+    {
+        var processPath = Environment.ProcessPath;
+        return string.IsNullOrWhiteSpace(processPath)
+            ? "unknown"
+            : FileVersionInfo.GetVersionInfo(processPath).ProductVersion ?? "unknown";
     }
 
     protected override void OnExit(ExitEventArgs e)
@@ -170,5 +250,60 @@ public partial class App : System.Windows.Application
             _logService?.Error("Startup registration sync failed.", ex);
             return $"Windows başlangıç ayarı uygulanamadı: {ex.Message}";
         }
+    }
+
+    private sealed class ReleaseSmokeOptions
+    {
+        public required string ReportPath { get; init; }
+        public required string AppDirectory { get; init; }
+
+        public static ReleaseSmokeOptions? Parse(IReadOnlyList<string> arguments)
+        {
+            var reportIndex = arguments
+                .Select((value, index) => (value, index))
+                .FirstOrDefault(item => string.Equals(
+                    item.value,
+                    "--release-smoke-report",
+                    StringComparison.OrdinalIgnoreCase));
+            if (reportIndex.value is null) return null;
+            if (reportIndex.index + 1 >= arguments.Count)
+            {
+                throw new ArgumentException("Release smoke report path is missing.");
+            }
+
+            var appDirectoryIndex = arguments
+                .Select((value, index) => (value, index))
+                .FirstOrDefault(item => string.Equals(
+                    item.value,
+                    "--release-smoke-app-directory",
+                    StringComparison.OrdinalIgnoreCase));
+            if (appDirectoryIndex.value is null || appDirectoryIndex.index + 1 >= arguments.Count)
+            {
+                throw new ArgumentException("Release smoke app directory is missing.");
+            }
+
+            var requestedReportPath = arguments[reportIndex.index + 1];
+            var requestedAppDirectory = arguments[appDirectoryIndex.index + 1];
+            if (!Path.IsPathFullyQualified(requestedReportPath)
+                || !Path.IsPathFullyQualified(requestedAppDirectory))
+            {
+                throw new ArgumentException("Release smoke paths must be absolute.");
+            }
+            var reportPath = Path.GetFullPath(requestedReportPath);
+            var appDirectory = Path.GetFullPath(requestedAppDirectory);
+            return new ReleaseSmokeOptions
+            {
+                ReportPath = reportPath,
+                AppDirectory = appDirectory
+            };
+        }
+    }
+
+    private sealed class ReleaseSmokeReport
+    {
+        public bool Succeeded { get; set; }
+        public string ProductVersion { get; set; } = "";
+        public Dictionary<string, bool> Checks { get; set; } = [];
+        public string Error { get; set; } = "";
     }
 }

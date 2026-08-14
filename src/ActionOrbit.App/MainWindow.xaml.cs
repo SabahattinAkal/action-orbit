@@ -1,7 +1,10 @@
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Media;
 using ActionOrbit.App.Services;
 using ActionOrbit.App.ViewModels;
+using ActionOrbit.App.Views.Settings;
+using ActionOrbit.App.Views.Shelf;
 using Drawing = System.Drawing;
 using Forms = System.Windows.Forms;
 
@@ -176,6 +179,50 @@ public partial class MainWindow : Window
                 _allowClose = false;
             }
         }));
+    }
+
+    internal IReadOnlyDictionary<string, bool> RunReleaseSmokeChecks()
+    {
+        var checks = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["mainWindowXaml"] = IsLoaded && Content is not null,
+            ["trayIcon"] = _trayIcon.Visible && _trayIcon.Icon is not null
+        };
+
+        _viewModel.NavigateWorkspaceCommand.Execute("settings");
+        UpdateLayout();
+        checks["settingsXaml"] = _viewModel.IsSettingsWorkspace
+            && FindVisualChild<SettingsView>(this) is not null;
+
+        var shelfWindow = new ShelfWindow
+        {
+            DataContext = _viewModel.Shelf,
+            ShowActivated = false,
+            ShowInTaskbar = false,
+            Opacity = 0,
+            Left = -32000,
+            Top = -32000
+        };
+        shelfWindow.Show();
+        shelfWindow.UpdateLayout();
+        checks["orbitShelfXaml"] = shelfWindow is { IsLoaded: true, Content: not null };
+        shelfWindow.Close();
+
+        return checks;
+    }
+
+    internal void ExitFromTrayForReleaseSmoke() => ExitFromTray();
+
+    private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+    {
+        for (var index = 0; index < VisualTreeHelper.GetChildrenCount(parent); index++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, index);
+            if (child is T match) return match;
+            var nested = FindVisualChild<T>(child);
+            if (nested is not null) return nested;
+        }
+        return null;
     }
 
 }

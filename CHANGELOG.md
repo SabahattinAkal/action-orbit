@@ -7,6 +7,8 @@ Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 
 ### Değiştirildi
 
+- Windows paketi, destek sorunlarını ve DLL hotfix belirsizliğini azaltmak için self-contained gevşek dosya düzenine geçirildi; hotfix yalnızca aynı sürümdeki bu düzen için üretiliyor.
+- CodeQL C# analizi, overlay-base uyarısına neden olan `manual` derleme yerine desteklenen derlemesiz moda geçirildi; normal CI ve release hattı derleme/test işini ayrı olarak sürdürüyor.
 - Public belgeler güncel uygulama davranışını anlatacak şekilde sadeleştirildi; eski iç geliştirme notları depodan kaldırıldı.
 
 ### Düzeltildi
@@ -28,6 +30,7 @@ Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 
 ### Eklendi
 
+- Release ZIP'ini temiz ve yükseltme durumlarında gerçek EXE ile açan; ana pencere, Ayarlar, Orbit Shelf, tray, kapanış, veri koruma, paket gizliliği, checksum ve tam paket/hotfix commit eşleşmesini doğrulayan yayın smoke hattı eklendi.
 - Orbit Link'in iki gerçek Windows bilgisayarda, doğrudan/ters bağlantı, çevrimdışı dönüş, VPN kesintisi, içerik sınırları ve gizlilik kontrolleriyle sınanması için kişisel veri toplamayan test matrisi ve rapor komutu eklendi.
 - Orbit Link'e uygulama yeniden başlatıldığında devam eden, iki öğe ve 24 saatle sınırlı şifreli aktarım kuyruğu; artan yeniden deneme aralığı, teslimat durumu, yeniden dene ve iptal kontrolleri eklendi.
 - Orbit Link ile iki Action Orbit kurulumu arasında tek kullanımlık kodla cihaz eşleştirme, öğe başına şifreli Shelf aktarımı ve yeni içerikleri eşleşen cihazlara ileten Ortak Raf modu eklendi.

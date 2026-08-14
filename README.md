@@ -83,7 +83,9 @@ Kararlı Windows x64 paketini [Releases](https://github.com/SabahattinAkal/actio
 2. Arşivi yazma iznin olan bir klasöre çıkar.
 3. `ActionOrbit.App.exe` dosyasını çalıştır.
 
-Release paketleri self-contained hazırlanır; ayrıca .NET kurman gerekmez. Authenticode sertifikası bulunmayan sürümlerde Windows SmartScreen bilinmeyen yayıncı uyarısı gösterebilir.
+Release paketleri self-contained hazırlanır; ayrıca .NET kurman gerekmez. ZIP içindeki EXE, DLL ve diğer runtime dosyalarını aynı klasörde tut. Authenticode sertifikası bulunmayan sürümlerde Windows SmartScreen bilinmeyen yayıncı uyarısı gösterebilir.
+
+`DLL-hotfix.zip` yalnızca aynı sürüm numarasına sahip gevşek dosyalı tam pakette kullanılır. Eski tek-EXE paketten geçiyorsan, sürümden emin değilsen veya birden fazla dosya değişmişse tam `win-x64.zip` paketini kullan.
 
 `main` dalı yayımlanmamış değişiklikler içerebilir. Günlük kullanım için Releases sayfasındaki son kararlı paketi tercih et.
 
