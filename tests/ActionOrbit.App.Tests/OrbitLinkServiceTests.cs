@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text.Json;
 using ActionOrbit.App.Models;
@@ -255,6 +256,81 @@ public sealed class OrbitLinkServiceTests
     }
 
     [Fact]
+    public async Task ReceiverWithoutShelf_RejectsTransferAndClearsSenderQueue()
+    {
+        using var receiverDirectory = new TemporaryDirectory();
+        using var senderDirectory = new TemporaryDirectory();
+        var ports = ReservePorts(2);
+        WriteState(receiverDirectory.Path, ports[0], "Alıcı");
+        WriteState(senderDirectory.Path, ports[1], "Gönderen");
+        using var receiver = new OrbitLinkService(receiverDirectory.Path, new LogService(receiverDirectory.Path));
+        using var sender = new OrbitLinkService(senderDirectory.Path, new LogService(senderDirectory.Path));
+
+        Assert.True((await receiver.SetEnabledAsync(true)).Succeeded);
+        Assert.True((await sender.SetEnabledAsync(true)).Succeeded);
+        var offer = receiver.BeginPairing();
+        Assert.True((await sender.PairAsync(
+            $"127.0.0.1:{ports[0]}",
+            offer.Code,
+            TestContext.Current.CancellationToken)).Succeeded);
+
+        var result = await sender.SendItemAsync(Assert.Single(sender.Peers).Id, new ShelfItem
+        {
+            Kind = "url",
+            DisplayName = "Örnek bağlantı",
+            TextContent = "https://example.com/orbit-link-test"
+        }, TestContext.Current.CancellationToken);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(OrbitLinkTransferState.Failed, result.TransferState);
+        Assert.Contains("kabul etmedi", result.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(sender.PendingTransfers);
+    }
+
+    [Fact]
+    public async Task ReplayedEncryptedTransfer_IsAcceptedWithoutAddingASecondCopy()
+    {
+        using var senderDirectory = new TemporaryDirectory();
+        using var receiverDirectory = new TemporaryDirectory();
+        var ports = ReservePorts(2);
+        var senderId = Guid.NewGuid().ToString("N");
+        var receiverId = Guid.NewGuid().ToString("N");
+        var key = RandomNumberGenerator.GetBytes(32);
+        WriteState(senderDirectory.Path, ports[0], "Gönderen", enabled: true,
+        [
+            CreatePeer(receiverId, "Alıcı", ports[1], key)
+        ], senderId);
+        WriteState(receiverDirectory.Path, ports[1], "Alıcı", enabled: true,
+        [
+            CreatePeer(senderId, "Gönderen", ports[0], key)
+        ], receiverId);
+        using var sender = new OrbitLinkService(senderDirectory.Path, new LogService(senderDirectory.Path));
+        var queuedResult = await sender.SendItemAsync(receiverId, new ShelfItem
+        {
+            Kind = "text",
+            DisplayName = "Tek kopya",
+            TextContent = "Aynı şifreli paket iki kez"
+        }, TestContext.Current.CancellationToken);
+        Assert.True(queuedResult.Succeeded);
+
+        var queued = Assert.Single(new OrbitLinkQueueStore(
+            senderDirectory.Path,
+            new LogService(senderDirectory.Path)).Load(
+                new HashSet<string>(StringComparer.OrdinalIgnoreCase) { receiverId }));
+        using var receiver = new OrbitLinkService(receiverDirectory.Path, new LogService(receiverDirectory.Path));
+        var receivedCount = 0;
+        receiver.ItemReceived += (_, _) => receivedCount++;
+
+        var first = InvokeTransfer(receiver, queued.Transfer);
+        var replay = InvokeTransfer(receiver, queued.Transfer);
+
+        Assert.True(first.Success, first.Message);
+        Assert.True(replay.Success, replay.Message);
+        Assert.Contains("daha önce", replay.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(1, receivedCount);
+    }
+
+    [Fact]
     public async Task Dispose_DoesNotBlockWhileReversePollWaitsForPeerResponse()
     {
         using var directory = new TemporaryDirectory();
@@ -444,6 +520,17 @@ public sealed class OrbitLinkServiceTests
         ProtectedKey = OrbitLinkStore.ProtectKey(key),
         PairedUtc = DateTime.UtcNow
     };
+
+    private static OrbitLinkWireResponse InvokeTransfer(
+        OrbitLinkService service,
+        OrbitLinkEncryptedTransfer transfer)
+    {
+        var method = typeof(OrbitLinkService).GetMethod(
+            "HandleTransferRequest",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.NotNull(method);
+        return Assert.IsType<OrbitLinkWireResponse>(method.Invoke(service, [transfer]));
+    }
 
     private static int ReservePort(int excluded = 0)
     {

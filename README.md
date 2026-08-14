@@ -194,4 +194,6 @@ scripts/                      Yayın ve imzalama araçları
 
 Katkıda bulunmadan önce [CONTRIBUTING.md](CONTRIBUTING.md) dosyasına göz at. Kullanıcıyı etkileyen değişiklikler [CHANGELOG.md](CHANGELOG.md) içinde tutulur.
 
+İki Windows bilgisayarda Orbit Link doğrulaması yapacaksan [gerçek cihaz test matrisini](docs/ORBIT_LINK_TEST_MATRIX.md) kullan. Yardımcı komut, kişisel ağ ve cihaz bilgilerini rapora almadan tekrarlanabilir bir sonuç dosyası üretir.
+
 Proje [MIT lisansı](LICENSE) ile yayımlanır.

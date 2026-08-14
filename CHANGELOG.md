@@ -28,6 +28,7 @@ Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 
 ### Eklendi
 
+- Orbit Link'in iki gerçek Windows bilgisayarda, doğrudan/ters bağlantı, çevrimdışı dönüş, VPN kesintisi, içerik sınırları ve gizlilik kontrolleriyle sınanması için kişisel veri toplamayan test matrisi ve rapor komutu eklendi.
 - Orbit Link'e uygulama yeniden başlatıldığında devam eden, iki öğe ve 24 saatle sınırlı şifreli aktarım kuyruğu; artan yeniden deneme aralığı, teslimat durumu, yeniden dene ve iptal kontrolleri eklendi.
 - Orbit Link ile iki Action Orbit kurulumu arasında tek kullanımlık kodla cihaz eşleştirme, öğe başına şifreli Shelf aktarımı ve yeni içerikleri eşleşen cihazlara ileten Ortak Raf modu eklendi.
 - Kurumsal güvenlik duvarı nedeniyle yalnızca tek yönde TCP bağlantısı kurulabilen cihazlar için kimlik doğrulamalı ters bağlantı ve güvenli aktarım sırası eklendi.
