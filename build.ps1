@@ -2,7 +2,7 @@ param(
     [switch]$Run
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference =  "Stop"
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $solution = Join-Path $root "ActionOrbit.slnx"
