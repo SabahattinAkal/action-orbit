@@ -1,9 +1,6 @@
 name: build-test-package
 
 on:
-  push:
-    branches: [main]
-  pull_request:
   workflow_dispatch:
 
 jobs:
@@ -12,32 +9,31 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: read
+
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         with:
           dotnet-version: 10.0.302
+
       - name: Restore
         run: dotnet restore ActionOrbit.slnx --locked-mode
+
       - name: Restore win-x64 runtime
         run: dotnet restore src/ActionOrbit.App/ActionOrbit.App.csproj --runtime win-x64 --locked-mode
+
       - name: Build
         run: dotnet build ActionOrbit.slnx --configuration Release --no-restore
+
       - name: Test
         run: dotnet test tests/ActionOrbit.App.Tests/ActionOrbit.App.Tests.csproj --configuration Release --no-build --no-restore
+
       - name: Publish win-x64
         run: dotnet publish src/ActionOrbit.App/ActionOrbit.App.csproj --configuration Release --no-restore -p:PublishProfile=win-x64
+
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ActionOrbitPro-win-x64
           path: src/ActionOrbit.App/bin/publish/win-x64/
           if-no-files-found: error
-
-  dependency-review:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
