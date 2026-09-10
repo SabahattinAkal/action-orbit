@@ -48,6 +48,28 @@ public sealed class ActionEditorPersistenceTests : IDisposable
     }
 
     [Fact]
+    public void ReorderAction_MovesDraggedRowWithinItsOwnerAndKeepsSelection()
+    {
+        var (configService, viewModel) = CreateViewModel();
+        var profile = configService.CurrentConfig.Profiles[0];
+        profile.Actions =
+        [
+            CreateAction("alpha", "Alpha"),
+            CreateAction("beta", "Beta"),
+            CreateAction("gamma", "Gamma")
+        ];
+        viewModel.ReloadForSelectedProfile();
+        var source = viewModel.ActionRows.Single(row => row.Action.Id == "alpha");
+        var target = viewModel.ActionRows.Single(row => row.Action.Id == "gamma");
+
+        Assert.True(ActionEditorViewModel.CanReorderAction(source, target));
+        viewModel.ReorderAction(source, target, placeAfterTarget: true);
+
+        Assert.Equal(["beta", "gamma", "alpha"], profile.Actions.Select(action => action.Id));
+        Assert.Equal("alpha", viewModel.SelectedAction?.Action.Id);
+    }
+
+    [Fact]
     public void SaveAndReload_PreservesPresetAppliedByActionEditor()
     {
         var (configService, viewModel) = CreateViewModel();

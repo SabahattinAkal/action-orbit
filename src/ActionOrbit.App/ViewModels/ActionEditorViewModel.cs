@@ -243,6 +243,50 @@ public sealed class ActionEditorViewModel : ViewModelBase
         return !IsDescendantOf(target, source);
     }
 
+    public static bool CanReorderAction(
+        ActionEditorRowViewModel? source,
+        ActionEditorRowViewModel? target) =>
+        source is not null
+        && target is not null
+        && !ReferenceEquals(source.Action, target.Action)
+        && ReferenceEquals(source.Owner, target.Owner);
+
+    public void ReorderAction(
+        ActionEditorRowViewModel source,
+        ActionEditorRowViewModel target,
+        bool placeAfterTarget)
+    {
+        if (!CanReorderAction(source, target))
+        {
+            _setStatus("Aksiyonlar yalnızca aynı halka veya klasör içinde sıralanabilir.");
+            return;
+        }
+
+        var owner = source.Owner;
+        var movedAction = source.Action;
+        if (!ActionOrderService.TryMoveRelative(
+                owner,
+                movedAction,
+                target.Action,
+                placeAfterTarget,
+                out var move))
+        {
+            return;
+        }
+
+        RebuildActionRows();
+        SelectedAction = ActionRows.FirstOrDefault(row => ReferenceEquals(row.Action, movedAction));
+        _registerUndo($"{movedAction.Title} sıralama", () =>
+        {
+            owner.Remove(movedAction);
+            owner.Insert(Math.Clamp(move.OriginalIndex, 0, owner.Count), movedAction);
+            RebuildActionRows();
+            SelectedAction = ActionRows.FirstOrDefault(row => ReferenceEquals(row.Action, movedAction));
+        });
+        _markDirty();
+        _setStatus($"{movedAction.Title}, {move.NewIndex + 1}. sıraya taşındı.");
+    }
+
     public void MoveActionIntoFolder(ActionEditorRowViewModel source, ActionEditorRowViewModel target)
     {
         if (!CanMoveActionIntoFolder(source, target))

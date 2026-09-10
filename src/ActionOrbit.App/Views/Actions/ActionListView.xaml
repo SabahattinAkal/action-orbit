@@ -170,7 +170,7 @@
                                    Text="Halka aksiyonları" />
                         <TextBlock HorizontalAlignment="Right"
                                    Style="{DynamicResource MutedText}"
-                                   Text="Sürükleyerek sırala" />
+                                   Text="Sürükle veya Alt+↑/↓" />
                     </DockPanel>
                     <ListBox x:Name="ActionList"
                              Grid.Row="1"
@@ -183,6 +183,7 @@
                              ScrollViewer.VerticalScrollBarVisibility="Auto"
                              PreviewMouseLeftButtonDown="ActionList_PreviewMouseLeftButtonDown"
                              PreviewMouseMove="ActionList_PreviewMouseMove"
+                             PreviewKeyDown="ActionList_PreviewKeyDown"
                              DragOver="ActionList_DragOver"
                              DragLeave="ActionList_DragLeave"
                              Drop="ActionList_Drop" />
@@ -217,13 +218,13 @@
                         <Button MinHeight="32"
                                 Padding="9,5"
                                 Command="{Binding MoveActionUpCommand}"
-                                Content="←"
-                                ToolTip="Önceki konuma taşı" />
+                                Content="↑"
+                                ToolTip="Yukarı taşı" />
                         <Button MinHeight="32"
                                 Padding="9,5"
                                 Command="{Binding MoveActionDownCommand}"
-                                Content="→"
-                                ToolTip="Sonraki konuma taşı" />
+                                Content="↓"
+                                ToolTip="Aşağı taşı" />
                         <Button MinHeight="32"
                                 Margin="0"
                                 Padding="9,5"
