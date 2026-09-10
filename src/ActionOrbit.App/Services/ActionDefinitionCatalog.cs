@@ -35,7 +35,7 @@ public static class ActionDefinitionCatalog
         new("open_file", "Dosya aç", "Dosya yolu", "Ek bilgi", "Dosyayı varsayılan uygulamasıyla açar."),
         new("open_url", "Web adresi aç", "Web adresi", "Ek bilgi", "https://... ile başlayan adresleri varsayılan tarayıcıda açar."),
         new("mini_tool", "Mini araç aç", "Mini araç", "Ek bilgi", "Action Orbit içindeki izinli mini araçlardan birini açar."),
-        new("type_text", "Metin yaz", "Yazılacak metin", "Ek bilgi", "Seçili pencereye düz metin yazar."),
+        new("type_text", "Metin yaz", "Yazılacak metin", "Ek bilgi", "Halka kapanınca son aktif uygulamadaki seçili alana düz metin yazar."),
         new("run_command", "Komut çalıştır", "Komut", "Argümanlar", "Gelişmiş kullanım içindir; cmd üzerinden çalışır."),
         new("folder", "Klasör / alt menü", "Hedef yok", "Ek bilgi", "Bu aksiyon çalışmaz; içine alt aksiyonlar koyar.")
     ];

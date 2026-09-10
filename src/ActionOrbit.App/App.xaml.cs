@@ -68,7 +68,7 @@ public partial class App : System.Windows.Application
         var profileService = new ProfileService(_logService);
         var startupService = new StartupService(_logService);
         var startupSyncIssue = releaseSmoke is null ? SyncStartupRegistration(startupService) : null;
-        var inputService = new InputSimulationService(_logService);
+        var inputService = new InputSimulationService(_logService, activeWindowService);
         var confirmationService = new MessageBoxConfirmationService();
         _miniToolWindowService = new MiniToolWindowService();
 

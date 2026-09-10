@@ -6,11 +6,44 @@ namespace ActionOrbit.App.Services;
 
 public sealed class InputSimulationService
 {
-    private readonly LogService _logService;
+    private const int FocusRetryCount = 8;
+    private const int ModifierReleaseRetryCount = 40;
+    private static readonly int[] ModifierVirtualKeys = [0x10, 0x11, 0x12, 0x5B, 0x5C];
 
-    public InputSimulationService(LogService logService)
+    private readonly LogService _logService;
+    private readonly Func<IntPtr>? _getInputTargetWindow;
+    private readonly Func<IntPtr> _getForegroundWindow;
+    private readonly Func<IntPtr, bool> _setForegroundWindow;
+    private readonly Func<int, short> _getAsyncKeyState;
+    private readonly Func<TimeSpan, Task> _delay;
+
+    public InputSimulationService(
+        LogService logService,
+        ActiveWindowService? activeWindowService = null)
+        : this(
+            logService,
+            activeWindowService is null ? null : activeWindowService.GetLastExternalWindowHandle,
+            NativeMethods.GetForegroundWindow,
+            NativeMethods.SetForegroundWindow,
+            NativeMethods.GetAsyncKeyState,
+            Task.Delay)
+    {
+    }
+
+    internal InputSimulationService(
+        LogService logService,
+        Func<IntPtr>? getInputTargetWindow,
+        Func<IntPtr> getForegroundWindow,
+        Func<IntPtr, bool> setForegroundWindow,
+        Func<int, short> getAsyncKeyState,
+        Func<TimeSpan, Task> delay)
     {
         _logService = logService;
+        _getInputTargetWindow = getInputTargetWindow;
+        _getForegroundWindow = getForegroundWindow;
+        _setForegroundWindow = setForegroundWindow;
+        _getAsyncKeyState = getAsyncKeyState;
+        _delay = delay;
     }
 
     public Task SendHotkeyAsync(string hotkey)
@@ -58,12 +91,14 @@ public sealed class InputSimulationService
         return Task.CompletedTask;
     }
 
-    public Task TypeTextAsync(string text)
+    public async Task TypeTextAsync(string text)
     {
         if (string.IsNullOrEmpty(text))
         {
-            return Task.CompletedTask;
+            return;
         }
+
+        await PrepareForTextInputAsync();
 
         var inputs = new List<NativeMethods.Input>();
         foreach (var character in text)
@@ -73,7 +108,50 @@ public sealed class InputSimulationService
         }
 
         Send(inputs);
-        return Task.CompletedTask;
+    }
+
+    internal async Task PrepareForTextInputAsync()
+    {
+        await RestoreInputTargetFocusAsync();
+        await WaitForModifierKeysReleasedAsync();
+    }
+
+    private async Task RestoreInputTargetFocusAsync()
+    {
+        var targetWindow = _getInputTargetWindow?.Invoke() ?? IntPtr.Zero;
+        if (targetWindow == IntPtr.Zero || _getForegroundWindow() == targetWindow)
+        {
+            return;
+        }
+
+        for (var attempt = 0; attempt < FocusRetryCount; attempt++)
+        {
+            _setForegroundWindow(targetWindow);
+            await _delay(TimeSpan.FromMilliseconds(50));
+            if (_getForegroundWindow() == targetWindow)
+            {
+                return;
+            }
+        }
+
+        throw new InvalidOperationException(
+            "Metnin yazılacağı pencereye odaklanılamadı. Hedef alana tıklayıp yeniden dene.");
+    }
+
+    private async Task WaitForModifierKeysReleasedAsync()
+    {
+        for (var attempt = 0; attempt < ModifierReleaseRetryCount; attempt++)
+        {
+            if (ModifierVirtualKeys.All(key => (_getAsyncKeyState(key) & 0x8000) == 0))
+            {
+                return;
+            }
+
+            await _delay(TimeSpan.FromMilliseconds(25));
+        }
+
+        throw new InvalidOperationException(
+            "Metin yazılamadı çünkü Ctrl, Alt, Shift veya Windows tuşu basılı kaldı.");
     }
 
     private void Send(IReadOnlyList<NativeMethods.Input> inputs)
