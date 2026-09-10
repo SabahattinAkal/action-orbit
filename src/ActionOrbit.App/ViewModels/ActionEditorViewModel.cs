@@ -22,6 +22,8 @@ public sealed class ActionEditorViewModel : ViewModelBase
     private readonly Action<string> _setStatus;
     private readonly Action<string, Action> _registerUndo;
     private readonly Action _showOverlay;
+    private readonly RelayCommand _moveActionUpCommand;
+    private readonly RelayCommand _moveActionDownCommand;
     private readonly RelayCommand _previousRingPreviewPageCommand;
     private readonly RelayCommand _nextRingPreviewPageCommand;
     private ActionEditorRowViewModel? _selectedAction;
@@ -81,8 +83,14 @@ public sealed class ActionEditorViewModel : ViewModelBase
         DeleteActionCommand = new RelayCommand(DeleteAction);
         BrowseActionTargetCommand = new RelayCommand(BrowseActionTarget);
         TestActionCommand = new RelayCommand(TestSelectedAction);
-        MoveActionUpCommand = new RelayCommand(() => MoveSelectedAction(-1));
-        MoveActionDownCommand = new RelayCommand(() => MoveSelectedAction(1));
+        _moveActionUpCommand = new RelayCommand(
+            parameter => MoveAction(parameter as ActionEditorRowViewModel ?? SelectedAction, -1),
+            parameter => CanMoveAction(parameter as ActionEditorRowViewModel ?? SelectedAction, -1));
+        _moveActionDownCommand = new RelayCommand(
+            parameter => MoveAction(parameter as ActionEditorRowViewModel ?? SelectedAction, 1),
+            parameter => CanMoveAction(parameter as ActionEditorRowViewModel ?? SelectedAction, 1));
+        MoveActionUpCommand = _moveActionUpCommand;
+        MoveActionDownCommand = _moveActionDownCommand;
         MoveActionOutOfFolderCommand = new RelayCommand(MoveSelectedActionOutOfFolder);
         SelectRingPreviewSlotCommand = new RelayCommand(parameter =>
             SelectRingPreviewSlot(parameter as RingPreviewSlotViewModel));
@@ -922,24 +930,31 @@ public sealed class ActionEditorViewModel : ViewModelBase
         _setStatus("Aksiyon silindi.");
     }
 
-    private void MoveSelectedAction(int direction)
+    private static bool CanMoveAction(ActionEditorRowViewModel? action, int direction)
     {
-        if (SelectedAction is null)
+        if (action is null || direction == 0)
+        {
+            return false;
+        }
+
+        var index = action.Owner.IndexOf(action.Action);
+        var targetIndex = index + Math.Sign(direction);
+        return index >= 0 && targetIndex >= 0 && targetIndex < action.Owner.Count;
+    }
+
+    private void MoveAction(ActionEditorRowViewModel? action, int direction)
+    {
+        if (!CanMoveAction(action, direction))
         {
             return;
         }
 
-        var owner = SelectedAction.Owner;
-        var index = owner.IndexOf(SelectedAction.Action);
-        var targetIndex = index + direction;
-        if (index < 0 || targetIndex < 0 || targetIndex >= owner.Count)
-        {
-            return;
-        }
-
+        var owner = action!.Owner;
+        var index = owner.IndexOf(action.Action);
+        var targetIndex = index + Math.Sign(direction);
+        var moved = action.Action;
         owner.RemoveAt(index);
-        owner.Insert(targetIndex, SelectedAction.Action);
-        var moved = SelectedAction.Action;
+        owner.Insert(targetIndex, moved);
         RebuildActionRows();
         SelectedAction = ActionRows.FirstOrDefault(row => ReferenceEquals(row.Action, moved));
         _registerUndo($"{moved.Title} sıralama", () =>
@@ -950,6 +965,7 @@ public sealed class ActionEditorViewModel : ViewModelBase
             SelectedAction = ActionRows.FirstOrDefault(row => ReferenceEquals(row.Action, moved));
         });
         _markDirty();
+        _setStatus($"{moved.Title}, {targetIndex + 1}. sıraya taşındı.");
     }
 
     private void BrowseFileForSelectedAction(string title, string filter)
@@ -1016,6 +1032,8 @@ public sealed class ActionEditorViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasSelectedActionValidation));
         OnPropertyChanged(nameof(RingPreviewSelectedTitle));
         OnPropertyChanged(nameof(RingPreviewSelectedDetails));
+        _moveActionUpCommand.RaiseCanExecuteChanged();
+        _moveActionDownCommand.RaiseCanExecuteChanged();
     }
 
     private void RefreshActionList() =>

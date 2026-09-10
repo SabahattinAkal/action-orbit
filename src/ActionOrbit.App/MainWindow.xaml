@@ -518,6 +518,7 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
                 <Grid Grid.Column="0"
@@ -606,6 +607,33 @@
                                Foreground="{DynamicResource MutedTextBrush}"
                                Text="klasör" />
                 </Border>
+
+                <StackPanel Grid.Column="4"
+                            Margin="0,0,2,0"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal">
+                    <Button Width="28"
+                            Height="28"
+                            Padding="0"
+                            AutomationProperties.Name="Aksiyonu yukarı taşı"
+                            Command="{Binding DataContext.ActionEditor.MoveActionUpCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                            CommandParameter="{Binding}"
+                            Content="↑"
+                            FontSize="15"
+                            FontWeight="SemiBold"
+                            ToolTip="Aksiyonu yukarı taşı" />
+                    <Button Width="28"
+                            Height="28"
+                            Margin="4,0,0,0"
+                            Padding="0"
+                            AutomationProperties.Name="Aksiyonu aşağı taşı"
+                            Command="{Binding DataContext.ActionEditor.MoveActionDownCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                            CommandParameter="{Binding}"
+                            Content="↓"
+                            FontSize="15"
+                            FontWeight="SemiBold"
+                            ToolTip="Aksiyonu aşağı taşı" />
+                </StackPanel>
             </Grid>
         </DataTemplate>
     </Window.Resources>

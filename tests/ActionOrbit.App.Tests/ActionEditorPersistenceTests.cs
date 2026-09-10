@@ -70,6 +70,31 @@ public sealed class ActionEditorPersistenceTests : IDisposable
     }
 
     [Fact]
+    public void ReorderButtons_UseTheClickedRowEvenWhenAnotherRowIsSelected()
+    {
+        var (configService, viewModel) = CreateViewModel();
+        var profile = configService.CurrentConfig.Profiles[0];
+        profile.Actions =
+        [
+            CreateAction("alpha", "Alpha"),
+            CreateAction("beta", "Beta"),
+            CreateAction("gamma", "Gamma")
+        ];
+        viewModel.ReloadForSelectedProfile();
+
+        var clickedRow = viewModel.ActionRows.Single(row => row.Action.Id == "alpha");
+        viewModel.SelectedAction = viewModel.ActionRows.Single(row => row.Action.Id == "gamma");
+
+        Assert.True(viewModel.MoveActionDownCommand.CanExecute(clickedRow));
+        viewModel.MoveActionDownCommand.Execute(clickedRow);
+
+        Assert.Equal(["beta", "alpha", "gamma"], profile.Actions.Select(action => action.Id));
+        Assert.Equal("alpha", viewModel.SelectedAction?.Action.Id);
+        Assert.False(viewModel.MoveActionUpCommand.CanExecute(viewModel.ActionRows.Single(row => row.Action.Id == "beta")));
+        Assert.False(viewModel.MoveActionDownCommand.CanExecute(viewModel.ActionRows.Single(row => row.Action.Id == "gamma")));
+    }
+
+    [Fact]
     public void SaveAndReload_PreservesPresetAppliedByActionEditor()
     {
         var (configService, viewModel) = CreateViewModel();
