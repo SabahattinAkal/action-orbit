@@ -14,7 +14,7 @@ if (Test-Path $uninstallKey) {
 $testRoot = Join-Path ([IO.Path]::GetTempPath()) ('action-orbit-setup-test-' + [guid]::NewGuid().ToString('N'))
 $installDir = Join-Path $testRoot 'installed'
 $stateDir = Join-Path $testRoot 'state'
-$reportPath = Join-Path $testRoot 'app-smoke.json'
+$appSmokeReportPath = Join-Path $testRoot 'app-smoke.json'
 New-Item -ItemType Directory -Path $testRoot, $stateDir -Force | Out-Null
 $runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
 $preferenceKey = 'HKCU:\Software\ActionOrbitPro\Setup'
@@ -50,9 +50,9 @@ try {
     }
     if ($forbidden) { throw 'Installer contains local state or private build files.' }
 
-    Invoke-HiddenProcess "$installDir\ActionOrbit.App.exe" @('--release-smoke-report', "`"$reportPath`"",
+    Invoke-HiddenProcess "$installDir\ActionOrbit.App.exe" @('--release-smoke-report', "`"$appSmokeReportPath`"",
         '--release-smoke-app-directory', "`"$stateDir`"")
-    $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+    $report = Get-Content -LiteralPath $appSmokeReportPath -Raw | ConvertFrom-Json
     if (-not $report.Succeeded) { throw "Installed app smoke failed: $($report.Error)" }
     if ($ExpectedCommit -and -not $report.ProductVersion.Contains($ExpectedCommit, [StringComparison]::OrdinalIgnoreCase)) {
         throw 'Installed application does not match the expected commit.'
