@@ -20,7 +20,7 @@
                                 BorderBrush="{DynamicResource BorderBrush}"
                                 BorderThickness="1"
                                 CornerRadius="10">
-                            <ContentPresenter />
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -103,7 +103,8 @@
                               DisplayMemberPath="DisplayName"
                               ItemsSource="{Binding Rings}"
                               SelectedItem="{Binding SelectedRing}" />
-                    <Grid Grid.Row="2" Margin="0,8,0,0">
+                    <Expander Grid.Row="2" Margin="0,8,0,0" Header="Halka ayarları" IsExpanded="False">
+                    <Grid Margin="0,8,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
@@ -131,6 +132,7 @@
                                     Style="{DynamicResource DangerButton}" />
                         </StackPanel>
                     </Grid>
+                    </Expander>
                 </Grid>
             </Border>
 
@@ -181,6 +183,8 @@
                              ItemTemplate="{DynamicResource ActionRowTemplate}"
                              ItemContainerStyle="{StaticResource ActionPanelListItem}"
                              ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             ScrollViewer.CanContentScroll="False"
                              PreviewMouseLeftButtonDown="ActionList_PreviewMouseLeftButtonDown"
                              PreviewMouseMove="ActionList_PreviewMouseMove"
                              PreviewKeyDown="ActionList_PreviewKeyDown"
@@ -199,7 +203,7 @@
                     BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="1"
                     CornerRadius="12"
-                    Visibility="{Binding HasSelectedAction, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    Visibility="{Binding SelectedActionIsChild, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />

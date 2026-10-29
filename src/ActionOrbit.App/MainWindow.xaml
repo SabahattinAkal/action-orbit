@@ -512,7 +512,8 @@
         </DataTemplate>
 
         <DataTemplate x:Key="ActionRowTemplate">
-            <Grid Margin="2" MinHeight="48">
+            <Grid Margin="2" MinHeight="48"
+                  MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ScrollContentPresenter}}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="{Binding Indent}" />
                     <ColumnDefinition Width="Auto" />
@@ -614,6 +615,8 @@
                             Orientation="Horizontal">
                     <Button Width="28"
                             Height="28"
+                            MinHeight="28"
+                            Margin="0"
                             Padding="0"
                             AutomationProperties.Name="Aksiyonu yukarı taşı"
                             Command="{Binding DataContext.ActionEditor.MoveActionUpCommand, RelativeSource={RelativeSource AncestorType=Window}}"
@@ -624,6 +627,7 @@
                             ToolTip="Aksiyonu yukarı taşı" />
                     <Button Width="28"
                             Height="28"
+                            MinHeight="28"
                             Margin="4,0,0,0"
                             Padding="0"
                             AutomationProperties.Name="Aksiyonu aşağı taşı"

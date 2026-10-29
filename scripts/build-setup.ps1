@@ -36,7 +36,28 @@ if (-not $IsccPath -or -not (Test-Path -LiteralPath $IsccPath)) {
     '-p:RestoreLockedMode=true' --output $publishDir
 if ($LASTEXITCODE -ne 0) { throw 'Self-contained publish failed.' }
 
-& $IsccPath "/DPublishDir=$publishDir" "/DOutputDir=$outputDir" "/DAppVersion=$Version" "/DBuildId=$buildId" `
+$artworkDir = Join-Path $publishDir '..\setup-artwork'
+New-Item -ItemType Directory -Path $artworkDir -Force | Out-Null
+Add-Type -AssemblyName System.Drawing
+$logo = [Drawing.Image]::FromFile((Join-Path $repoRoot 'src\ActionOrbit.App\Assets\Brand\ActionOrbitLogo.png'))
+try {
+    foreach ($size in @(@(164, 314, 'wizard.bmp'), @(55, 55, 'wizard-small.bmp'))) {
+        $bitmap = [Drawing.Bitmap]::new([int]$size[0], [int]$size[1])
+        $graphics = [Drawing.Graphics]::FromImage($bitmap)
+        try {
+            $graphics.Clear([Drawing.Color]::FromArgb(15, 17, 22))
+            $graphics.InterpolationMode = [Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+            $logoSize = if ($size[0] -eq 164) { 110 } else { 47 }
+            $top = if ($size[0] -eq 164) { 68 } else { 4 }
+            $graphics.DrawImage($logo, [int](($size[0] - $logoSize) / 2), $top, $logoSize, $logoSize)
+            $bitmap.Save((Join-Path $artworkDir $size[2]), [Drawing.Imaging.ImageFormat]::Bmp)
+        }
+        finally { $graphics.Dispose(); $bitmap.Dispose() }
+    }
+}
+finally { $logo.Dispose() }
+
+& $IsccPath "/DPublishDir=$publishDir" "/DOutputDir=$outputDir" "/DArtworkDir=$artworkDir" "/DAppVersion=$Version" "/DBuildId=$buildId" `
     (Join-Path $repoRoot 'installer\ActionOrbit.iss')
 if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed.' }
 

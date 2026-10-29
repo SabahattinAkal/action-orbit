@@ -7,10 +7,12 @@ public sealed class StartupService : IStartupRegistration
     private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string ValueName = "ActionOrbitPro";
     private readonly LogService _logService;
+    private readonly string _installerPreferenceKeyPath;
 
-    public StartupService(LogService logService)
+    public StartupService(LogService logService, string installerPreferenceKeyPath = @"Software\ActionOrbitPro\Setup")
     {
         _logService = logService;
+        _installerPreferenceKeyPath = installerPreferenceKeyPath;
     }
 
     public bool IsEnabled()
@@ -45,6 +47,19 @@ public sealed class StartupService : IStartupRegistration
         _logService.Info("Startup registration disabled.");
     }
 
+    public void ApplyInstallerPreference(ConfigService configService)
+    {
+        using var key = Registry.CurrentUser.OpenSubKey(_installerPreferenceKeyPath, writable: true);
+        if (key?.GetValue("RunAtStartup") is not int enabled)
+        {
+            return;
+        }
+
+        configService.CurrentConfig.Settings.RunAtStartup = enabled == 1;
+        configService.Save(configService.CurrentConfig);
+        key.DeleteValue("RunAtStartup", throwOnMissingValue: false);
+    }
+
     private static string GetStartupCommand()
     {
         var path = Environment.ProcessPath;
@@ -58,7 +73,7 @@ public sealed class StartupService : IStartupRegistration
             throw new InvalidOperationException("Uygulama yolu bulunamadı.");
         }
 
-        return $"\"{path}\"";
+        return $"\"{path}\" --background";
     }
 
     private static string Normalize(string value) =>

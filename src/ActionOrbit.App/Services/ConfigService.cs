@@ -228,7 +228,7 @@ public sealed class ConfigService : IConfigPersistence
 
         config.Hotkey.Display = BuildHotkeyDisplay(config.Hotkey);
 
-        config.Profiles = config.Profiles?.OfType<ProfileConfig>().ToList() ?? [];
+        config.Profiles = RemoveNullEntries(config.Profiles);
 
         if (config.Profiles.Count == 0)
         {
@@ -297,12 +297,12 @@ public sealed class ConfigService : IConfigPersistence
             EnsureTextLength(match.ProcessName, MaxIdentifierLength, "profile.matches.processName");
         }
 
-        profile.Actions = profile.Actions?.OfType<OrbitAction>().ToList() ?? [];
+        profile.Actions = RemoveNullEntries(profile.Actions);
         var actionCount = 0;
         NormalizeActions(profile.Actions, depth: 0, ref actionCount);
         EnsureUniqueActionIds(profile.Actions);
 
-        profile.RingSets = profile.RingSets?.OfType<RingSetConfig>().ToList() ?? [];
+        profile.RingSets = RemoveNullEntries(profile.RingSets);
         if (profile.RingSets.Count > MaxRingSetsPerProfile)
         {
             throw new InvalidOperationException(
@@ -320,7 +320,7 @@ public sealed class ConfigService : IConfigPersistence
             EnsureTextLength(ring.Name, MaxTitleLength, "profile.ringSets.name");
             ring.Id = CreateUniqueId(ring.Id, "ring", usedRingIds);
             ring.Name = string.IsNullOrWhiteSpace(ring.Name) ? "Yeni Halka" : ring.Name.Trim();
-            ring.Actions = ring.Actions?.OfType<OrbitAction>().ToList() ?? [];
+            ring.Actions = RemoveNullEntries(ring.Actions);
             NormalizeActions(ring.Actions, depth: 0, ref actionCount);
             EnsureUniqueActionIds(ring.Actions);
         }
@@ -385,7 +385,7 @@ public sealed class ConfigService : IConfigPersistence
 
                 action.Shortcut = shortcut.Display;
             }
-            action.Children = action.Children?.OfType<OrbitAction>().ToList() ?? [];
+            action.Children = RemoveNullEntries(action.Children);
             if (action.Children.Count > 0)
             {
                 NormalizeActions(action.Children, depth + 1, ref actionCount);
@@ -398,6 +398,15 @@ public sealed class ConfigService : IConfigPersistence
                 action.Type = "folder";
             }
         }
+    }
+
+    private static List<T> RemoveNullEntries<T>(List<T>? items) where T : class
+    {
+        // Editor rows and undo callbacks retain these lists across autosave.
+        // Replacing a list here silently disconnects subsequent edits from the saved config.
+        items ??= [];
+        items.RemoveAll(item => item is null);
+        return items;
     }
 
     private static void NormalizeTheme(ThemeConfig theme)

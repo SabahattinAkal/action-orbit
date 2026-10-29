@@ -182,7 +182,37 @@ public sealed class ActionEditorPersistenceTests : IDisposable
         Assert.Contains(viewModel.RingPreviewSlots, slot => slot.Title == "Aksiyon 18" && slot.IsSelected);
     }
 
-    private (ConfigService ConfigService, ActionEditorViewModel ViewModel) CreateViewModel()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ReorderAndUndo_AfterAutosave_StillChangeThePersistedActions(bool nested)
+    {
+        var undo = new UndoManager();
+        var (configService, viewModel) = CreateViewModel(undo.Register);
+        var actions = new List<OrbitAction>
+        {
+            CreateAction("alpha", "Alpha"), CreateAction("beta", "Beta"), CreateAction("gamma", "Gamma")
+        };
+        configService.CurrentConfig.Profiles[0].Actions = nested
+            ? [new OrbitAction { Id = "folder", Title = "Folder", Type = "folder", Children = actions }]
+            : actions;
+        viewModel.ReloadForSelectedProfile();
+        configService.Save(configService.CurrentConfig);
+
+        viewModel.MoveActionDownCommand.Execute(viewModel.ActionRows.Single(row => row.Id == "alpha"));
+        configService.Save(configService.CurrentConfig);
+        Assert.Equal(["beta", "alpha", "gamma"], actions.Select(action => action.Id));
+
+        undo.Undo();
+        configService.Save(configService.CurrentConfig);
+        var reloaded = CreateConfigService();
+        reloaded.Load();
+        var persisted = reloaded.CurrentConfig.Profiles[0].Actions;
+        if (nested) persisted = Assert.Single(persisted).Children;
+        Assert.Equal(["alpha", "beta", "gamma"], persisted.Select(action => action.Id));
+    }
+
+    private (ConfigService ConfigService, ActionEditorViewModel ViewModel) CreateViewModel(Action<string, Action>? registerUndo = null)
     {
         var configService = CreateConfigService();
         configService.Load();
@@ -196,7 +226,7 @@ public sealed class ActionEditorPersistenceTests : IDisposable
             () => selectedProfile,
             () => { },
             _ => { },
-            (_, _) => { },
+            registerUndo ?? ((_, _) => { }),
             () => { });
         return (configService, viewModel);
     }

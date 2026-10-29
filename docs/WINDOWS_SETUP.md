@@ -4,6 +4,8 @@
 
 Kurulumdan önce bildirim alanındaki Action Orbit menüsünden **Çıkış** seçeneğini kullan. Kurulum sihirbazı dosyaları kullanıcı hesabındaki `AppData\Local\Programs\Action Orbit Pro` klasörüne yerleştirir. Yönetici yetkisi istemez. Başlat menüsüne kısayol ekler; masaüstü kısayolu isteğe bağlıdır.
 
+Sihirbazda Windows ile başlatma, Başlat menüsü kısayolu ve masaüstü kısayolunu ayrı ayrı seçebilirsin. Windows ile başlatma varsayılan olarak kapalıdır. Açarsan uygulama oturum açıldığında bildirim alanında sessizce çalışır; ayarlar penceresi kendiliğinden açılmaz. Seçim, uygulamanın **Ayarlar > Uygulama** bölümüne ilk açılışta aktarılır. Kurulumun sonundaki uygulamayı aç seçeneğini kapatsan da tercih kaybolmaz.
+
 Önceki sürüm aynı Windows hesabında kullanılmışsa profiller, raflar ve eşleşmeler `%AppData%\ActionOrbitPro` klasöründen okunur. Başka bir bilgisayara kurmak kişisel ayarları otomatik taşımaz. Profilleri uygulamanın içe/dışa aktarma seçenekleriyle taşıyabilirsin.
 
 Güncelleme için yeni setup dosyasını çalıştır. Kurulumu Windows **Ayarlar > Uygulamalar** bölümünden kaldırabilirsin. Kaldırma, kişisel ayarları ve raf verilerini silmez.
@@ -27,3 +29,5 @@ Araçlar PATH üzerinde değilse `-DotNetPath` ve `-IsccPath` ile tam yolların�
 ```
 
 Test, geçici bir klasöre kurar, aynı kurulumun üzerine güncelleme yapar, yüklenen uygulamanın pencere ve bildirim alanı kontrollerini çalıştırır ve kaldırır. Logların bulunduğu geçici klasörü sonuçta gösterir. Bilgisayarda setup ile kurulmuş bir kopya varsa test durur; bu durumda ayrı bir Windows test hesabı kullan.
+
+Arayüzü kişisel verilerden ayrı denemek için uygulamaya `--ui-preview-directory=C:\Test\OrbitState --ui-preview-display=2` argümanlarını verebilirsin. Belirtilen klasörde ayrı config oluşur; otomatik Windows başlangıç kaydı ve ana global kısayol bu modda etkinleştirilmez. Bu seçenek günlük kullanım veya ağ testi için değildir.

@@ -23,6 +23,11 @@ public partial class App : System.Windows.Application
     {
         base.OnStartup(e);
 
+        // Interactive QA uses a separate state directory and never changes Windows startup.
+        var previewDirectory = e.Args.FirstOrDefault(arg => arg.StartsWith("--ui-preview-directory=", StringComparison.Ordinal))
+            ?["--ui-preview-directory=".Length..];
+        var isUiPreview = !string.IsNullOrWhiteSpace(previewDirectory) && Path.IsPathFullyQualified(previewDirectory);
+
         ReleaseSmokeOptions? releaseSmoke;
         try
         {
@@ -34,7 +39,7 @@ public partial class App : System.Windows.Application
             return;
         }
 
-        if (releaseSmoke is null)
+        if (releaseSmoke is null && !isUiPreview)
         {
             _singleInstanceService = new SingleInstanceService();
             if (!_singleInstanceService.IsPrimaryInstance)
@@ -54,10 +59,11 @@ public partial class App : System.Windows.Application
             }
         }
 
-        _logService = new LogService(releaseSmoke?.AppDirectory);
+        var stateDirectory = releaseSmoke?.AppDirectory ?? (isUiPreview ? previewDirectory : null);
+        _logService = new LogService(stateDirectory);
         DispatcherUnhandledException += OnDispatcherUnhandledException;
 
-        _configService = new ConfigService(_logService, releaseSmoke?.AppDirectory);
+        _configService = new ConfigService(_logService, stateDirectory);
         _configService.Load();
         ThemeService.ApplyApplicationTheme(
             _configService.CurrentConfig.Theme.Mode,
@@ -67,7 +73,7 @@ public partial class App : System.Windows.Application
         var activeWindowService = new ActiveWindowService(_logService);
         var profileService = new ProfileService(_logService);
         var startupService = new StartupService(_logService);
-        var startupSyncIssue = releaseSmoke is null ? SyncStartupRegistration(startupService) : null;
+        var startupSyncIssue = releaseSmoke is null && !isUiPreview ? SyncStartupRegistration(startupService) : null;
         var inputService = new InputSimulationService(_logService, activeWindowService);
         var confirmationService = new MessageBoxConfirmationService();
         _miniToolWindowService = new MiniToolWindowService();
@@ -115,8 +121,24 @@ public partial class App : System.Windows.Application
             confirmationService);
         _mainWindowViewModel = viewModel;
 
-        var mainWindow = new MainWindow(viewModel, _hotkeyService);
+        var mainWindow = new MainWindow(viewModel, _hotkeyService, isUiPreview);
         MainWindow = mainWindow;
+        if (isUiPreview)
+        {
+            var displayArgument = e.Args.FirstOrDefault(arg => arg.StartsWith("--ui-preview-display=", StringComparison.Ordinal));
+            if (int.TryParse(displayArgument?["--ui-preview-display=".Length..], out var displayNumber))
+            {
+                var screen = System.Windows.Forms.Screen.AllScreens.FirstOrDefault(item =>
+                    item.DeviceName.EndsWith($"DISPLAY{displayNumber}", StringComparison.OrdinalIgnoreCase));
+                if (screen is null) { Shutdown(2); return; }
+                var area = screen.WorkingArea;
+                mainWindow.WindowStartupLocation = WindowStartupLocation.Manual;
+                mainWindow.Left = area.Left + 40;
+                mainWindow.Top = area.Top + 40;
+                mainWindow.Width = Math.Min(mainWindow.Width, area.Width - 80);
+                mainWindow.Height = Math.Min(mainWindow.Height, area.Height - 80);
+            }
+        }
         if (releaseSmoke is not null)
         {
             mainWindow.ShowActivated = false;
@@ -127,7 +149,15 @@ public partial class App : System.Windows.Application
             mainWindow.Top = -32000;
             mainWindow.ContentRendered += (_, _) => RunReleaseSmoke(mainWindow, releaseSmoke);
         }
-        mainWindow.Show();
+        if (releaseSmoke is not null || !e.Args.Contains("--background", StringComparer.OrdinalIgnoreCase))
+        {
+            mainWindow.Show();
+        }
+        else
+        {
+            // Register global shortcuts without flashing the settings window at Windows sign-in.
+            new System.Windows.Interop.WindowInteropHelper(mainWindow).EnsureHandle();
+        }
         if (!string.IsNullOrWhiteSpace(startupSyncIssue))
         {
             viewModel.Status.ReportFailure(startupSyncIssue);
@@ -242,6 +272,10 @@ public partial class App : System.Windows.Application
     {
         try
         {
+            if (_configService is not null)
+            {
+                startupService.ApplyInstallerPreference(_configService);
+            }
             startupService.SetEnabled(_configService?.CurrentConfig.Settings.RunAtStartup == true);
             return null;
         }

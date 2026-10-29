@@ -18,9 +18,11 @@ public partial class MainWindow : Window
     private readonly Forms.NotifyIcon _trayIcon;
     private bool _allowClose;
     private bool _hasShownTrayTip;
+    private readonly bool _isUiPreview;
 
-    public MainWindow(MainWindowViewModel viewModel, HotkeyService hotkeyService)
+    public MainWindow(MainWindowViewModel viewModel, HotkeyService hotkeyService, bool isUiPreview = false)
     {
+        _isUiPreview = isUiPreview;
         _viewModel = viewModel;
         _hotkeyService = hotkeyService;
         DataContext = _viewModel;
@@ -32,6 +34,7 @@ public partial class MainWindow : Window
 
     private void Window_SourceInitialized(object? sender, EventArgs e)
     {
+        if (_isUiPreview) return;
         _hotkeyService.Initialize(this);
         _viewModel.RegisterHotkey();
     }
@@ -96,7 +99,7 @@ public partial class MainWindow : Window
             ContextMenuStrip = menu,
             Icon = _applicationIcon ?? Drawing.SystemIcons.Application,
             Text = "Action Orbit Pro",
-            Visible = true
+            Visible = !_isUiPreview
         };
 
         trayIcon.DoubleClick += (_, _) => ShowFromTray();

@@ -12,6 +12,10 @@ $installDir = Join-Path $testRoot 'installed'
 $stateDir = Join-Path $testRoot 'state'
 $reportPath = Join-Path $testRoot 'app-smoke.json'
 New-Item -ItemType Directory -Path $testRoot, $stateDir -Force | Out-Null
+$runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
+$preferenceKey = 'HKCU:\Software\ActionOrbitPro\Setup'
+$originalRun = Get-ItemPropertyValue -LiteralPath $runKey -Name ActionOrbitPro -ErrorAction SilentlyContinue
+$originalPreference = Get-ItemPropertyValue -LiteralPath $preferenceKey -Name RunAtStartup -ErrorAction SilentlyContinue
 
 function Invoke-HiddenProcess([string]$FilePath, [string[]]$Arguments) {
     $process = Start-Process -FilePath $FilePath -ArgumentList $Arguments -WindowStyle Hidden -PassThru
@@ -24,10 +28,16 @@ function Invoke-HiddenProcess([string]$FilePath, [string[]]$Arguments) {
 try {
     # Install twice to exercise an in-place update with the same AppId.
     foreach ($pass in 1..2) {
+        $tasks = if ($pass -eq 1) { '/TASKS=startup' } else { '/TASKS=!startup' }
         Invoke-HiddenProcess $setup @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/NOICONS',
-            '/NOCLOSEAPPLICATIONS', '/NORESTARTAPPLICATIONS', "/DIR=`"$installDir`"", "/LOG=`"$testRoot\install-$pass.log`"")
+            '/NOCLOSEAPPLICATIONS', '/NORESTARTAPPLICATIONS', $tasks, "/DIR=`"$installDir`"", "/LOG=`"$testRoot\install-$pass.log`"")
         if (-not (Test-Path -LiteralPath "$installDir\ActionOrbit.App.exe")) { throw 'Installed executable missing.' }
         if (-not (Test-Path $uninstallKey)) { throw 'Windows uninstall registration missing.' }
+        $choice = Get-ItemPropertyValue -LiteralPath $preferenceKey -Name RunAtStartup
+        if ($choice -ne [int]($pass -eq 1)) { throw 'Setup startup preference does not match the selected task.' }
+        $run = Get-ItemPropertyValue -LiteralPath $runKey -Name ActionOrbitPro -ErrorAction SilentlyContinue
+        if ($pass -eq 1 -and $run -ne ('"' + $installDir + '\ActionOrbit.App.exe" --background')) { throw 'Startup command missing or incorrect.' }
+        if ($pass -eq 2 -and $null -ne $run) { throw 'Deselected startup task left the Run entry behind.' }
     }
 
     $forbidden = Get-ChildItem -LiteralPath $installDir -Recurse -File | Where-Object {
@@ -46,6 +56,13 @@ finally {
     $uninstaller = Join-Path $installDir 'unins000.exe'
     if (Test-Path -LiteralPath $uninstaller) {
         Invoke-HiddenProcess $uninstaller @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/LOG=`"$testRoot\uninstall.log`"")
+    }
+    if ($null -ne $originalRun) {
+        New-ItemProperty -LiteralPath $runKey -Name ActionOrbitPro -Value $originalRun -PropertyType String -Force | Out-Null
+    }
+    if ($null -ne $originalPreference) {
+        New-Item -Path $preferenceKey -Force | Out-Null
+        New-ItemProperty -LiteralPath $preferenceKey -Name RunAtStartup -Value $originalPreference -PropertyType DWord -Force | Out-Null
     }
 }
 
