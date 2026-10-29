@@ -14,8 +14,8 @@ $reportPath = Join-Path $testRoot 'app-smoke.json'
 New-Item -ItemType Directory -Path $testRoot, $stateDir -Force | Out-Null
 $runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
 $preferenceKey = 'HKCU:\Software\ActionOrbitPro\Setup'
-$originalRun = Get-ItemPropertyValue -LiteralPath $runKey -Name ActionOrbitPro -ErrorAction SilentlyContinue
-$originalPreference = Get-ItemPropertyValue -LiteralPath $preferenceKey -Name RunAtStartup -ErrorAction SilentlyContinue
+$originalRun = [Microsoft.Win32.Registry]::GetValue('HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run', 'ActionOrbitPro', $null)
+$originalPreference = [Microsoft.Win32.Registry]::GetValue('HKEY_CURRENT_USER\Software\ActionOrbitPro\Setup', 'RunAtStartup', $null)
 
 function Invoke-HiddenProcess([string]$FilePath, [string[]]$Arguments) {
     $process = Start-Process -FilePath $FilePath -ArgumentList $Arguments -WindowStyle Hidden -PassThru
@@ -35,7 +35,7 @@ try {
         if (-not (Test-Path $uninstallKey)) { throw 'Windows uninstall registration missing.' }
         $choice = Get-ItemPropertyValue -LiteralPath $preferenceKey -Name RunAtStartup
         if ($choice -ne [int]($pass -eq 1)) { throw 'Setup startup preference does not match the selected task.' }
-        $run = Get-ItemPropertyValue -LiteralPath $runKey -Name ActionOrbitPro -ErrorAction SilentlyContinue
+        $run = [Microsoft.Win32.Registry]::GetValue('HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run', 'ActionOrbitPro', $null)
         if ($pass -eq 1 -and $run -ne ('"' + $installDir + '\ActionOrbit.App.exe" --background')) { throw 'Startup command missing or incorrect.' }
         if ($pass -eq 2 -and $null -ne $run) { throw 'Deselected startup task left the Run entry behind.' }
     }
