@@ -37,6 +37,9 @@ dotnet list tests\ActionOrbit.App.Tests\ActionOrbit.App.Tests.csproj package --v
 - [ ] `win-x64` self-contained paket üretildi
 - [ ] Tam paket ve DLL hotfix aynı committen üretildi
 - [ ] `Test-ReleasePackage.ps1` temiz kurulum, yükseltme, XAML/tray ve gizlilik kontrollerini geçti
+- [ ] `Test-PublicSource.ps1` Git index kontrolünü geçti
+- [ ] `Assert-PublishContent.ps1` paket girdisini kabul etti; olumsuz testler `Test-PackagingGuards.ps1` ile geçti
+- [ ] `Test-Setup.ps1` başlangıç tercihleri, kurulum, güncelleme ve kaldırmayı doğruladı
 
 ## Temel kullanım
 
@@ -79,6 +82,8 @@ dotnet list tests\ActionOrbit.App.Tests\ActionOrbit.App.Tests.csproj package --v
 ## Dağıtım
 
 - [ ] Otomatik temiz kurulum ve yükseltme smoke raporu release varlıklarında bulunuyor
+- [ ] Setup EXE'si, temizlenmiş setup smoke raporu ve setup checksum'u release varlıklarında bulunuyor
+- [ ] Yayın varlıklarında ham kurulum logu, yerel durum klasörü veya kişisel dosya yolu yok
 - [ ] Fiziksel temiz Windows kullanıcı hesabı kontrolü sürüm adayı için tamamlandı
 - [ ] EXE zararlı yazılım taramasından geçti
 - [ ] Runtime sürümü beklenen değerle aynı

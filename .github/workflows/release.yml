@@ -17,6 +17,10 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
+      - name: Check public source content
+        shell: pwsh
+        run: ./scripts/Test-PublicSource.ps1
+
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         with:
           dotnet-version: 10.0.302
@@ -24,7 +28,7 @@ jobs:
       - name: Validate tag and project version
         shell: pwsh
         run: |
-          $version = '${{ github.ref_name }}'.TrimStart('v')
+          $version = $env:GITHUB_REF_NAME.TrimStart('v')
           [xml]$project = Get-Content 'src/ActionOrbit.App/ActionOrbit.App.csproj'
           $projectVersion = [string]$project.Project.PropertyGroup.Version
           if ($version -ne $projectVersion) {
@@ -42,7 +46,11 @@ jobs:
           dotnet test tests/ActionOrbit.App.Tests/ActionOrbit.App.Tests.csproj --configuration Release --no-build --no-restore
 
       - name: Publish win-x64
-        run: dotnet publish src/ActionOrbit.App/ActionOrbit.App.csproj --configuration Release --no-restore -p:PublishProfile=win-x64
+        run: dotnet publish src/ActionOrbit.App/ActionOrbit.App.csproj --configuration Release --no-restore -p:PublishProfile=win-x64 -p:ContinuousIntegrationBuild=true
+
+      - name: Verify publish content
+        shell: pwsh
+        run: ./scripts/Assert-PublishContent.ps1 -PublishDirectory 'src/ActionOrbit.App/bin/publish/win-x64'
 
       - name: Import signing certificate
         shell: pwsh
@@ -72,12 +80,48 @@ jobs:
             Remove-Item -LiteralPath $pfx -Force -ErrorAction SilentlyContinue
           }
 
+      - name: Build Windows setup from the verified application
+        shell: pwsh
+        run: |
+          $compiler = ./scripts/Install-InnoCompiler.ps1 -DestinationDirectory (Join-Path $env:RUNNER_TEMP 'inno-compiler')
+          ./scripts/build-setup.ps1 `
+            -IsccPath $compiler `
+            -Version ($env:GITHUB_REF_NAME.TrimStart('v')) `
+            -PublishDirectory 'src/ActionOrbit.App/bin/publish/win-x64' `
+            -OutputDirectory 'release'
+
+      - name: Sign Windows setup when configured
+        shell: pwsh
+        env:
+          SIGNING_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE_BASE64 }}
+          ACTION_ORBIT_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE_PASSWORD }}
+        run: |
+          if ($env:AUTHENTICODE_STATUS -eq 'unsigned') { exit 0 }
+          $pfx = Join-Path $env:RUNNER_TEMP 'action-orbit-setup-signing.pfx'
+          try {
+            [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:SIGNING_CERTIFICATE_BASE64))
+            $setup = Get-ChildItem 'release' -File -Filter '*-Setup-win-x64.exe'
+            if (@($setup).Count -ne 1) { throw 'Expected one Windows setup.' }
+            ./scripts/sign.ps1 -FilePath $setup.FullName -PfxPath $pfx
+          }
+          finally {
+            Remove-Item -LiteralPath $pfx -Force -ErrorAction SilentlyContinue
+          }
+
+      - name: Windows setup lifecycle test
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem 'release' -File -Filter '*-Setup-win-x64.exe'
+          if (@($setup).Count -ne 1) { throw 'Expected one Windows setup.' }
+          ./scripts/Test-Setup.ps1 -SetupPath $setup.FullName `
+            -ExpectedCommit '${{ github.sha }}' -ReportPath 'release/setup-smoke-report.json'
+
       - name: Generate SBOM and release packages
         env:
           DOTNET_ROLL_FORWARD: Major
         shell: pwsh
         run: |
-          $version = '${{ github.ref_name }}'.TrimStart('v')
+          $version = $env:GITHUB_REF_NAME.TrimStart('v')
           $publish = Resolve-Path 'src/ActionOrbit.App/bin/publish/win-x64'
           $release = Join-Path $PWD 'release'
           $stage = Join-Path $release "ActionOrbitPro-v$version-win-x64"
@@ -125,7 +169,8 @@ jobs:
           $hotfixZip = Join-Path $release "ActionOrbitPro-v$version-DLL-hotfix.zip"
           Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zip -CompressionLevel Optimal
           Compress-Archive -Path (Join-Path $hotfixStage '*') -DestinationPath $hotfixZip -CompressionLevel Optimal
-          @($zip, $hotfixZip, (Join-Path $release "ActionOrbitPro-v$version.spdx.json")) |
+          $setup = Get-ChildItem $release -File -Filter '*-Setup-win-x64.exe'
+          @($zip, $hotfixZip, $setup.FullName, (Join-Path $release 'setup-smoke-report.json'), (Join-Path $release "ActionOrbitPro-v$version.spdx.json")) |
             ForEach-Object {
               $hash = (Get-FileHash $_ -Algorithm SHA256).Hash.ToLowerInvariant()
               "$hash  $(Split-Path $_ -Leaf)"
@@ -134,7 +179,7 @@ jobs:
       - name: Clean install, upgrade and privacy smoke
         shell: pwsh
         run: |
-          $version = '${{ github.ref_name }}'.TrimStart('v')
+          $version = $env:GITHUB_REF_NAME.TrimStart('v')
           ./scripts/Test-ReleasePackage.ps1 `
             -PackagePath "release/ActionOrbitPro-v$version-win-x64.zip" `
             -HotfixPath "release/ActionOrbitPro-v$version-DLL-hotfix.zip" `
@@ -147,6 +192,7 @@ jobs:
           name: ActionOrbitPro-${{ github.ref_name }}-release
           path: |
             release/*.zip
+            release/*-Setup-win-x64.exe
             release/*.json
             release/SHA256SUMS.txt
           if-no-files-found: error
@@ -155,6 +201,7 @@ jobs:
         with:
           subject-path: |
             release/*.zip
+            release/*-Setup-win-x64.exe
             release/*.json
             release/SHA256SUMS.txt
 
@@ -163,7 +210,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $version = '${{ github.ref_name }}'.TrimStart('v')
+          $version = $env:GITHUB_REF_NAME.TrimStart('v')
           $notes = @"
           ## Action Orbit Pro v$version
 
@@ -175,21 +222,22 @@ jobs:
           - Tarayıcı seçimi ve aksiyon bazlı global hotkey
           - Self-contained .NET runtime 10.0.10
           - Temiz kurulum/yükseltme smoke raporu ve aynı sürüme özel DLL hotfix
+          - Windows setup: başlangıç/kısayol tercihleri ve otomatik kurulum yaşam döngüsü testi
           - SPDX SBOM ve GitHub build provenance attestation
 
-          Tam paketin içindeki dosyalar birlikte tutulmalıdır. DLL hotfix yalnızca aynı sürümün gevşek dosyalı tam paketi içindir. Paket bütünlüğü `SHA256SUMS.txt` ile doğrulanabilir. Authenticode sertifikası yapılandırılmadıysa Windows SmartScreen bilinmeyen yayıncı uyarısı gösterebilir.
+          Kolay kurulum için Setup-win-x64.exe dosyasını indir. Taşınabilir kullanımda tam ZIP paketinin dosyalarını birlikte tut. DLL hotfix yalnızca aynı sürümün gevşek dosyalı tam paketi içindir. Paket bütünlüğü `SHA256SUMS.txt` ile doğrulanabilir. Authenticode sertifikası yapılandırılmadıysa Windows SmartScreen bilinmeyen yayıncı uyarısı gösterebilir.
           "@
           $notesPath = Join-Path $env:RUNNER_TEMP 'release-notes.md'
           $notes | Set-Content $notesPath -Encoding utf8
           $assets = @(
             Get-ChildItem release -File |
               Where-Object {
-                $_.Extension -in '.zip', '.json' -or $_.Name -eq 'SHA256SUMS.txt'
+                $_.Extension -in '.zip', '.json' -or $_.Name -like '*-Setup-win-x64.exe' -or $_.Name -eq 'SHA256SUMS.txt'
               } |
               Select-Object -ExpandProperty FullName
           )
-          if ($assets.Count -lt 5) { throw 'Release assetları eksik.' }
-          gh release create '${{ github.ref_name }}' `
+          if ($assets.Count -lt 7) { throw 'Release assetları eksik.' }
+          gh release create $env:GITHUB_REF_NAME `
             @assets `
             --verify-tag `
             --title "Action Orbit Pro v$version" `

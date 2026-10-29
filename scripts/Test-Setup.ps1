@@ -1,5 +1,9 @@
 [CmdletBinding()]
-param([Parameter(Mandatory)][string]$SetupPath)
+param(
+    [Parameter(Mandatory)][string]$SetupPath,
+    [string]$ReportPath = '',
+    [string]$ExpectedCommit = ''
+)
 
 $ErrorActionPreference = 'Stop'
 $setup = (Resolve-Path -LiteralPath $SetupPath).Path
@@ -50,6 +54,9 @@ try {
         '--release-smoke-app-directory', "`"$stateDir`"")
     $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
     if (-not $report.Succeeded) { throw "Installed app smoke failed: $($report.Error)" }
+    if ($ExpectedCommit -and -not $report.ProductVersion.Contains($ExpectedCommit, [StringComparison]::OrdinalIgnoreCase)) {
+        throw 'Installed application does not match the expected commit.'
+    }
     if ($report.Checks.PSObject.Properties | Where-Object { -not [bool]$_.Value }) { throw 'An app smoke check failed.' }
 }
 finally {
@@ -69,4 +76,22 @@ finally {
 if (Test-Path -LiteralPath "$installDir\ActionOrbit.App.exe") { throw 'Uninstall left the executable behind.' }
 if (Test-Path $uninstallKey) { throw 'Uninstall registration was not removed.' }
 if (-not (Test-Path -LiteralPath "$stateDir\config.json")) { throw 'Uninstall removed data outside its installation directory.' }
-Write-Output "PASS: install, in-place update, installed app smoke, package privacy, uninstall. Logs: $testRoot"
+$summary = [ordered]@{
+    succeeded = $true
+    productVersion = $report.ProductVersion
+    setupSha256 = (Get-FileHash -LiteralPath $setup -Algorithm SHA256).Hash.ToLowerInvariant()
+    install = $true
+    inPlaceUpdate = $true
+    startupEnabled = $true
+    startupDisabled = $true
+    appSmoke = $report.Checks
+    packagePrivacy = $true
+    uninstall = $true
+    dataPreserved = $true
+}
+if ($ReportPath) {
+    $destination = [IO.Path]::GetFullPath($ReportPath)
+    New-Item -ItemType Directory -Path (Split-Path -Parent $destination) -Force | Out-Null
+    $summary | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $destination -Encoding utf8
+}
+Write-Output 'PASS: install, update, startup choices, app smoke, privacy, uninstall, data preservation.'

@@ -2,7 +2,9 @@
 param(
     [string]$DotNetPath = 'dotnet',
     [string]$IsccPath = '',
-    [string]$Version = '2.0.0'
+    [string]$Version = '2.0.0',
+    [string]$PublishDirectory = '',
+    [string]$OutputDirectory = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -10,9 +12,11 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 if ($Version -notmatch '^\d+\.\d+\.\d+$') { throw 'Version must use major.minor.patch.' }
 $buildId = (& git -C $repoRoot rev-parse --short HEAD).Trim()
 if ($LASTEXITCODE -ne 0) { throw 'Cannot determine build commit.' }
-$outputDir = Join-Path $repoRoot 'artifacts\setup'
+$outputDir = if ($OutputDirectory) { [IO.Path]::GetFullPath($OutputDirectory) } else { Join-Path $repoRoot 'artifacts\setup' }
 # A fresh directory prevents stale files or local application state entering the installer.
-$publishDir = Join-Path $repoRoot ('artifacts\setup-publish-' + [guid]::NewGuid().ToString('N'))
+$publishDir = if ($PublishDirectory) { (Resolve-Path -LiteralPath $PublishDirectory).Path } else {
+    Join-Path $repoRoot ('artifacts\setup-publish-' + [guid]::NewGuid().ToString('N'))
+}
 New-Item -ItemType Directory -Path $outputDir, $publishDir -Force | Out-Null
 
 if (-not $IsccPath) {
@@ -30,13 +34,16 @@ if (-not $IsccPath -or -not (Test-Path -LiteralPath $IsccPath)) {
     throw 'Install Inno Setup 6 or pass -IsccPath with the path to ISCC.exe.'
 }
 
-& $DotNetPath publish (Join-Path $repoRoot 'src\ActionOrbit.App\ActionOrbit.App.csproj') `
+if (-not $PublishDirectory) {
+    & $DotNetPath publish (Join-Path $repoRoot 'src\ActionOrbit.App\ActionOrbit.App.csproj') `
     --configuration Release --runtime win-x64 --self-contained true `
     '-p:PublishSingleFile=false' '-p:PublishTrimmed=false' '-p:DebugType=embedded' `
-    '-p:RestoreLockedMode=true' --output $publishDir
-if ($LASTEXITCODE -ne 0) { throw 'Self-contained publish failed.' }
+    '-p:RestoreLockedMode=true' '-p:ContinuousIntegrationBuild=true' --output $publishDir
+    if ($LASTEXITCODE -ne 0) { throw 'Self-contained publish failed.' }
+}
+& (Join-Path $PSScriptRoot 'Assert-PublishContent.ps1') -PublishDirectory $publishDir
 
-$artworkDir = Join-Path $publishDir '..\setup-artwork'
+$artworkDir = Join-Path $repoRoot ('artifacts\setup-artwork-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $artworkDir -Force | Out-Null
 Add-Type -AssemblyName System.Drawing
 $logo = [Drawing.Image]::FromFile((Join-Path $repoRoot 'src\ActionOrbit.App\Assets\Brand\ActionOrbitLogo.png'))

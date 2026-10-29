@@ -22,6 +22,10 @@ Paket şu an kod imzası içermez. Windows SmartScreen uyarısı gösterebilir. 
 
 Araçlar PATH üzerinde değilse `-DotNetPath` ve `-IsccPath` ile tam yollarını ver. Sonuç ve SHA-256 dosyası `artifacts\setup` klasörüne yazılır. Her derleme temiz bir yayın klasörü kullanır; kişisel config ve raf dosyaları kurulum paketine eklenmez.
 
+CI, Inno Setup 6.7.3 derleyicisini sabit resmi adresten indirir; SHA-256 ve yayıncı imzasını doğrulamadan çalıştırmaz. `-PublishDirectory` seçeneğiyle aynı commit'in önceden hazırlanmış ve gerekiyorsa imzalanmış uygulamasından setup üretilebilir. Girdi klasörü yalnızca beklenen uygulama/runtime dosyalarını kabul eder; beklenmeyen dosya varsa paketleme durur.
+
+Release akışı setup'ı, kurulum test özetini ve checksum'u yayımlar. Kurulum logları, geçici config klasörleri ve ham test verileri yayın varlığı değildir. Test özeti yalnızca sürüm, dosya özeti ve başarılı/başarısız kontrollerini içerir. Kaynak kontrolü de Git index üzerinden çalışır; ilgisiz yerel taslakları okumaz veya commit'e eklemez.
+
 ## Kurulumu test etme
 
 ```powershell

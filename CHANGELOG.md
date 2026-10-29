@@ -7,12 +7,15 @@ Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 
 ### Değiştirildi
 
+- Windows setup, taşınabilir paketle aynı uygulama çıktısından üretiliyor; CI kurulum ve kaldırmayı deniyor, Release yalnızca paketleri ve temizlenmiş özet raporları yayımlıyor.
+- Paket girdisi ve Git index kontrolüne, yerel durum dosyaları ile yaygın gizli anahtar biçimlerini engelleyen denetimler eklendi.
 - Windows paketi, destek sorunlarını ve DLL hotfix belirsizliğini azaltmak için self-contained gevşek dosya düzenine geçirildi; hotfix yalnızca aynı sürümdeki bu düzen için üretiliyor.
 - CodeQL C# analizi, overlay-base uyarısına neden olan `manual` derleme yerine desteklenen derlemesiz moda geçirildi; normal CI ve release hattı derleme/test işini ayrı olarak sürdürüyor.
 - Public belgeler güncel uygulama davranışını anlatacak şekilde sadeleştirildi; eski iç geliştirme notları depodan kaldırıldı.
 
 ### Düzeltildi
 
+- Yüzen Shelf'in her zaman ana monitörü kullanması düzeltildi. Shelf ve mini araçlar imlecin bulunduğu ekranın çalışma alanına sığıyor; küçük alanlarda minimum pencere boyutunun yol açtığı konumlandırma hatası engelleniyor.
 - Bildirim alanındaki `Çıkış` komutunun açık tray menüsünü dispose ederek ekranda bırakması ve Orbit Link ağ görevlerini UI iş parçacığında bekleyerek menüyü dondurması düzeltildi; menü önce kapatılıyor, dinleyici anında durdurulurken kalan temizlik arka planda tamamlanıyor.
 - Tailscale IPv4 adreslerinin çift-mod ağ dinleyicisinde `::ffff:100.x.x.x` biçiminde kaydedilip sonraki Shelf gönderiminde Windows soketi tarafından reddedilmesi düzeltildi; mevcut eşleşmeler açılışta otomatik normalleştiriliyor.
 - Orbit Link ayarlarındaki ana düğme stilinin ayrı WPF görünümünde çözülememesi nedeniyle uygulamanın pencere ve tray ikonu oluşturmadan arka planda kalması düzeltildi; başlangıç UI hataları artık görünür hata verip uygulamayı kapatıyor.
