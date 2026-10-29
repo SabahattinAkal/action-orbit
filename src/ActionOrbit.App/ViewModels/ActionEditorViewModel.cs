@@ -30,6 +30,8 @@ public sealed class ActionEditorViewModel : ViewModelBase
     private ActionPresetOption? _selectedPreset;
     private bool _isTestingAction;
     private int _ringPreviewPageIndex;
+    private string _actionSearchText = "";
+    private readonly HashSet<OrbitAction> _collapsedFolders = [];
 
     public ActionEditorViewModel(
         ConfigService configService,
@@ -91,6 +93,8 @@ public sealed class ActionEditorViewModel : ViewModelBase
             parameter => CanMoveAction(parameter as ActionEditorRowViewModel ?? SelectedAction, 1));
         MoveActionUpCommand = _moveActionUpCommand;
         MoveActionDownCommand = _moveActionDownCommand;
+        ClearActionSearchCommand = new RelayCommand(() => ActionSearchText = "");
+        ToggleActionFolderCommand = new RelayCommand(parameter => ToggleActionFolder(parameter as ActionEditorRowViewModel));
         MoveActionOutOfFolderCommand = new RelayCommand(MoveSelectedActionOutOfFolder);
         SelectRingPreviewSlotCommand = new RelayCommand(parameter =>
             SelectRingPreviewSlot(parameter as RingPreviewSlotViewModel));
@@ -107,6 +111,28 @@ public sealed class ActionEditorViewModel : ViewModelBase
     }
 
     public ObservableCollection<ActionEditorRowViewModel> ActionRows { get; } = [];
+    public ObservableCollection<ActionEditorRowViewModel> VisibleActionRows { get; } = [];
+    public string ActionSearchText
+    {
+        get => _actionSearchText;
+        set
+        {
+            if (SetProperty(ref _actionSearchText, value ?? ""))
+            {
+                RefreshVisibleActionRows();
+                OnPropertyChanged(nameof(HasActionSearch));
+                OnPropertyChanged(nameof(CanToggleActionFolders));
+            }
+        }
+    }
+    public bool HasActionSearch => !string.IsNullOrWhiteSpace(ActionSearchText);
+    public bool CanToggleActionFolders => !HasActionSearch;
+    public bool HasNoVisibleActions => VisibleActionRows.Count == 0;
+    public string EmptyActionListTitle => HasActionSearch ? "Aksiyon bulunamadı" : "Halka henüz boş";
+    public string EmptyActionListHint => HasActionSearch ? "Başka bir ad veya eylem türü dene." : "Bir aksiyon veya klasör ekleyerek başla.";
+    public string ActionListSummary => HasActionSearch
+        ? $"{VisibleActionRows.Count} görünür · {ActionRows.Count} aksiyon"
+        : $"{ActionRows.Count} aksiyon";
     public ObservableCollection<IconOption> AvailableIcons { get; } = [];
     public ObservableCollection<RingPreviewSlotViewModel> RingPreviewSlots { get; } = [];
     public IReadOnlyList<string> AvailableIconKeys => IconCatalog.AvailableKeys;
@@ -219,12 +245,70 @@ public sealed class ActionEditorViewModel : ViewModelBase
     public ICommand TestActionCommand { get; }
     public ICommand MoveActionUpCommand { get; }
     public ICommand MoveActionDownCommand { get; }
+    public ICommand ClearActionSearchCommand { get; }
+    public ICommand ToggleActionFolderCommand { get; }
     public ICommand MoveActionOutOfFolderCommand { get; }
     public ICommand SelectRingPreviewSlotCommand { get; }
     public ICommand PreviousRingPreviewPageCommand { get; }
     public ICommand NextRingPreviewPageCommand { get; }
 
-    public void ReloadForSelectedProfile() => RebuildActionRows();
+    public void ReloadForSelectedProfile()
+    {
+        _collapsedFolders.Clear();
+        ActionSearchText = "";
+        RebuildActionRows();
+    }
+
+    private void ToggleActionFolder(ActionEditorRowViewModel? row)
+    {
+        if (row?.CanExpand != true || HasActionSearch) return;
+        if (!_collapsedFolders.Add(row.Action)) _collapsedFolders.Remove(row.Action);
+        if (_collapsedFolders.Contains(row.Action) && SelectedAction is not null && IsDescendantOf(SelectedAction, row))
+            SelectedAction = row;
+        RefreshVisibleActionRows();
+    }
+
+    private void RefreshVisibleActionRows()
+    {
+        var query = ActionSearchText.Trim();
+        var matches = new HashSet<ActionEditorRowViewModel>();
+        if (query.Length > 0)
+        {
+            foreach (var row in ActionRows)
+            {
+                var candidate = row;
+                var matched = false;
+                while (candidate is not null)
+                {
+                    if (candidate.Title.Contains(query, StringComparison.CurrentCultureIgnoreCase) ||
+                        candidate.TypeLabel.Contains(query, StringComparison.CurrentCultureIgnoreCase)) matched = true;
+                    candidate = candidate.Parent;
+                }
+                if (!matched) continue;
+                for (candidate = row; candidate is not null; candidate = candidate.Parent) matches.Add(candidate);
+            }
+        }
+        var visible = new List<ActionEditorRowViewModel>();
+        foreach (var row in ActionRows)
+        {
+            row.IsExpanded = query.Length > 0 || !_collapsedFolders.Contains(row.Action);
+            var hidden = false;
+            for (var parent = row.Parent; parent is not null; parent = parent.Parent)
+                if (_collapsedFolders.Contains(parent.Action)) hidden = true;
+            if (query.Length > 0 ? matches.Contains(row) : !hidden) visible.Add(row);
+        }
+        if (!VisibleActionRows.SequenceEqual(visible))
+        {
+            var selection = SelectedAction;
+            VisibleActionRows.Clear();
+            foreach (var row in visible) VisibleActionRows.Add(row);
+            if (selection is not null && visible.Contains(selection)) SelectedAction = selection;
+        }
+        OnPropertyChanged(nameof(HasNoVisibleActions));
+        OnPropertyChanged(nameof(ActionListSummary));
+        OnPropertyChanged(nameof(EmptyActionListTitle));
+        OnPropertyChanged(nameof(EmptyActionListHint));
+    }
 
     public void RefreshAvailableIcons()
     {
@@ -316,6 +400,7 @@ public sealed class ActionEditorViewModel : ViewModelBase
         }
 
         targetFolder.Children.Add(movedAction);
+        _collapsedFolders.Remove(targetFolder);
         var targetOwner = targetFolder.Children;
         RebuildActionRows();
         SelectedAction = ActionRows.FirstOrDefault(row => ReferenceEquals(row.Action, movedAction));
@@ -429,11 +514,13 @@ public sealed class ActionEditorViewModel : ViewModelBase
         if (selectedProfile is null || selectedActions is null)
         {
             SelectedAction = null;
+            RefreshVisibleActionRows();
             RebuildRingPreview();
             return;
         }
 
         AddRows(selectedActions, selectedActions, parent: null, depth: 0);
+        RefreshVisibleActionRows();
         SelectedAction = ActionRows.FirstOrDefault(row =>
             string.Equals(row.Action.Id, selectedId, StringComparison.OrdinalIgnoreCase))
             ?? ActionRows.FirstOrDefault();
@@ -650,6 +737,7 @@ public sealed class ActionEditorViewModel : ViewModelBase
         }
 
         SelectedAction.Action.Children ??= [];
+        _collapsedFolders.Remove(SelectedAction.Action);
         AddActionTo(SelectedAction.Action.Children, type: "open_app");
     }
 
@@ -728,6 +816,7 @@ public sealed class ActionEditorViewModel : ViewModelBase
         var action = ActionDefinitionCatalog.CreateActionFromPreset(
             SelectedPreset,
             CreateUniqueActionId(selectedActions, NormalizeId(SelectedPreset.Id, "action")));
+        ActionSearchText = "";
         selectedActions.Add(action);
         RebuildActionRows();
         SelectedAction = ActionRows.FirstOrDefault(candidate => ReferenceEquals(candidate.Action, action));
@@ -889,6 +978,7 @@ public sealed class ActionEditorViewModel : ViewModelBase
             Arguments = ""
         };
 
+        ActionSearchText = "";
         actions.Add(action);
         RebuildActionRows();
         SelectedAction = ActionRows.FirstOrDefault(row => ReferenceEquals(row.Action, action));

@@ -25,8 +25,87 @@ public partial class ActionListView : System.Windows.Controls.UserControl
 
     private ActionEditorViewModel? ViewModel => DataContext as ActionEditorViewModel;
 
+    public void FocusSearch()
+    {
+        ActionSearchBox.Focus();
+        ActionSearchBox.SelectAll();
+    }
+
+    internal IReadOnlyDictionary<string, bool> RunNavigationSmokeChecks()
+    {
+        var checks = new Dictionary<string, bool>();
+        if (ViewModel is not { } editor)
+        {
+            checks["actionEditorBinding"] = false;
+            return checks;
+        }
+        var originalQuery = editor.ActionSearchText;
+        var originalSelection = editor.SelectedAction;
+        var folder = editor.ActionRows.FirstOrDefault(row => row.CanExpand);
+        var originalExpanded = folder?.IsExpanded;
+        try
+        {
+            var query = "orbit-ui-check-" + Guid.NewGuid().ToString("N");
+            editor.ActionSearchText = query;
+            UpdateLayout();
+            checks["actionSearchBinding"] = ActionSearchBox.Text == query && ActionList.Items.Count == 0 && editor.HasNoVisibleActions;
+            editor.ClearActionSearchCommand.Execute(null);
+            UpdateLayout();
+            checks["actionSearchClear"] = ActionSearchBox.Text.Length == 0 && ActionList.Items.Count == editor.ActionRows.Count;
+            if (folder is not null)
+            {
+                editor.ToggleActionFolderCommand.Execute(folder);
+                UpdateLayout();
+                checks["actionFolderCollapse"] = !folder.IsExpanded && ActionList.Items.Count < editor.ActionRows.Count;
+                editor.ToggleActionFolderCommand.Execute(folder);
+                UpdateLayout();
+                checks["actionFolderExpand"] = folder.IsExpanded && ActionList.Items.Count == editor.ActionRows.Count;
+            }
+        }
+        finally
+        {
+            editor.ActionSearchText = "";
+            if (folder is not null && folder.IsExpanded != originalExpanded) editor.ToggleActionFolderCommand.Execute(folder);
+            editor.ActionSearchText = originalQuery;
+            editor.SelectedAction = originalSelection;
+        }
+        return checks;
+    }
+
+    private void Panel_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == Key.F && Keyboard.Modifiers == ModifierKeys.Control)
+        {
+            FocusSearch();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Escape && ActionSearchBox.IsKeyboardFocusWithin)
+        {
+            ViewModel?.ClearActionSearchCommand.Execute(null);
+            ActionList.Focus();
+            e.Handled = true;
+        }
+    }
+
+    private void ActionList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ContextIdle, new Action(() =>
+        {
+            if (IsLoaded && ActionList.SelectedItem is { } selected && ActionList.Items.Contains(selected))
+                ActionList.ScrollIntoView(selected);
+        }));
+    }
+
     private void ActionList_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
+        for (var node = e.OriginalSource as DependencyObject; node is not null; node = VisualTreeHelper.GetParent(node))
+        {
+            if (node is System.Windows.Controls.Primitives.ButtonBase)
+            {
+                _actionDragSource = null;
+                return;
+            }
+        }
         _actionDragStartPoint = e.GetPosition(ActionList);
         _actionDragSource = FindActionRow(e.OriginalSource as DependencyObject);
     }
@@ -119,7 +198,8 @@ public partial class ActionListView : System.Windows.Controls.UserControl
             return;
         }
 
-        var command = e.Key switch
+        var key = e.Key == Key.System ? e.SystemKey : e.Key;
+        var command = key switch
         {
             Key.Up => ViewModel?.MoveActionUpCommand,
             Key.Down => ViewModel?.MoveActionDownCommand,

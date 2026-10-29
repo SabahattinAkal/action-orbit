@@ -15,6 +15,7 @@ Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 
 ### Düzeltildi
 
+- Ring Editörü'nde Alt+↑/↓ tuşlarının sistem tuşu olayında tanınmaması düzeltildi; taşıma sonrasında seçili satır görünür tutuluyor ve satır düğmelerine basmak sürükleme başlatmıyor.
 - Yüzen Shelf'in her zaman ana monitörü kullanması düzeltildi. Shelf ve mini araçlar imlecin bulunduğu ekranın çalışma alanına sığıyor; küçük alanlarda minimum pencere boyutunun yol açtığı konumlandırma hatası engelleniyor.
 - Bildirim alanındaki `Çıkış` komutunun açık tray menüsünü dispose ederek ekranda bırakması ve Orbit Link ağ görevlerini UI iş parçacığında bekleyerek menüyü dondurması düzeltildi; menü önce kapatılıyor, dinleyici anında durdurulurken kalan temizlik arka planda tamamlanıyor.
 - Tailscale IPv4 adreslerinin çift-mod ağ dinleyicisinde `::ffff:100.x.x.x` biçiminde kaydedilip sonraki Shelf gönderiminde Windows soketi tarafından reddedilmesi düzeltildi; mevcut eşleşmeler açılışta otomatik normalleştiriliyor.
@@ -33,6 +34,7 @@ Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 
 ### Eklendi
 
+- Ring Editörü aksiyon listesine ad/tür araması, Ctrl+F ile aramaya geçiş, Esc ile temizleme ve klasör alt aksiyonlarını açıp kapatma eklendi. Arama eşleşmelerin klasörlerini de gösteriyor; arama/görünüm durumu config'e yazılmıyor.
 - Release ZIP'ini temiz ve yükseltme durumlarında gerçek EXE ile açan; ana pencere, Ayarlar, Orbit Shelf, tray, kapanış, veri koruma, paket gizliliği, checksum ve tam paket/hotfix commit eşleşmesini doğrulayan yayın smoke hattı eklendi.
 - Orbit Link'in iki gerçek Windows bilgisayarda, doğrudan/ters bağlantı, çevrimdışı dönüş, VPN kesintisi, içerik sınırları ve gizlilik kontrolleriyle sınanması için kişisel veri toplamayan test matrisi ve rapor komutu eklendi.
 - Orbit Link'e uygulama yeniden başlatıldığında devam eden, iki öğe ve 24 saatle sınırlı şifreli aktarım kuyruğu; artan yeniden deneme aralığı, teslimat durumu, yeniden dene ve iptal kontrolleri eklendi.

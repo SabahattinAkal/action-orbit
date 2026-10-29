@@ -23,6 +23,22 @@ public sealed class ActionEditorRowViewModel : ViewModelBase
     public string ParentTitle => Parent?.Title ?? "";
     public int ChildCount => Action.Children?.Count ?? 0;
     public bool CanChangeType => ChildCount == 0;
+    public bool CanExpand => IsFolder && ChildCount > 0;
+    private bool _isExpanded = true;
+    public bool IsExpanded
+    {
+        get => _isExpanded;
+        set
+        {
+            if (SetProperty(ref _isExpanded, value))
+            {
+                OnPropertyChanged(nameof(ExpansionGlyph));
+                OnPropertyChanged(nameof(ExpansionToolTip));
+            }
+        }
+    }
+    public string ExpansionGlyph => IsExpanded ? "⌄" : "›";
+    public string ExpansionToolTip => IsExpanded ? "Alt aksiyonları gizle" : "Alt aksiyonları göster";
     public string FolderBadgeText => ChildCount == 1 ? "1 alt" : $"{ChildCount} alt";
     public string RowSubtitle =>
         IsChild

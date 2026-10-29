@@ -176,7 +176,7 @@ public partial class App : System.Windows.Application
         string? error = null;
         try
         {
-            foreach (var check in mainWindow.RunReleaseSmokeChecks())
+            foreach (var check in await mainWindow.RunReleaseSmokeChecks())
             {
                 checks[check.Key] = check.Value;
             }

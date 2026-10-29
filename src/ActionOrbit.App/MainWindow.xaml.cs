@@ -1,10 +1,12 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Input;
 using ActionOrbit.App.Services;
 using ActionOrbit.App.ViewModels;
 using ActionOrbit.App.Views.Settings;
 using ActionOrbit.App.Views.Shelf;
+using ActionOrbit.App.Views.Actions;
 using Drawing = System.Drawing;
 using Forms = System.Windows.Forms;
 
@@ -27,6 +29,10 @@ public partial class MainWindow : Window
         _hotkeyService = hotkeyService;
         DataContext = _viewModel;
         InitializeComponent();
+        InputBindings.Add(new KeyBinding(ApplicationCommands.Find, new KeyGesture(Key.F, ModifierKeys.Control)));
+        CommandBindings.Add(new CommandBinding(ApplicationCommands.Find,
+            (_, args) => { FindVisualChild<ActionListView>(this)?.FocusSearch(); args.Handled = true; },
+            (_, args) => { args.CanExecute = _viewModel.IsEditorWorkspace; args.Handled = true; }));
         _applicationIcon = LoadApplicationIcon();
         _trayIcon = CreateTrayIcon();
         _viewModel.Status.UserNotificationRequested += ShowUserNotification;
@@ -184,7 +190,7 @@ public partial class MainWindow : Window
         }));
     }
 
-    internal IReadOnlyDictionary<string, bool> RunReleaseSmokeChecks()
+    internal async Task<IReadOnlyDictionary<string, bool>> RunReleaseSmokeChecks()
     {
         var checks = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase)
         {
@@ -196,6 +202,14 @@ public partial class MainWindow : Window
         UpdateLayout();
         checks["settingsXaml"] = _viewModel.IsSettingsWorkspace
             && FindVisualChild<SettingsView>(this) is not null;
+
+        _viewModel.NavigateWorkspaceCommand.Execute("editor");
+        await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+        UpdateLayout();
+        var actionList = FindVisualChild<ActionListView>(this);
+        checks["actionEditorXaml"] = actionList is { IsLoaded: true };
+        if (actionList is not null)
+            foreach (var check in actionList.RunNavigationSmokeChecks()) checks[check.Key] = check.Value;
 
         var shelfWindow = new ShelfWindow
         {

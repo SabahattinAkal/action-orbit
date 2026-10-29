@@ -212,7 +212,94 @@ public sealed class ActionEditorPersistenceTests : IDisposable
         Assert.Equal(["alpha", "beta", "gamma"], persisted.Select(action => action.Id));
     }
 
-    private (ConfigService ConfigService, ActionEditorViewModel ViewModel) CreateViewModel(Action<string, Action>? registerUndo = null)
+    [Fact]
+    public void ActionSearch_FindsNestedActionsWithFolderContext_WithoutChangingSavedDataOrPreview()
+    {
+        var dirtyCount = 0;
+        var (config, editor) = CreateViewModel(markDirty: () => dirtyCount++);
+        var child = CreateAction("needle", "Needle tool");
+        config.CurrentConfig.Profiles[0].Actions =
+        [new OrbitAction { Id = "folder", Title = "Tools", Type = "folder", Children = [child, CreateAction("other", "Other")] },
+            CreateAction("root", "Root")];
+        editor.ReloadForSelectedProfile();
+        editor.ActionSearchText = "needle";
+
+        Assert.Equal(["folder", "needle"], editor.VisibleActionRows.Select(row => row.Id));
+        Assert.Equal(4, editor.ActionRows.Count);
+        Assert.Equal(2, editor.RingPreviewSlots.Count);
+        Assert.Equal(0, dirtyCount);
+        config.Save(config.CurrentConfig);
+        Assert.DoesNotContain("actionSearchText", File.ReadAllText(config.ConfigPath), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void CollapsedFolder_SearchTemporarilyRevealsChildren_AndClearRestoresCollapse()
+    {
+        var dirtyCount = 0;
+        var (config, editor) = CreateViewModel(markDirty: () => dirtyCount++);
+        config.CurrentConfig.Profiles[0].Actions =
+        [new OrbitAction { Id = "folder", Title = "Tools", Type = "folder", Children = [CreateAction("child", "Child")] }];
+        editor.ReloadForSelectedProfile();
+        var folder = editor.ActionRows[0];
+        editor.SelectedAction = editor.ActionRows[1];
+        editor.ToggleActionFolderCommand.Execute(folder);
+        Assert.Same(folder, Assert.Single(editor.VisibleActionRows));
+        Assert.Same(folder, editor.SelectedAction);
+        editor.ActionSearchText = "Child";
+        Assert.Equal(2, editor.VisibleActionRows.Count);
+        Assert.True(folder.IsExpanded);
+        Assert.False(editor.CanToggleActionFolders);
+        editor.ClearActionSearchCommand.Execute(null);
+        Assert.Single(editor.VisibleActionRows);
+        Assert.False(folder.IsExpanded);
+        Assert.Equal(0, dirtyCount);
+    }
+
+    [Fact]
+    public void FilteredReorder_UsesFullOwnerOrder_AndPersistsAfterSave()
+    {
+        var (config, editor) = CreateViewModel();
+        config.CurrentConfig.Profiles[0].Actions =
+        [CreateAction("alpha", "Alpha"), CreateAction("beta", "Beta"), CreateAction("gamma", "Gamma")];
+        editor.ReloadForSelectedProfile();
+        editor.ActionSearchText = "Beta";
+        editor.MoveActionUpCommand.Execute(Assert.Single(editor.VisibleActionRows));
+        config.Save(config.CurrentConfig);
+        Assert.Equal(["beta", "alpha", "gamma"], config.Reload().Profiles[0].Actions.Select(action => action.Id));
+        Assert.Single(editor.VisibleActionRows);
+        Assert.Equal("beta", editor.SelectedAction?.Id);
+    }
+
+    [Fact]
+    public void SearchWithoutResults_CanBeCleared_AndDoesNotHideNewActions()
+    {
+        var (config, editor) = CreateViewModel();
+        config.CurrentConfig.Profiles[0].Actions = [CreateAction("one", "One")];
+        editor.ReloadForSelectedProfile();
+        editor.ActionSearchText = "not-present";
+        Assert.True(editor.HasNoVisibleActions);
+        editor.AddActionCommand.Execute(null);
+        Assert.False(editor.HasActionSearch);
+        Assert.Contains(editor.SelectedAction, editor.VisibleActionRows);
+        Assert.Equal(2, editor.VisibleActionRows.Count);
+    }
+
+    [Fact]
+    public void AddChild_IntoCollapsedFolder_RevealsTheNewAction()
+    {
+        var (config, editor) = CreateViewModel();
+        config.CurrentConfig.Profiles[0].Actions =
+        [new OrbitAction { Id = "folder", Title = "Tools", Type = "folder", Children = [CreateAction("child", "Child")] }];
+        editor.ReloadForSelectedProfile();
+        editor.ToggleActionFolderCommand.Execute(editor.SelectedAction);
+        Assert.Single(editor.VisibleActionRows);
+        editor.AddChildActionCommand.Execute(null);
+        Assert.Equal(3, editor.VisibleActionRows.Count);
+        Assert.Contains(editor.SelectedAction, editor.VisibleActionRows);
+        Assert.True(editor.SelectedAction!.IsChild);
+    }
+
+    private (ConfigService ConfigService, ActionEditorViewModel ViewModel) CreateViewModel(Action<string, Action>? registerUndo = null, Action? markDirty = null)
     {
         var configService = CreateConfigService();
         configService.Load();
@@ -224,7 +311,7 @@ public sealed class ActionEditorPersistenceTests : IDisposable
             executionService,
             logService,
             () => selectedProfile,
-            () => { },
+            markDirty ?? (() => { }),
             _ => { },
             registerUndo ?? ((_, _) => { }),
             () => { });
