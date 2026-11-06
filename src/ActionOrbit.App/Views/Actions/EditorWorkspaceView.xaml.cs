@@ -7,6 +7,7 @@ namespace ActionOrbit.App.Views.Actions;
 public partial class EditorWorkspaceView : System.Windows.Controls.UserControl
 {
     private EditorLayoutMode? _layoutMode;
+    private void ShortcutHelp_Click(object sender, RoutedEventArgs e) => System.Windows.Input.ApplicationCommands.Help.Execute(null, this);
     private bool _focusMode;
     private bool? _previousProfiles = true, _previousDetails = true;
     private bool _changingFocusMode;

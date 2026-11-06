@@ -299,6 +299,69 @@ public sealed class ActionEditorPersistenceTests : IDisposable
         Assert.True(editor.SelectedAction!.IsChild);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DuplicateAction_IsIndependent_AndUndoStillWorksAfterSave(bool nested)
+    {
+        var undo = new UndoManager();
+        var (config, editor) = CreateViewModel(undo.Register);
+        var source = new OrbitAction { Id = "source", Title = "Tools", Type = "folder", Shortcut = "Ctrl+Alt+K",
+            Children = [CreateAction("child", "Child")] };
+        source.Children[0].Shortcut = "Ctrl+Alt+J";
+        config.CurrentConfig.Profiles[0].Actions = nested
+            ? [new OrbitAction { Id = "parent", Title = "Parent", Type = "folder", Children = [source] }]
+            : [source];
+        editor.ReloadForSelectedProfile();
+        editor.SelectedAction = editor.ActionRows.Single(row => row.Id == "source");
+        editor.DuplicateActionCommand.Execute(null);
+        var copy = editor.SelectedAction!.Action;
+        Assert.NotSame(source, copy);
+        Assert.NotEqual(source.Id, copy.Id);
+        Assert.Empty(copy.Shortcut);
+        Assert.Empty(copy.Children[0].Shortcut);
+        Assert.NotSame(source.Children[0], copy.Children[0]);
+        copy.Children[0].Title = "Independent";
+        Assert.Equal("Child", source.Children[0].Title);
+        config.Save(config.CurrentConfig);
+        Assert.Equal(2, nested ? config.CurrentConfig.Profiles[0].Actions[0].Children.Count : config.CurrentConfig.Profiles[0].Actions.Count);
+        undo.Undo();
+        config.Save(config.CurrentConfig);
+        var roots = config.Reload().Profiles[0].Actions;
+        Assert.Single(nested ? roots[0].Children : roots);
+        Assert.Equal("source", editor.SelectedAction?.Id);
+    }
+
+    [Fact]
+    public void DuplicateAction_RespectsProfileBudget()
+    {
+        var roots = Enumerable.Range(0, 1024).Select(i => CreateAction("id_" + i, "Action")).ToList();
+        Assert.False(ActionDuplicationService.TryDuplicate(roots[0], roots, out var copy));
+        Assert.Null(copy);
+        Assert.Equal(1024, roots.Count);
+    }
+
+    [Fact]
+    public void BulkFolderVisibility_PreservesSearchMatchesAndDoesNotSaveViewChanges()
+    {
+        var dirty = 0;
+        var (config, editor) = CreateViewModel(markDirty: () => dirty++);
+        config.CurrentConfig.Profiles[0].Actions =
+        [new OrbitAction { Id = "folder", Title = "Tools", Type = "folder", Children = [CreateAction("child", "Needle")] }, CreateAction("root", "Root")];
+        editor.ReloadForSelectedProfile();
+        editor.SelectedAction = editor.ActionRows.Single(row => row.Id == "child");
+        editor.CollapseAllFoldersCommand.Execute(null);
+        Assert.Equal("folder", editor.SelectedAction?.Id);
+        Assert.Equal(2, editor.VisibleActionRows.Count);
+        editor.ActionSearchText = "Needle";
+        editor.CollapseAllFoldersCommand.Execute(null);
+        Assert.Contains(editor.VisibleActionRows, row => row.Id == "child");
+        editor.ClearActionSearchCommand.Execute(null);
+        editor.ExpandAllFoldersCommand.Execute(null);
+        Assert.Equal(editor.ActionRows.Count, editor.VisibleActionRows.Count);
+        Assert.Equal(0, dirty);
+    }
+
     private (ConfigService ConfigService, ActionEditorViewModel ViewModel) CreateViewModel(Action<string, Action>? registerUndo = null, Action? markDirty = null)
     {
         var configService = CreateConfigService();

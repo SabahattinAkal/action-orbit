@@ -356,17 +356,22 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <Button Margin="0"
                             HorizontalAlignment="Left"
                             Command="{Binding TestActionCommand}"
-                            Content="Aksiyonu test et"
+                            Content="Test et" AutomationProperties.Name="Seçili aksiyonu test et"
                             IsEnabled="{Binding CanTestSelectedAction}"
                             Style="{DynamicResource PrimaryButton}" />
                     <Button Grid.Column="1"
+                            Margin="0,0,8,0" Content="Çoğalt" ToolTip="Alt aksiyonlarıyla çoğalt · Ctrl+D"
+                            AutomationProperties.Name="Seçili aksiyonu çoğalt"
+                            Command="{Binding DuplicateActionCommand}" />
+                    <Button Grid.Column="2"
                             Margin="0"
                             Command="{Binding DeleteActionCommand}"
-                            Content="Aksiyonu sil"
+                            Content="Sil" AutomationProperties.Name="Seçili aksiyonu sil"
                             Style="{DynamicResource DangerButton}" />
                 </Grid>
             </Border>

@@ -83,6 +83,9 @@ public sealed class ActionEditorViewModel : ViewModelBase
         AddPresetToProfileCommand = new RelayCommand(AddSelectedPresetToProfile);
         ImportIconCommand = new RelayCommand(ImportIcon);
         DeleteActionCommand = new RelayCommand(DeleteAction);
+        DuplicateActionCommand = new RelayCommand(DuplicateSelectedAction);
+        ExpandAllFoldersCommand = new RelayCommand(() => SetAllFoldersExpanded(true));
+        CollapseAllFoldersCommand = new RelayCommand(() => SetAllFoldersExpanded(false));
         BrowseActionTargetCommand = new RelayCommand(BrowseActionTarget);
         TestActionCommand = new RelayCommand(TestSelectedAction);
         _moveActionUpCommand = new RelayCommand(
@@ -241,6 +244,45 @@ public sealed class ActionEditorViewModel : ViewModelBase
     public ICommand AddPresetToProfileCommand { get; }
     public ICommand ImportIconCommand { get; }
     public ICommand DeleteActionCommand { get; }
+    public ICommand DuplicateActionCommand { get; }
+    public ICommand ExpandAllFoldersCommand { get; }
+    public ICommand CollapseAllFoldersCommand { get; }
+
+    private void SetAllFoldersExpanded(bool expanded)
+    {
+        if (HasActionSearch) return;
+        _collapsedFolders.Clear();
+        if (!expanded)
+        {
+            foreach (var row in ActionRows.Where(row => row.CanExpand)) _collapsedFolders.Add(row.Action);
+            SelectedAction = GetSelectedRootAction();
+        }
+        RefreshVisibleActionRows();
+    }
+
+    private void DuplicateSelectedAction()
+    {
+        if (SelectedAction is not { } selected || _getSelectedProfile() is not { } profile) return;
+        var roots = profile.Actions.Concat(profile.RingSets.SelectMany(ring => ring.Actions));
+        if (!ActionDuplicationService.TryDuplicate(selected.Action, roots, out var copy) || copy is null)
+        { _setStatus("Profildeki aksiyon sınırı aşılıyor; çoğaltmadan önce kullanılmayan aksiyonları kaldır."); return; }
+        var owner = selected.Owner;
+        var index = owner.IndexOf(selected.Action);
+        if (index < 0) return;
+        owner.Insert(index + 1, copy);
+        for (var parent = selected.Parent; parent is not null; parent = parent.Parent) _collapsedFolders.Remove(parent.Action);
+        ActionSearchText = "";
+        RebuildActionRows();
+        SelectedAction = ActionRows.FirstOrDefault(row => ReferenceEquals(row.Action, copy));
+        _registerUndo("Aksiyon çoğaltma", () =>
+        {
+            owner.Remove(copy);
+            RebuildActionRows();
+            SelectedAction = ActionRows.FirstOrDefault(row => ReferenceEquals(row.Action, selected.Action));
+        });
+        _markDirty();
+        _setStatus("Kopya oluşturuldu. Kısayol çakışmaması için kopyanın doğrudan kısayolları temizlendi.");
+    }
     public ICommand BrowseActionTargetCommand { get; }
     public ICommand TestActionCommand { get; }
     public ICommand MoveActionUpCommand { get; }

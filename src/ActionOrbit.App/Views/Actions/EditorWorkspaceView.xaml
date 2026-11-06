@@ -83,10 +83,14 @@
             </ToggleButton>
           </StackPanel>
         </Border>
-        <Button x:Name="FocusModeButton" Grid.Column="1" Content="Odak modu" Margin="10,0,0,0" Padding="12,6"
+        <StackPanel Grid.Column="1" Orientation="Horizontal">
+        <Button x:Name="FocusModeButton" Content="Odak modu" Margin="10,0,0,0" Padding="12,6"
                 MinHeight="34" VerticalAlignment="Center" Click="FocusMode_Click"
                 AutomationProperties.Name="Editör odak modunu aç veya panelleri geri getir"
                 ToolTip="İki yan paneli birlikte gizle veya geri getir" />
+        <Button Content="?" Margin="6,0,0,0" Width="34" MinHeight="34" Padding="0" VerticalAlignment="Center"
+                ToolTip="Kısayollar · F1" AutomationProperties.Name="Kısayol rehberini aç" Click="ShortcutHelp_Click" />
+        </StackPanel>
       </Grid>
     <ScrollViewer x:Name="WorkspaceScroll" Grid.Row="1"
                   HorizontalScrollBarVisibility="Disabled"

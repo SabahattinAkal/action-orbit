@@ -36,6 +36,8 @@ Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 
 ### Eklendi
 
+- Editöre Ctrl+D / Çoğalt ile bağımsız aksiyon ve klasör kopyalama eklendi; kopyada doğrudan kısayollar temizleniyor, işlem geri alınabiliyor ve profil sınırı kontrol ediliyor.
+- Liste menüsüne tüm klasörleri açma/kapama, F1 ve yardım düğmesine yerel kısayol rehberi eklendi.
 - Orbit Shelf küçültme düğmesi rafı ekranda taşınabilir bir simgeye dönüştürüyor; tıklama ile geri açılıyor ve simgeye içerik sürüklendiğinde raf genişliyor.
 - Ring Editörü'nün profil ve seçili aksiyon panelleri ayrı ayrı gizlenebiliyor; boşalan alan aksiyon listesine aktarılıyor.
 - Ctrl+Alt+Shift+T ile aktif Windows penceresinin üstte tutulması açılıp kapatılabiliyor. Kırmızı, tıklamaları geçiren çerçeve pencereyi takip ediyor; uygulama kapanınca kendi sabitlemeleri kaldırılıyor.

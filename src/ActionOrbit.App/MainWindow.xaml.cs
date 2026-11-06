@@ -7,6 +7,7 @@ using ActionOrbit.App.ViewModels;
 using ActionOrbit.App.Views.Settings;
 using ActionOrbit.App.Views.Shelf;
 using ActionOrbit.App.Views.Actions;
+using ActionOrbit.App.Views;
 using Drawing = System.Drawing;
 using Forms = System.Windows.Forms;
 
@@ -22,6 +23,7 @@ public partial class MainWindow : Window
     private bool _hasShownTrayTip;
     private readonly bool _isUiPreview;
     private readonly WindowPinService _windowPinService = new();
+    private ShortcutGuideWindow? _shortcutGuide;
 
     public MainWindow(MainWindowViewModel viewModel, HotkeyService hotkeyService, bool isUiPreview = false)
     {
@@ -30,6 +32,23 @@ public partial class MainWindow : Window
         _hotkeyService = hotkeyService;
         DataContext = _viewModel;
         InitializeComponent();
+        var duplicate = new RoutedCommand("DuplicateAction", typeof(MainWindow));
+        InputBindings.Add(new KeyBinding(duplicate, new KeyGesture(Key.D, ModifierKeys.Control)));
+        CommandBindings.Add(new CommandBinding(duplicate,
+            (_, args) => { _viewModel.ActionEditor.DuplicateActionCommand.Execute(null); args.Handled = true; },
+            (_, args) => { args.CanExecute = _viewModel.IsEditorWorkspace && _viewModel.ActionEditor.HasSelectedAction; args.Handled = true; }));
+        InputBindings.Add(new KeyBinding(ApplicationCommands.Help, new KeyGesture(Key.F1)));
+        CommandBindings.Add(new CommandBinding(ApplicationCommands.Help, (_, args) =>
+        {
+            if (_shortcutGuide is null)
+            {
+                _shortcutGuide = new ShortcutGuideWindow(_viewModel.Hotkey.HotkeyDisplay) { Owner = this };
+                _shortcutGuide.Closed += (_, _) => _shortcutGuide = null;
+                _shortcutGuide.Show();
+            }
+            else _shortcutGuide.Activate();
+            args.Handled = true;
+        }));
         InputBindings.Add(new KeyBinding(ApplicationCommands.Find, new KeyGesture(Key.F, ModifierKeys.Control)));
         CommandBindings.Add(new CommandBinding(ApplicationCommands.Find,
             (_, args) => { FindVisualChild<ActionListView>(this)?.FocusSearch(); args.Handled = true; },
@@ -262,6 +281,11 @@ public partial class MainWindow : Window
         }
         checks["windowPinExitCleanup"] = !WindowPinService.IsTopmost(pinTarget);
         shelfWindow.Close();
+        var guide = new ShortcutGuideWindow(_viewModel.Hotkey.HotkeyDisplay)
+        { Owner = this, ShowActivated = false, Opacity = 0 };
+        guide.Show(); guide.UpdateLayout();
+        checks["shortcutGuideWindow"] = guide.IsLoaded && guide.Content is not null;
+        guide.Close();
 
         return checks;
     }

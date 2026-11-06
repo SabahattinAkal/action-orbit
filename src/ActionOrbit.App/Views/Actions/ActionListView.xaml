@@ -172,9 +172,16 @@
                         <TextBlock DockPanel.Dock="Left"
                                    FontWeight="SemiBold"
                                    Text="Halka aksiyonları" />
-                        <TextBlock HorizontalAlignment="Right"
-                                   Style="{DynamicResource MutedText}"
-                                   Text="Sürükle veya Alt+↑/↓" />
+                        <Button HorizontalAlignment="Right" Margin="0" Padding="5,0" Width="28" Height="24" MinHeight="24"
+                                Content="⋯" FontSize="18" ToolTip="Liste görünümü" AutomationProperties.Name="Aksiyon listesi görünüm seçenekleri"
+                                Click="ListOptions_Click">
+                            <Button.ContextMenu>
+                                <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                    <MenuItem Header="Tüm klasörleri aç" Command="{Binding ExpandAllFoldersCommand}" IsEnabled="{Binding CanToggleActionFolders}" />
+                                    <MenuItem Header="Tüm klasörleri kapat" Command="{Binding CollapseAllFoldersCommand}" IsEnabled="{Binding CanToggleActionFolders}" />
+                                </ContextMenu>
+                            </Button.ContextMenu>
+                        </Button>
                     </DockPanel>
                     <Grid Grid.Row="1" Margin="0,0,0,8">
                         <Grid.ColumnDefinitions>

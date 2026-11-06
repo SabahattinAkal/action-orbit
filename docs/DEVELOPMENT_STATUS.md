@@ -1,5 +1,13 @@
 # Geliştirme durumu
 
+## Yeni verimlilik maddeleri
+
+- [x] [#44](https://github.com/SabahattinAkal/action-orbit/issues/44): aksiyon/klasör çoğaltma; bağımsız alt aksiyonlar, temiz kısayollar, geri alma ve profil sınırı
+- [x] [#45](https://github.com/SabahattinAkal/action-orbit/issues/45): liste menüsünden tüm klasörleri aç/kapat; arama bağlamını koruma
+- [x] [#46](https://github.com/SabahattinAkal/action-orbit/issues/46): F1 ve yardım düğmesiyle yerel kısayol rehberi
+
+Çoğaltma `Ctrl+D` veya seçili aksiyondaki **Çoğalt** düğmesiyle yapılır. Kopyadaki doğrudan kısayollar boş bırakılır; yeni kısayolu ayrıca atayabilirsin. Toplu klasör kontrolleri aksiyon listesi başlığındaki üç nokta menüsündedir. Arama açıkken eşleşmeleri gizlememek için bu kontroller devre dışıdır.
+
 ## Tamamlanan son işler
 
 - [x] Panel araç çubuğunda ikonlu durum düğmeleri, hover/klavye odağı ve önceki düzeni geri getiren odak modu

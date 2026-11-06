@@ -25,6 +25,12 @@ public partial class ActionListView : System.Windows.Controls.UserControl
 
     private ActionEditorViewModel? ViewModel => DataContext as ActionEditorViewModel;
 
+    private void ListOptions_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is System.Windows.Controls.Button { ContextMenu: { } menu } button)
+        { menu.PlacementTarget = button; menu.IsOpen = true; }
+    }
+
     public void FocusSearch()
     {
         ActionSearchBox.Focus();
@@ -61,6 +67,12 @@ public partial class ActionListView : System.Windows.Controls.UserControl
                 UpdateLayout();
                 checks["actionFolderExpand"] = folder.IsExpanded && ActionList.Items.Count == editor.ActionRows.Count;
             }
+            editor.CollapseAllFoldersCommand.Execute(null);
+            UpdateLayout();
+            checks["actionBulkCollapse"] = ActionList.Items.Count == editor.ActionRows.Count(row => !row.IsChild);
+            editor.ExpandAllFoldersCommand.Execute(null);
+            UpdateLayout();
+            checks["actionBulkExpand"] = ActionList.Items.Count == editor.ActionRows.Count;
         }
         finally
         {
