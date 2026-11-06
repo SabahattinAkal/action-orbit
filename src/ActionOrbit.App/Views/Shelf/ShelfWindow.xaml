@@ -223,7 +223,8 @@
         </Style>
     </Window.Resources>
 
-    <Border Margin="8"
+    <Grid>
+    <Border x:Name="FullShelfPanel" Margin="8"
             Background="{DynamicResource SurfaceBrush}"
             BorderBrush="{DynamicResource BorderBrush}"
             BorderThickness="1"
@@ -266,7 +267,8 @@
                     </StackPanel>
                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                         <Button Style="{StaticResource ShelfIconButton}"
-                                ToolTip="Küçült"
+                                AutomationProperties.Name="Orbit Shelf'i küçük simgeye dönüştür"
+                                ToolTip="Ekranda küçük simge olarak tut"
                                 Content="—"
                                 Click="Minimize_Click" />
                         <Button Style="{StaticResource ShelfIconButton}"
@@ -547,4 +549,35 @@
             </Border>
         </Grid>
     </Border>
+        <Button x:Name="CompactShelfButton" Margin="5" Padding="0" Visibility="Collapsed"
+                AutomationProperties.Name="Orbit Shelf'i aç"
+                ToolTip="Orbit Shelf'i aç · Taşımak için sürükle"
+                Cursor="Hand" Click="CompactShelf_Click"
+                PreviewMouseLeftButtonDown="CompactShelf_MouseDown"
+                PreviewMouseMove="CompactShelf_MouseMove">
+            <Button.Template>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bubble" Background="{DynamicResource SurfaceBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1.5" CornerRadius="18">
+                        <Image Width="38" Height="38" Stretch="Uniform"
+                               Source="/ActionOrbit.App;component/Assets/Brand/ActionOrbitLogo.png" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bubble" Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Bubble" Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Button.Template>
+            <Button.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Orbit Shelf'i aç" Click="CompactShelf_Click" />
+                    <MenuItem Header="Raf penceresini kapat" Click="Close_Click" />
+                </ContextMenu>
+            </Button.ContextMenu>
+        </Button>
+    </Grid>
 </Window>

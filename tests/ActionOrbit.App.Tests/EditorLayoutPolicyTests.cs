@@ -4,6 +4,14 @@ namespace ActionOrbit.App.Tests;
 
 public sealed class EditorLayoutPolicyTests
 {
+    [Theory]
+    [InlineData(900, false, true, EditorLayoutMode.Wide)]
+    [InlineData(900, true, false, EditorLayoutMode.Wide)]
+    [InlineData(600, false, false, EditorLayoutMode.Wide)]
+    [InlineData(600, true, false, EditorLayoutMode.Compact)]
+    public void Resolve_ReclaimsSpaceWhenSidePanelsAreHidden(double width, bool profiles, bool details, EditorLayoutMode expected)
+        => Assert.Equal(expected, EditorLayoutPolicy.Resolve(width, profiles, details));
+
     [Fact]
     public void WorkspaceScroll_IsReservedForCompactStackedLayout()
     {

@@ -115,6 +115,9 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
+                        <TextBlock Margin="0,8,0,0" FontWeight="SemiBold" Text="Pencere sabitleme · Ctrl+Alt+Shift+T" />
+                        <TextBlock Style="{StaticResource SettingsCaption}" TextWrapping="Wrap"
+                                   Text="Aktif Windows penceresini üstte tutar; tekrar basınca bırakır. Mouse'un ikinci makro tuşuna atayabilirsin. Kırmızı çerçeve sabit pencereyi belirtir." />
                         <TextBlock Margin="0,2,0,0"
                                    Foreground="{DynamicResource DangerTextBrush}"
                                    Text="{Binding Hotkey.HotkeyIssueMessage}"

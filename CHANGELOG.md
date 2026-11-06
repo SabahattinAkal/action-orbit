@@ -34,6 +34,9 @@ Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 
 ### Eklendi
 
+- Orbit Shelf küçültme düğmesi rafı ekranda taşınabilir bir simgeye dönüştürüyor; tıklama ile geri açılıyor ve simgeye içerik sürüklendiğinde raf genişliyor.
+- Ring Editörü'nün profil ve seçili aksiyon panelleri ayrı ayrı gizlenebiliyor; boşalan alan aksiyon listesine aktarılıyor.
+- Ctrl+Alt+Shift+T ile aktif Windows penceresinin üstte tutulması açılıp kapatılabiliyor. Kırmızı, tıklamaları geçiren çerçeve pencereyi takip ediyor; uygulama kapanınca kendi sabitlemeleri kaldırılıyor.
 - Ring Editörü aksiyon listesine ad/tür araması, Ctrl+F ile aramaya geçiş, Esc ile temizleme ve klasör alt aksiyonlarını açıp kapatma eklendi. Arama eşleşmelerin klasörlerini de gösteriyor; arama/görünüm durumu config'e yazılmıyor.
 - Release ZIP'ini temiz ve yükseltme durumlarında gerçek EXE ile açan; ana pencere, Ayarlar, Orbit Shelf, tray, kapanış, veri koruma, paket gizliliği, checksum ve tam paket/hotfix commit eşleşmesini doğrulayan yayın smoke hattı eklendi.
 - Orbit Link'in iki gerçek Windows bilgisayarda, doğrudan/ters bağlantı, çevrimdışı dönüş, VPN kesintisi, içerik sınırları ve gizlilik kontrolleriyle sınanması için kişisel veri toplamayan test matrisi ve rapor komutu eklendi.

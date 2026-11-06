@@ -4,7 +4,15 @@
              xmlns:actionViews="clr-namespace:ActionOrbit.App.Views.Actions"
              xmlns:profileViews="clr-namespace:ActionOrbit.App.Views.Profiles"
              AutomationProperties.Name="Profil ve aksiyon editörü">
-    <ScrollViewer x:Name="WorkspaceScroll"
+    <Grid>
+      <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+      <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+        <CheckBox x:Name="ShowProfiles" Content="Profiller" IsChecked="True" Margin="4,0,18,0"
+                  Checked="PanelVisibility_Changed" Unchecked="PanelVisibility_Changed" />
+        <CheckBox x:Name="ShowDetails" Content="Seçili aksiyon" IsChecked="True"
+                  Checked="PanelVisibility_Changed" Unchecked="PanelVisibility_Changed" />
+      </StackPanel>
+    <ScrollViewer x:Name="WorkspaceScroll" Grid.Row="1"
                   HorizontalScrollBarVisibility="Disabled"
                   VerticalContentAlignment="Stretch"
                   VerticalScrollBarVisibility="Disabled">
@@ -32,4 +40,5 @@
                                                   Grid.Column="2" />
         </Grid>
     </ScrollViewer>
+    </Grid>
 </UserControl>

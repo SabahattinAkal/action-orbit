@@ -2,6 +2,10 @@
 
 ## Tamamlanan son işler
 
+- [x] Orbit Shelf için sürüklenebilir küçük simge, tek tıklamayla geri açma ve boyut koruma
+- [x] Editörde sol/sağ paneli ayrı gizleme ve aksiyon alanını genişletme
+- [x] Ctrl+Alt+Shift+T ile aktif pencereyi sabitleme; kırmızı, tıklamaları geçiren çerçeve
+- [x] Simgeye geçiş/geri açma, panel görünürlüğü ve sabitleme temizliğinin gerçek Windows pencere testi
 - [x] Kullanıcı hesabına kurulan, .NET içeren Windows setup
 - [x] Kurulumda Windows ile başlatma ve iki ayrı kısayol tercihi
 - [x] Kurulum tercihinin ilk uygulama açılışında ayarlara aktarılması

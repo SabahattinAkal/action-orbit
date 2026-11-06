@@ -15,6 +15,7 @@ public sealed class ShelfWindowService : IDisposable
     {
         if (_window is { IsVisible: true })
         {
+            _window.ExpandFromIcon();
             if (_window.WindowState == System.Windows.WindowState.Minimized)
             {
                 _window.WindowState = System.Windows.WindowState.Normal;
@@ -36,7 +37,7 @@ public sealed class ShelfWindowService : IDisposable
 
         window.Closing += (_, _) =>
         {
-            _lastBounds = FloatingWindowPlacementService.GetBounds(window) ?? _lastBounds;
+            _lastBounds = window.GetExpandedBounds() ?? _lastBounds;
         };
         window.Closed += (_, _) => _window = null;
         _window.Show();

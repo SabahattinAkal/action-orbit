@@ -11,6 +11,8 @@ namespace ActionOrbit.App.Services;
 public sealed class HotkeyService : IHotkeyRegistrar, IDisposable
 {
     private const int MainHotkeyId = 0x4150;
+    private const int WindowPinHotkeyId = 0x4151;
+    private bool _windowPinRegistered;
     private const int FirstActionHotkeyId = 0x4200;
     private const int MaxActionHotkeys = 128;
 
@@ -30,6 +32,16 @@ public sealed class HotkeyService : IHotkeyRegistrar, IDisposable
 
     public event EventHandler? HotkeyPressed;
     public event EventHandler? HotkeyReleased;
+    public event EventHandler? WindowPinPressed;
+
+    public void RegisterWindowPinShortcut()
+    {
+        if (_windowPinRegistered) return;
+        if (_windowHandle == IntPtr.Zero || !NativeMethods.RegisterHotKey(_windowHandle, WindowPinHotkeyId,
+                NativeMethods.ModControl | NativeMethods.ModAlt | NativeMethods.ModShift | NativeMethods.ModNoRepeat, 0x54))
+            throw new InvalidOperationException("Ctrl+Alt+Shift+T kaydedilemedi; başka bir uygulama kullanıyor olabilir.");
+        _windowPinRegistered = true;
+    }
     public event EventHandler<ActionShortcutPressedEventArgs>? ActionShortcutPressed;
 
     public bool IsRegistered => _registered;
@@ -190,6 +202,8 @@ public sealed class HotkeyService : IHotkeyRegistrar, IDisposable
 
     public void Dispose()
     {
+        if (_windowPinRegistered) NativeMethods.UnregisterHotKey(_windowHandle, WindowPinHotkeyId);
+        _windowPinRegistered = false;
         Unregister();
         UnregisterActionShortcuts();
         _releaseTimer?.Stop();
@@ -203,6 +217,11 @@ public sealed class HotkeyService : IHotkeyRegistrar, IDisposable
             handled = true;
             _releaseTimer?.Start();
             HotkeyPressed?.Invoke(this, EventArgs.Empty);
+        }
+        else if (message == NativeMethods.WmHotkey && wParam.ToInt32() == WindowPinHotkeyId)
+        {
+            handled = true;
+            WindowPinPressed?.Invoke(this, EventArgs.Empty);
         }
         else if (message == NativeMethods.WmHotkey && _actionHotkeys.TryGetValue(wParam.ToInt32(), out var shortcut))
         {

@@ -7,9 +7,10 @@ namespace ActionOrbit.App.Services;
 
 internal static class FloatingWindowPlacementService
 {
-    internal static void Place(Window window, bool alignRight = false, PixelRect? previousBounds = null)
+    internal static void Place(Window window, bool alignRight = false, PixelRect? previousBounds = null, PixelPoint? anchor = null)
     {
         if (!NativeMethods.GetCursorPos(out var cursor)) return;
+        if (anchor is { } point) cursor = new NativeMethods.Point { X = point.X, Y = point.Y };
         var monitor = NativeMethods.MonitorFromPoint(cursor, NativeMethods.MonitorDefaultToNearest);
         var info = new NativeMethods.MonitorInfo { Size = Marshal.SizeOf<NativeMethods.MonitorInfo>() };
         if (monitor == IntPtr.Zero || !NativeMethods.GetMonitorInfo(monitor, ref info)) return;

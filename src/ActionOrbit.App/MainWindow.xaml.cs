@@ -21,6 +21,7 @@ public partial class MainWindow : Window
     private bool _allowClose;
     private bool _hasShownTrayTip;
     private readonly bool _isUiPreview;
+    private readonly WindowPinService _windowPinService = new();
 
     public MainWindow(MainWindowViewModel viewModel, HotkeyService hotkeyService, bool isUiPreview = false)
     {
@@ -36,6 +37,14 @@ public partial class MainWindow : Window
         _applicationIcon = LoadApplicationIcon();
         _trayIcon = CreateTrayIcon();
         _viewModel.Status.UserNotificationRequested += ShowUserNotification;
+        _hotkeyService.WindowPinPressed += WindowPin_Pressed;
+    }
+
+    private void WindowPin_Pressed(object? sender, EventArgs e)
+    {
+        var message = _windowPinService.ToggleForeground();
+        if (_windowPinService.LastToggleSucceeded) _viewModel.Status.SetMessage(message);
+        else _viewModel.Status.ReportFailure(message);
     }
 
     private void Window_SourceInitialized(object? sender, EventArgs e)
@@ -43,6 +52,8 @@ public partial class MainWindow : Window
         if (_isUiPreview) return;
         _hotkeyService.Initialize(this);
         _viewModel.RegisterHotkey();
+        try { _hotkeyService.RegisterWindowPinShortcut(); }
+        catch (InvalidOperationException ex) { _viewModel.Status.ReportFailure(ex.Message); }
     }
 
     protected override void OnClosing(CancelEventArgs e)
@@ -76,6 +87,8 @@ public partial class MainWindow : Window
     protected override void OnClosed(EventArgs e)
     {
         _viewModel.Status.UserNotificationRequested -= ShowUserNotification;
+        _hotkeyService.WindowPinPressed -= WindowPin_Pressed;
+        _windowPinService.Dispose();
         _viewModel.Dispose();
         _trayIcon.Visible = false;
         _trayIcon.Dispose();
@@ -208,6 +221,7 @@ public partial class MainWindow : Window
         UpdateLayout();
         var actionList = FindVisualChild<ActionListView>(this);
         checks["actionEditorXaml"] = actionList is { IsLoaded: true };
+        checks["editorPanelVisibility"] = FindVisualChild<EditorWorkspaceView>(this)?.RunPanelVisibilitySmoke() == true;
         if (actionList is not null)
             foreach (var check in actionList.RunNavigationSmokeChecks()) checks[check.Key] = check.Value;
 
@@ -223,6 +237,30 @@ public partial class MainWindow : Window
         shelfWindow.Show();
         shelfWindow.UpdateLayout();
         checks["orbitShelfXaml"] = shelfWindow is { IsLoaded: true, Content: not null };
+        var shelfContext = shelfWindow.DataContext;
+        var width = shelfWindow.Width;
+        var height = shelfWindow.Height;
+        shelfWindow.CollapseToIcon();
+        shelfWindow.UpdateLayout();
+        checks["shelfCompactIcon"] = shelfWindow.IsCompact && shelfWindow.IsVisible && shelfWindow.Width <= 65 &&
+            shelfWindow.Height <= 65 && shelfWindow.WindowState != WindowState.Minimized;
+        shelfWindow.ExpandFromIcon();
+        shelfWindow.UpdateLayout();
+        checks["shelfCompactRestore"] = !shelfWindow.IsCompact && ReferenceEquals(shelfContext, shelfWindow.DataContext) &&
+            Math.Abs(width - shelfWindow.Width) < 2 && Math.Abs(height - shelfWindow.Height) < 2;
+        var pinTarget = new System.Windows.Interop.WindowInteropHelper(shelfWindow).Handle;
+        using (var pin = new WindowPinService())
+        {
+            // Only this isolated, invisible test window is modified; no user's window is touched.
+            shelfWindow.Topmost = false;
+            pin.Toggle(pinTarget, allowOwnProcess: true);
+            checks["windowPinToggleOn"] = WindowPinService.IsTopmost(pinTarget) && pin.IsTracking(pinTarget);
+            checks["windowPinClickThroughBorder"] = pin.OutlinesAreClickThrough;
+            pin.Toggle(pinTarget, allowOwnProcess: true);
+            checks["windowPinToggleOff"] = !WindowPinService.IsTopmost(pinTarget) && !pin.IsTracking(pinTarget);
+            pin.Toggle(pinTarget, allowOwnProcess: true);
+        }
+        checks["windowPinExitCleanup"] = !WindowPinService.IsTopmost(pinTarget);
         shelfWindow.Close();
 
         return checks;
