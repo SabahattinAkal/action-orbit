@@ -264,14 +264,14 @@ public sealed class OrbitLinkService : IDisposable
             CryptographicOperations.ZeroMemory(secret);
             return OrbitLinkOperationResult.Success($"{peer.Name} eşleştirildi.");
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             return OrbitLinkOperationResult.Failure("Eşleştirme iptal edildi.");
         }
         catch (Exception ex)
         {
             _logService.Error("Orbit Link pairing failed.", ex);
-            return OrbitLinkOperationResult.Failure($"Cihaza ulaşılamadı: {ex.Message}");
+            return OrbitLinkOperationResult.Failure(OrbitLinkConnectionMessage.FromException(ex));
         }
     }
 
@@ -477,7 +477,7 @@ public sealed class OrbitLinkService : IDisposable
                 _listenerCancellation?.Dispose();
                 _listenerCancellation = null;
                 _logService.Error("Orbit Link listener failed to start.", ex);
-                return OrbitLinkOperationResult.Failure($"Orbit Link başlatılamadı: {ex.Message}");
+                return OrbitLinkOperationResult.Failure("Orbit Link başlatılamadı. " + OrbitLinkConnectionMessage.FromException(ex));
             }
         }
     }

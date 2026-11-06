@@ -19,7 +19,7 @@ public sealed class OrbitLinkPeerViewModel(OrbitLinkPeer peer, bool reverseRoute
     public bool ReverseRouteReady { get; } = reverseRouteReady;
     public string ConnectionLabel => ReverseRouteReady
         ? "Çift yönlü bağlantı hazır"
-        : "Doğrudan bağlantı";
+        : "Doğrudan aktarım kullanılacak";
     public string DisplayName => ReverseRouteReady
         ? $"{Name} · çift yönlü"
         : Name;

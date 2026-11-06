@@ -7,6 +7,8 @@ Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 
 ### Değiştirildi
 
+- Editörün panel seçimleri, ikonlu ve açık/kapalı durumu belirgin düğmelere dönüştürüldü. Odak modu iki yan paneli gizliyor; çıkarken önceki panel düzenini geri getiriyor.
+- Orbit Link bağlantı hataları kısa açıklamalar ve kontrol önerileri gösteriyor; ham hata metnindeki adres veya dosya yolu arayüze taşınmıyor. Doğrudan aktarım etiketi artık cihazın çevrimiçi olduğunu ima etmiyor.
 - Windows setup, taşınabilir paketle aynı uygulama çıktısından üretiliyor; CI kurulum ve kaldırmayı deniyor, Release yalnızca paketleri ve temizlenmiş özet raporları yayımlıyor.
 - Paket girdisi ve Git index kontrolüne, yerel durum dosyaları ile yaygın gizli anahtar biçimlerini engelleyen denetimler eklendi.
 - Windows paketi, destek sorunlarını ve DLL hotfix belirsizliğini azaltmak için self-contained gevşek dosya düzenine geçirildi; hotfix yalnızca aynı sürümdeki bu düzen için üretiliyor.

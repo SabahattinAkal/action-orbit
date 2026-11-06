@@ -2,6 +2,8 @@
 
 ## Tamamlanan son işler
 
+- [x] Panel araç çubuğunda ikonlu durum düğmeleri, hover/klavye odağı ve önceki düzeni geri getiren odak modu
+- [x] Orbit Link ağ hatalarının sadeleştirilmesi ve ham hata ayrıntılarının kullanıcı mesajından çıkarılması
 - [x] Orbit Shelf için sürüklenebilir küçük simge, tek tıklamayla geri açma ve boyut koruma
 - [x] Editörde sol/sağ paneli ayrı gizleme ve aksiyon alanını genişletme
 - [x] Ctrl+Alt+Shift+T ile aktif pencereyi sabitleme; kırmızı, tıklamaları geçiren çerçeve

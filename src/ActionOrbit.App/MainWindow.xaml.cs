@@ -203,7 +203,7 @@ public partial class MainWindow : Window
         }));
     }
 
-    internal async Task<IReadOnlyDictionary<string, bool>> RunReleaseSmokeChecks()
+    internal async Task<IReadOnlyDictionary<string, bool>> RunReleaseSmokeChecks(string? toolbarPreviewPath = null)
     {
         var checks = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase)
         {
@@ -221,7 +221,7 @@ public partial class MainWindow : Window
         UpdateLayout();
         var actionList = FindVisualChild<ActionListView>(this);
         checks["actionEditorXaml"] = actionList is { IsLoaded: true };
-        checks["editorPanelVisibility"] = FindVisualChild<EditorWorkspaceView>(this)?.RunPanelVisibilitySmoke() == true;
+        checks["editorPanelVisibility"] = FindVisualChild<EditorWorkspaceView>(this)?.RunPanelVisibilitySmoke(toolbarPreviewPath) == true;
         if (actionList is not null)
             foreach (var check in actionList.RunNavigationSmokeChecks()) checks[check.Key] = check.Value;
 

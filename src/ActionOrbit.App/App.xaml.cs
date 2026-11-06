@@ -125,6 +125,7 @@ public partial class App : System.Windows.Application
         MainWindow = mainWindow;
         if (isUiPreview)
         {
+            mainWindow.Title = "Action Orbit Pro · Arayüz testi";
             var displayArgument = e.Args.FirstOrDefault(arg => arg.StartsWith("--ui-preview-display=", StringComparison.Ordinal));
             if (int.TryParse(displayArgument?["--ui-preview-display=".Length..], out var displayNumber))
             {
@@ -176,7 +177,7 @@ public partial class App : System.Windows.Application
         string? error = null;
         try
         {
-            foreach (var check in await mainWindow.RunReleaseSmokeChecks())
+            foreach (var check in await mainWindow.RunReleaseSmokeChecks(options.ToolbarPreviewPath))
             {
                 checks[check.Key] = check.Value;
             }
@@ -288,6 +289,7 @@ public partial class App : System.Windows.Application
 
     private sealed class ReleaseSmokeOptions
     {
+        public string? ToolbarPreviewPath { get; init; }
         public required string ReportPath { get; init; }
         public required string AppDirectory { get; init; }
 
@@ -325,8 +327,13 @@ public partial class App : System.Windows.Application
             }
             var reportPath = Path.GetFullPath(requestedReportPath);
             var appDirectory = Path.GetFullPath(requestedAppDirectory);
+            var toolbarPreview = arguments.FirstOrDefault(value => value.StartsWith("--release-smoke-toolbar-preview=", StringComparison.Ordinal))
+                ?["--release-smoke-toolbar-preview=".Length..];
+            if (toolbarPreview is not null && !Path.IsPathFullyQualified(toolbarPreview))
+                throw new ArgumentException("Toolbar preview path must be absolute.");
             return new ReleaseSmokeOptions
             {
+                ToolbarPreviewPath = toolbarPreview,
                 ReportPath = reportPath,
                 AppDirectory = appDirectory
             };

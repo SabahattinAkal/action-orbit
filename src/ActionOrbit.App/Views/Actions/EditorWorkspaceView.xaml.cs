@@ -7,8 +7,35 @@ namespace ActionOrbit.App.Views.Actions;
 public partial class EditorWorkspaceView : System.Windows.Controls.UserControl
 {
     private EditorLayoutMode? _layoutMode;
+    private bool _focusMode;
+    private bool? _previousProfiles = true, _previousDetails = true;
+    private bool _changingFocusMode;
 
-    internal bool RunPanelVisibilitySmoke()
+    private void FocusMode_Click(object sender, RoutedEventArgs e)
+    {
+        _changingFocusMode = true;
+        try
+        {
+            if (!_focusMode)
+            {
+                _previousProfiles = ShowProfiles.IsChecked;
+                _previousDetails = ShowDetails.IsChecked;
+                ShowProfiles.IsChecked = ShowDetails.IsChecked = false;
+                _focusMode = true;
+            }
+            else
+            {
+                ShowProfiles.IsChecked = _previousProfiles;
+                ShowDetails.IsChecked = _previousDetails;
+                _focusMode = false;
+            }
+            _layoutMode = null;
+            ApplyLayout(ActualWidth);
+        }
+        finally { _changingFocusMode = false; }
+    }
+
+    internal bool RunPanelVisibilitySmoke(string? toolbarPreviewPath = null)
     {
         var profiles = ShowProfiles.IsChecked;
         var details = ShowDetails.IsChecked;
@@ -21,7 +48,27 @@ public partial class EditorWorkspaceView : System.Windows.Controls.UserControl
             ShowProfiles.IsChecked = true;
             ShowDetails.IsChecked = true;
             UpdateLayout();
-            return hidden && ProfilePanel.Visibility == Visibility.Visible && DetailPanel.Visibility == Visibility.Visible;
+            if (toolbarPreviewPath is not null)
+            {
+                var width = Math.Max(1, (int)Math.Ceiling(PanelToolbar.ActualWidth));
+                var height = Math.Max(1, (int)Math.Ceiling(PanelToolbar.ActualHeight));
+                var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(width, height, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+                var visual = new System.Windows.Media.DrawingVisual();
+                using (var drawing = visual.RenderOpen())
+                    drawing.DrawRectangle(new System.Windows.Media.VisualBrush(PanelToolbar), null, new Rect(0, 0, width, height));
+                bitmap.Render(visual);
+                var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+                encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+                using var stream = File.Create(toolbarPreviewPath);
+                encoder.Save(stream);
+            }
+            var restored = ProfilePanel.Visibility == Visibility.Visible && DetailPanel.Visibility == Visibility.Visible;
+            ShowDetails.IsChecked = false;
+            FocusMode_Click(this, new RoutedEventArgs());
+            var focused = ProfilePanel.Visibility == Visibility.Collapsed && DetailPanel.Visibility == Visibility.Collapsed;
+            FocusMode_Click(this, new RoutedEventArgs());
+            var previousLayout = ShowProfiles.IsChecked == true && ShowDetails.IsChecked == false;
+            return hidden && restored && focused && previousLayout;
         }
         finally { ShowProfiles.IsChecked = profiles; ShowDetails.IsChecked = details; }
     }
@@ -29,6 +76,7 @@ public partial class EditorWorkspaceView : System.Windows.Controls.UserControl
     private void PanelVisibility_Changed(object sender, RoutedEventArgs e)
     {
         if (!IsLoaded) return;
+        if (!_changingFocusMode) _focusMode = false;
         _layoutMode = null;
         ApplyLayout(ActualWidth);
     }
@@ -109,6 +157,7 @@ public partial class EditorWorkspaceView : System.Windows.Controls.UserControl
     {
         var profiles = ShowProfiles.IsChecked == true;
         var details = ShowDetails.IsChecked == true;
+        FocusModeButton.Content = _focusMode ? "Önceki düzene dön" : "Odak modu";
         ProfilePanel.Visibility = profiles ? Visibility.Visible : Visibility.Collapsed;
         DetailPanel.Visibility = details ? Visibility.Visible : Visibility.Collapsed;
         if (_layoutMode == EditorLayoutMode.Compact)

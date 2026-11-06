@@ -4,14 +4,90 @@
              xmlns:actionViews="clr-namespace:ActionOrbit.App.Views.Actions"
              xmlns:profileViews="clr-namespace:ActionOrbit.App.Views.Profiles"
              AutomationProperties.Name="Profil ve aksiyon editörü">
+    <UserControl.Resources>
+        <Style x:Key="PanelToggle" TargetType="ToggleButton">
+            <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="12,7" />
+            <Setter Property="MinHeight" Value="34" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Shell" CornerRadius="8" Padding="{TemplateBinding Padding}"
+                                Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+                                <Setter TargetName="Shell" Property="Background" Value="{DynamicResource SelectedSurfaceBrush}" />
+                                <Setter TargetName="Shell" Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Shell" Property="Background" Value="{DynamicResource HoverSurfaceBrush}" />
+                                <Setter TargetName="Shell" Property="BorderBrush" Value="{DynamicResource SelectedBorderBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Shell" Property="BorderBrush" Value="{DynamicResource PrimaryActionBrush}" />
+                                <Setter TargetName="Shell" Property="BorderThickness" Value="2" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Shell" Property="Opacity" Value="0.75" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
     <Grid>
       <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
-      <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-        <CheckBox x:Name="ShowProfiles" Content="Profiller" IsChecked="True" Margin="4,0,18,0"
-                  Checked="PanelVisibility_Changed" Unchecked="PanelVisibility_Changed" />
-        <CheckBox x:Name="ShowDetails" Content="Seçili aksiyon" IsChecked="True"
-                  Checked="PanelVisibility_Changed" Unchecked="PanelVisibility_Changed" />
-      </StackPanel>
+      <Grid x:Name="PanelToolbar" Margin="0,0,0,10">
+        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+        <Border Padding="4" HorizontalAlignment="Left" CornerRadius="11"
+                Background="{DynamicResource SoftSurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+          <StackPanel Orientation="Horizontal">
+            <ToggleButton x:Name="ShowProfiles" IsChecked="True" Margin="0,0,4,0" Style="{StaticResource PanelToggle}"
+                          AutomationProperties.Name="Profil panelini göster veya gizle"
+                          ToolTip="Sol profil panelini göster veya gizle"
+                          Checked="PanelVisibility_Changed" Unchecked="PanelVisibility_Changed">
+              <StackPanel Orientation="Horizontal">
+                <Viewbox Width="16" Height="16" Margin="0,0,8,0">
+                  <Grid Width="24" Height="24">
+                    <Rectangle Margin="2,3" RadiusX="2" RadiusY="2" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}" StrokeThickness="1.7" />
+                    <Path Data="M9,3 L9,21" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}" StrokeThickness="1.7" />
+                  </Grid>
+                </Viewbox>
+                <TextBlock Text="Profiller" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}" />
+              </StackPanel>
+            </ToggleButton>
+            <ToggleButton x:Name="ShowDetails" IsChecked="True" Style="{StaticResource PanelToggle}"
+                          AutomationProperties.Name="Aksiyon detay panelini göster veya gizle"
+                          ToolTip="Sağ aksiyon detay panelini göster veya gizle"
+                          Checked="PanelVisibility_Changed" Unchecked="PanelVisibility_Changed">
+              <StackPanel Orientation="Horizontal">
+                <Viewbox Width="16" Height="16" Margin="0,0,8,0">
+                  <Grid Width="24" Height="24">
+                    <Rectangle Margin="2,3" RadiusX="2" RadiusY="2" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}" StrokeThickness="1.7" />
+                    <Path Data="M15,3 L15,21" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}" StrokeThickness="1.7" />
+                  </Grid>
+                </Viewbox>
+                <TextBlock Text="Aksiyon detayı" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}" />
+              </StackPanel>
+            </ToggleButton>
+          </StackPanel>
+        </Border>
+        <Button x:Name="FocusModeButton" Grid.Column="1" Content="Odak modu" Margin="10,0,0,0" Padding="12,6"
+                MinHeight="34" VerticalAlignment="Center" Click="FocusMode_Click"
+                AutomationProperties.Name="Editör odak modunu aç veya panelleri geri getir"
+                ToolTip="İki yan paneli birlikte gizle veya geri getir" />
+      </Grid>
     <ScrollViewer x:Name="WorkspaceScroll" Grid.Row="1"
                   HorizontalScrollBarVisibility="Disabled"
                   VerticalContentAlignment="Stretch"
