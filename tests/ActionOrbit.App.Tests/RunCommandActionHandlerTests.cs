@@ -11,11 +11,13 @@ public sealed class RunCommandActionHandlerTests : IDisposable
         $"action-orbit-command-handler-tests-{Guid.NewGuid():N}");
 
     [Fact]
-    public async Task ExecuteAsync_WhenCommandSucceeds_ReturnsSuccess()
+    public async Task ExecuteAsync_WhenEnabled_RunsCommandAndArgumentsWithoutConfirmation()
     {
         var handler = CreateHandler();
 
-        var result = await handler.ExecuteAsync(CreateAction("ver > nul"));
+        var action = CreateAction("exit");
+        action.Arguments = "/b 0";
+        var result = await handler.ExecuteAsync(action);
 
         Assert.True(result.Succeeded);
     }
@@ -25,7 +27,9 @@ public sealed class RunCommandActionHandlerTests : IDisposable
     {
         var handler = CreateHandler();
 
-        var result = await handler.ExecuteAsync(CreateAction("exit /b 7"));
+        var action = CreateAction("exit");
+        action.Arguments = "/b 7";
+        var result = await handler.ExecuteAsync(action);
 
         Assert.False(result.Succeeded);
         Assert.Contains("7", result.Message);
@@ -54,14 +58,14 @@ public sealed class RunCommandActionHandlerTests : IDisposable
     }
 
     [Fact]
-    public async Task ExecuteAsync_WhenConfirmationIsDeclined_DoesNotRunCommand()
+    public async Task ExecuteAsync_WithoutExplicitEnablement_ReturnsFailure()
     {
-        var handler = CreateHandler(confirmed: false);
+        var handler = new RunCommandActionHandler(new LogService(_tempDirectory));
 
         var result = await handler.ExecuteAsync(CreateAction("ver > nul"));
 
         Assert.False(result.Succeeded);
-        Assert.Contains("iptal", result.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("kapalı", result.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -77,13 +81,12 @@ public sealed class RunCommandActionHandlerTests : IDisposable
         Assert.DoesNotContain(secretMarker, log, StringComparison.Ordinal);
     }
 
-    private RunCommandActionHandler CreateHandler(bool enabled = true, bool confirmed = true)
+    private RunCommandActionHandler CreateHandler(bool enabled = true)
     {
         Directory.CreateDirectory(_tempDirectory);
         return new RunCommandActionHandler(
             new LogService(_tempDirectory),
-            () => enabled,
-            _ => confirmed);
+            () => enabled);
     }
 
     private static OrbitAction CreateAction(string command) => new()

@@ -22,7 +22,7 @@ Güvenlik düzeltmeleri öncelikle [son kararlı GitHub Release](https://github.
 
 Action Orbit yerel program ve komut çalıştırabildiği için güvenmediğin kaynaklardan gelen profil veya config dosyalarını içe aktarma. İçe aktarma ekranındaki çalıştırılabilir aksiyon özetini dikkatle incele; özellikle `run_command`, `open_app`, `type_text` ve `send_hotkey` hedeflerini kontrol et.
 
-`run_command` varsayılan olarak kapalıdır. İçe aktarılan config bu ayarı açamaz ve her komut için ayrıca kullanıcı onayı gerekir. Bu korumalar, güvenilmeyen bir dosyayı güvenilir hâle getirmez.
+`run_command` varsayılan olarak kapalıdır ve içe aktarılan config bu ayarı açamaz. Kullanıcı ayarı etkinleştirirse seçtiği komut aksiyonları, ayrıca onay sorulmadan mevcut Windows kullanıcı yetkileriyle çalışır. Mevcut komut filtresi devrededir ancak güvenilmeyen komutları güvenli hâle getirmez.
 
 Hata bildirirken `%AppData%\ActionOrbitPro` altındaki config, log ve raf dosyalarını doğrudan paylaşma. Gerekli bölümü kopyala ve kişisel yolları, bağlantıları ve içerikleri temizle.
 

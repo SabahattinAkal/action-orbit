@@ -7,6 +7,7 @@ Bu projedeki önemli değişiklikler bu dosyada belgelenir. Sürümler
 
 ### Değiştirildi
 
+- Etkinleştirilmiş komut aksiyonları artık her çalıştırmada onay istemiyor. Varsayılan kapalı ayar, komut filtresi ve içe aktarma uyarıları korunuyor.
 - Editörün panel seçimleri, ikonlu ve açık/kapalı durumu belirgin düğmelere dönüştürüldü. Odak modu iki yan paneli gizliyor; çıkarken önceki panel düzenini geri getiriyor.
 - Orbit Link bağlantı hataları kısa açıklamalar ve kontrol önerileri gösteriyor; ham hata metnindeki adres veya dosya yolu arayüze taşınmıyor. Doğrudan aktarım etiketi artık cihazın çevrimiçi olduğunu ima etmiyor.
 - Windows setup, taşınabilir paketle aynı uygulama çıktısından üretiliyor; CI kurulum ve kaldırmayı deniyor, Release yalnızca paketleri ve temizlenmiş özet raporları yayımlıyor.

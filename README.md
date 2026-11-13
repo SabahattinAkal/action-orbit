@@ -30,7 +30,7 @@ Desteklenen aksiyon türleri:
 - Program, dosya, klasör ve URL açma
 - Klavye kısayolu gönderme
 - Metin yazdırma
-- Kullanıcı onayıyla PowerShell veya CMD komutu çalıştırma
+- İsteğe bağlı PowerShell veya CMD komutu çalıştırma
 - Mini araç açma
 - Alt menü oluşturma
 
@@ -144,7 +144,7 @@ Bu dosyalarda kişisel klasör yolları, açtığın bağlantılar veya rafa ekl
 
 `orbit-link.json`, eşleşen cihaz adlarını ve yerel ağ adreslerini içerir. Cihaz anahtarları Windows'un geçerli kullanıcı hesabına bağlı veri korumasıyla şifrelenir; dosyayı başka bir bilgisayara kopyalamak anahtarları kullanılabilir hale getirmez. `orbit-link-queue.json` ise henüz teslim edilmemiş, eşleşme anahtarıyla AES-GCM şifrelenmiş içerikleri tutabilir. Bu iki dosyayı da hata bildirimlerine ekleme.
 
-`run_command` aksiyonları varsayılan olarak kapalıdır. Etkinleştirildiklerinde bile her çalıştırmadan önce komutun tamamı gösterilir ve kullanıcı onayı istenir. İnternetten aldığın profil veya config dosyasını içe aktarmadan önce çalıştırılabilir aksiyonları incele.
+`run_command` aksiyonları varsayılan olarak kapalıdır. Ayarlardan etkinleştirirsen seçtiğin komut aksiyonu, Action Orbit'in onay penceresi olmadan mevcut Windows kullanıcı yetkileriyle çalışır. Yalnızca güvendiğin komutları çalıştır; bir profil veya config dosyasını içe aktarmadan önce çalıştırılabilir aksiyonları incele.
 
 Bir güvenlik açığı bildirmek için [SECURITY.md](SECURITY.md) dosyasını kullan.
 

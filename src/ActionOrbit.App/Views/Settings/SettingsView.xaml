@@ -296,7 +296,7 @@
                                       IsChecked="{Binding Settings.AllowCommandActions}" />
                             <TextBlock Margin="22,4,0,0"
                                        Style="{StaticResource SettingsCaption}"
-                                       Text="Kapalı kalması önerilir; açıkken her komut ayrıca onaylanır." />
+                                       Text="Açıkken komut aksiyonları onay penceresi olmadan çalışır. Yalnızca güvendiğin komutlar için etkinleştir." />
                         </StackPanel>
                         <StackPanel Grid.Column="1">
                             <TextBlock Style="{StaticResource SettingsSectionTitle}" Text="Bu uygulamalarda devre dışı" />

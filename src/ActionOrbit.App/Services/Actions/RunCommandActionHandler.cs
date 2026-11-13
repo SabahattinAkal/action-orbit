@@ -7,16 +7,13 @@ public sealed class RunCommandActionHandler : IActionHandler
 {
     private readonly LogService _logService;
     private readonly Func<bool> _isCommandExecutionEnabled;
-    private readonly Func<string, bool> _confirmCommand;
 
     public RunCommandActionHandler(
         LogService logService,
-        Func<bool>? isCommandExecutionEnabled = null,
-        Func<string, bool>? confirmCommand = null)
+        Func<bool>? isCommandExecutionEnabled = null)
     {
         _logService = logService;
         _isCommandExecutionEnabled = isCommandExecutionEnabled ?? (() => false);
-        _confirmCommand = confirmCommand ?? (_ => false);
     }
 
     public bool CanHandle(OrbitAction action) =>
@@ -45,11 +42,6 @@ public sealed class RunCommandActionHandler : IActionHandler
         {
             return ActionExecutionResult.Failure(
                 "Bu komut public beta güvenlik filtresine takıldı. Silme, formatlama veya kapatma komutlarını elle çalıştır.");
-        }
-
-        if (!_confirmCommand(fullCommand))
-        {
-            return ActionExecutionResult.Failure("Komut çalıştırma kullanıcı tarafından iptal edildi.");
         }
 
         var startInfo = new ProcessStartInfo

@@ -144,7 +144,7 @@ public sealed class SettingsViewModel : ViewModelBase
             _configService.CurrentConfig.Settings.AllowCommandActions = value;
             _markDirty();
             _setStatus(value
-                ? "Komut aksiyonları açıldı. Her çalıştırmada ayrıca onay istenecek."
+                ? "Komut aksiyonları açıldı. Komutlar onay penceresi olmadan çalışır."
                 : "Komut aksiyonları kapatıldı.");
         }
     }

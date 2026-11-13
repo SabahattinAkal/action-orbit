@@ -95,10 +95,7 @@ public partial class App : System.Windows.Application
                 new TypeTextActionHandler(inputService),
                 new RunCommandActionHandler(
                     _logService,
-                    () => _configService!.CurrentConfig.Settings.AllowCommandActions,
-                    command => confirmationService.Confirm(
-                        "Komut çalıştırma onayı",
-                        $"Aşağıdaki komut mevcut kullanıcı yetkileriyle çalıştırılacak:\n\n{command}\n\nDevam edilsin mi?"))
+                    () => _configService!.CurrentConfig.Settings.AllowCommandActions)
             });
 
         var overlayService = new OverlayService(
